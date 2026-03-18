@@ -16,6 +16,6 @@ class DashboardMetric(models.Model):
     metric_type = models.CharField(max_length=50, choices=METRIC_TYPES)
     value = models.DecimalField(max_digits=10, decimal_places=2)
     calculated_at = models.DateTimeField(default=timezone.now)
-
+    class Meta:
     def __str__(self):
         return f"{self.metric_type}: {self.value}"
