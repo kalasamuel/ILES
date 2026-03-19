@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'evaluations',
     'notifications',
     'dashboards',
+    'simple_history',
 ]
 
 MIDDLEWARE = [
