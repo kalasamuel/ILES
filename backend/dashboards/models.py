@@ -61,3 +61,11 @@ class DashboardMetric(models.Model):
 
     def __str__(self):
         return f"{self.get_metric_type_display()}: {self.value} (calculated at {self.calculated_at:%Y-%m-%d %H:%M})"
+ # Optional: convenience method for incrementing metrics safely
+    def increment(self, amount=1):
+        """
+        Increment the metric's value by a given amount.
+        Ensures historical record is tracked automatically.
+        """
+        self.value += amount
+        self.save()   
