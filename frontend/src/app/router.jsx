@@ -71,9 +71,11 @@ function Router() {
 function Dashboard() {
   const { user } = useAuth();
 
-  if (!user) return null;
+  if (!user || !user.role) return <div>Loading...</div>;
 
-  switch (user.role.role_name) {
+  const roleName = user.role.role_name || user.role_name || 'student';
+
+  switch (roleName) {
     case 'student':
       return <StudentDashboard />;
     case 'workplace_supervisor':

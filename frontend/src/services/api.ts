@@ -46,6 +46,16 @@ export const authAPI = {
     const response = await api.post('/accounts/users/login/', { email, password });
     return response.data;
   },
+  register: async (userData: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    password: string;
+    role: string;
+  }): Promise<{ access: string; refresh: string; user: User }> => {
+    const response = await api.post('/accounts/users/register/', userData);
+    return response.data;
+  },
 };
 
 // Users

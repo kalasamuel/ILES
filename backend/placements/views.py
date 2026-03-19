@@ -6,12 +6,33 @@ from django.utils import timezone
 from .models import InternshipPlacement, PlacementDocument
 from .serializers import InternshipPlacementSerializer, PlacementDocumentSerializer
 from reviews.models import WorkflowHistory
+from accounts.models import Supervisor
 
 
 class InternshipPlacementViewSet(viewsets.ModelViewSet):
     queryset = InternshipPlacement.objects.all()
     serializer_class = InternshipPlacementSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return InternshipPlacement.objects.none()
+
+        try:
+            supervisor = Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            return InternshipPlacement.objects.none()
+
+        if supervisor.supervisor_type == 'workplace':
+            return self.queryset.filter(workplace_supervisor=supervisor)
+
+        if supervisor.supervisor_type == 'academic':
+            if supervisor.department:
+                return self.queryset.filter(student__user__department=supervisor.department)
+            return self.queryset.filter(academic_supervisor=supervisor)
+
+        return InternshipPlacement.objects.none()
 
     def perform_create(self, request):
         # Create workflow history

@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles: string[];
+  allowedRoles?: string[];
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
@@ -18,7 +18,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     return <Navigate to="/login" replace />;
   }
 
-  if (user && !allowedRoles.includes(user.role.role_name.toLowerCase())) {
+  if (allowedRoles && user && user.role && !allowedRoles.includes(user.role.role_name.toLowerCase())) {
     return <Navigate to="/unauthorized" replace />;
   }
 

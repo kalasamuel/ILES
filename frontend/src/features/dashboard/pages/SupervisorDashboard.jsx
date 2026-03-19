@@ -18,8 +18,17 @@ function SupervisorDashboard() {
           placementsAPI.getPlacements(),
         ]);
 
-        setReviews(reviewsRes.results);
-        setPlacements(placementsRes.results);
+        setReviews(Array.isArray(reviewsRes)
+          ? reviewsRes
+          : Array.isArray(reviewsRes?.results)
+            ? reviewsRes.results
+            : []);
+
+        setPlacements(Array.isArray(placementsRes)
+          ? placementsRes
+          : Array.isArray(placementsRes?.results)
+            ? placementsRes.results
+            : []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -44,6 +53,31 @@ function SupervisorDashboard() {
     { month: 'Apr', reviews: 22 },
   ];
 
+  const userRole = user?.role?.role_name;
+
+  let visiblePlacements = placements;
+  if (userRole === 'workplace_supervisor') {
+    visiblePlacements = placements.filter((placement) =>
+      placement?.workplace_supervisor_details?.user?.user_id === user?.user_id
+    );
+  } else if (userRole === 'academic_supervisor') {
+    visiblePlacements = placements.filter((placement) =>
+      user?.department && placement?.student_details?.user?.department?.department_id === user.department.department_id
+    );
+  }
+
+  let visibleReviews = reviews;
+  if (userRole === 'workplace_supervisor') {
+    visibleReviews = reviews.filter((review) =>
+      review?.log?.placement?.workplace_supervisor?.user_id === user?.user_id ||
+      review?.log?.placement?.workplace_supervisor_details?.user?.user_id === user?.user_id
+    );
+  } else if (userRole === 'academic_supervisor') {
+    visibleReviews = reviews.filter((review) =>
+      user?.department && review?.log?.placement?.student?.user?.department?.department_id === user.department.department_id
+    );
+  }
+
   if (loading) {
     return <div>Loading dashboard...</div>;
   }
@@ -58,14 +92,14 @@ function SupervisorDashboard() {
       <div className="dashboard-grid">
         <div className="dashboard-card">
           <h3>Pending Reviews</h3>
-          <div className="stat-number">{reviews.filter(r => r.status === 'needs_revision').length}</div>
+          <div className="stat-number">{(visibleReviews || []).filter(r => r?.status === 'needs_revision').length}</div>
           <p>Logs awaiting your review</p>
           <Link to="/app/reviews" className="btn btn-secondary">Review Logs</Link>
         </div>
 
         <div className="dashboard-card">
           <h3>My Students</h3>
-          <div className="stat-number">{placements.length}</div>
+          <div className="stat-number">{visiblePlacements.length}</div>
           <p>Active placements supervised</p>
           <Link to="/app/placements" className="btn btn-secondary">View Students</Link>
         </div>
@@ -73,9 +107,9 @@ function SupervisorDashboard() {
         <div className="dashboard-card">
           <h3>Recent Activity</h3>
           <ul>
-            {reviews.slice(0, 3).map((review) => (
+            {visibleReviews.slice(0, 3).map((review) => (
               <li key={review.review_id}>
-                Reviewed Week {review.log.week_number} for {review.log.placement.student.user.first_name}
+                Reviewed Week {review.log?.week_number ?? review.log?.placement?.week_number} for {review.log?.placement?.student?.user?.first_name ?? 'N/A'}
               </li>
             ))}
           </ul>

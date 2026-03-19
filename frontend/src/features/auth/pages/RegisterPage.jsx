@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../hooks/AuthContext';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ function RegisterPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -34,11 +36,34 @@ function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement registration API call
-      console.log('Registration data:', formData);
-      navigate('/login');
+      await register({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      });
+      navigate('/app/dashboard');
     } catch (err) {
-      setError('Registration failed');
+      // Handle specific backend validation errors
+      if (err.response && err.response.data) {
+        const errors = err.response.data;
+        if (errors.email) {
+          setError(`Email: ${errors.email.join(', ')}`);
+        } else if (errors.first_name) {
+          setError(`First name: ${errors.first_name.join(', ')}`);
+        } else if (errors.last_name) {
+          setError(`Last name: ${errors.last_name.join(', ')}`);
+        } else if (errors.password) {
+          setError(`Password: ${errors.password.join(', ')}`);
+        } else if (errors.role) {
+          setError(`Role: ${errors.role.join(', ')}`);
+        } else {
+          setError('Registration failed. Please check your information and try again.');
+        }
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

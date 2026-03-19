@@ -15,15 +15,39 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    role_name = serializers.CharField(source='role.role_name', read_only=True)
-    department_name = serializers.CharField(source='department.department_name', read_only=True)
+    role = RoleSerializer(read_only=True)
+    department = DepartmentSerializer(read_only=True)
 
     class Meta:
         model = User
-        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'role', 'role_name', 'department', 'department_name', 'is_active', 'date_joined', 'last_login']
+        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'role', 'department', 'is_active', 'date_joined', 'last_login']
         extra_kwargs = {
-            'password_hash': {'write_only': True}
+            'password': {'write_only': True}
         }
+
+
+class UserRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+    role = serializers.CharField(write_only=True, required=True)  # Accept role name as string
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'password', 'role']
+
+    def create(self, validated_data):
+        role_name = validated_data.pop('role')
+        password = validated_data.pop('password')
+
+        # Get or create the role
+        role, created = Role.objects.get_or_create(role_name=role_name)
+
+        user = User.objects.create_user(
+            email=validated_data['email'],
+            password=password,
+            role=role,
+            **{k: v for k, v in validated_data.items() if k != 'email'}
+        )
+        return user
 
 
 class StudentSerializer(serializers.ModelSerializer):
