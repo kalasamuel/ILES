@@ -21,4 +21,10 @@ class DashboardMetricSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['metric_id', 'created_at', 'updated_at']
 
-    
+    def validate_value(self, value):
+        """
+        Ensure the metric value is non-negative.
+        """
+        if value < 0:
+            raise serializers.ValidationError("Metric value cannot be negative.")
+        return value  
