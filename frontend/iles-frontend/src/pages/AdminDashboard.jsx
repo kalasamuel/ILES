@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
-import * as api from '../services/api';
+import * as api from '../services/apiClient';
 
 const AdminDashboard = () => {
   const { user } = useAuth();

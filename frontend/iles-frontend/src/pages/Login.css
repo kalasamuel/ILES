@@ -518,3 +518,26 @@ a:hover {
     gap: 6px;
   }
 }
+/* Logo link styling */
+.login-logo-link {
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* Back to home link */
+.back-to-home-container {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.back-to-home {
+  color: #6c757d;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.back-to-home:hover {
+  color: #007bff;
+  text-decoration: underline;
+}

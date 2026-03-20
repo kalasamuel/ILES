@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../hooks/AuthContext';
-import { StoreProvider } from './store';
+//import { StoreProvider } from './store';
 
 // Layouts
 import PublicLayout from '../components/layout/PublicLayout';
@@ -9,7 +9,7 @@ import AppLayout from '../components/layout/AppLayout';
 
 // Auth Pages
 import LandingPage from '../features/auth/pages/LandingPage';
-import LoginPage from '../features/auth/pages/LoginPage';
+//import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
 import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage';
 import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage';
@@ -21,6 +21,7 @@ import AdminDashboard from '../pages/AdminDashboard';
 
 // Other Pages - placeholders for now
 import PlacementsPage from '../pages/PlacementsPage';
+import Login from '../pages/Login';
 import LogsPage from '../pages/LogsPage';
 import ReviewsPage from '../pages/ReviewsPage';
 import EvaluationsPage from '../pages/EvaluationsPage';
@@ -33,17 +34,19 @@ import ProtectedRoute from '../components/ProtectedRoute';
 
 function Router() {
   return (
-    <StoreProvider>
       <AuthProvider>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<PublicLayout />}>
             <Route index element={<LandingPage />} />
-            <Route path="login" element={<LoginPage />} />
+            <Route path="login" element={<Login />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
             <Route path="reset-password" element={<ResetPasswordPage />} />
-          </Route>
+            <Route path="privacy" element={<div>Privacy Policy Page</div>} />
+  <Route path="terms" element={<div>Terms Page</div>} />
+  <Route path="contact" element={<div>Contact Page</div>} />
+</Route>
 
           {/* Protected App Routes */}
           <Route path="/app" element={
@@ -63,7 +66,6 @@ function Router() {
           </Route>
         </Routes>
       </AuthProvider>
-    </StoreProvider>
   );
 }
 
