@@ -1,0 +1,9 @@
+venv/ 
+__pycache__/ 
+*.pyc 
+.env 
+Lib/ 
+Scripts/ 
+db.sqlite3 
+frontend/iles-frontend/node_modules/ 
+frontend/iles-frontend/.env 
