@@ -404,7 +404,7 @@ a:hover {
   to { transform: rotate(360deg); }
 }
 
-/* ── Register Link ───────────────────────────────────────── */
+/* ── Register Link ─────────────────────────────────── */
 .login-register {
   margin-top: 20px;
   text-align: center;
@@ -462,7 +462,7 @@ a:hover {
   color: #1E40AF;
 }
 
-/* ── Footer ──────────────────────────────────────────────── */
+/* ── Footer ─────────────────────────── */
 .login-footer {
   width: 100%;
   max-width: 620px;
