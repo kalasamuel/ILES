@@ -4,7 +4,7 @@ function ReviewsPage() {
   return (
     <div>
       <h2>Reviews</h2>
-      <p>Supervisor reviews for student logs</p>
+      <p>Supervisor Rreviews For Student Logs</p>
     </div>
   );
 }
