@@ -103,7 +103,7 @@ const StudentDashboard = () => {
               ))}
             </ul>
           ) : (
-            <p>No new notifications.</p>
+            <p>No New Notifications.</p>
           )}
         </div>
 
