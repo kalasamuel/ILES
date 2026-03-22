@@ -39,7 +39,7 @@ function ReportsPage() {
       <div className="bg-white rounded-lg shadow p-6">
         {activeTab === 'internship' && (
           <p className="text-gray-500 text-center py-8">
-            You Internship reports will appear here.
+            Your Internship reports will appear here.
           </p>
         )}
         {activeTab === 'analytics' && (
