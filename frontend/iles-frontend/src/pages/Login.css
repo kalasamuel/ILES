@@ -307,7 +307,7 @@ a:hover {
   color: var(--text-secondary);
 }
 
-/* ── Error Message ────────────────────────── */
+/* ── Error Message ──────────────────── */
 .error-message {
   display: flex;
   align-items: flex-start;
