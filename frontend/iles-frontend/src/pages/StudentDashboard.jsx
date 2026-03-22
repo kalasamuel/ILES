@@ -6,7 +6,7 @@ import {
   BarChart, Bar
 } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
-import * as api from '../services/api';
+import * as api from '../services/apiClient';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
