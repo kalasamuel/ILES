@@ -307,7 +307,7 @@ a:hover {
   color: var(--text-secondary);
 }
 
-/* ── Error Message ──────────────────────────── */
+/* ── Error Message ────────────────────────── */
 .error-message {
   display: flex;
   align-items: flex-start;
@@ -341,7 +341,6 @@ a:hover {
   line-height: 1.4;
 }
 
-/* ── Sign In Button ──────────────────────────── */
 .btn-signin {
   display: flex;
   align-items: center;
