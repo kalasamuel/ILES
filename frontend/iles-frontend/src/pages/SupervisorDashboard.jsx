@@ -44,7 +44,7 @@ function SupervisorDashboard() {
     ].filter(item => item.value > 0);
   };
 
-  // Calculate monthly workload from actual reviews
+  // Calculate monthly workload from reviews
   const getWorkloadData = () => {
     const monthlyData = {};
     
