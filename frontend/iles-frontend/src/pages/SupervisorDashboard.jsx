@@ -85,7 +85,7 @@ function SupervisorDashboard() {
     <div className="supervisor-dashboard">
       <header className="dashboard-header">
         <h1>Supervisor Dashboard</h1>
-        <p>Welcome back, {user?.first_name} {user?.last_name}</p>
+        <p>Welcome back! {user?.first_name} {user?.last_name}</p>
       </header>
 
       <div className="dashboard-grid">
@@ -96,7 +96,7 @@ function SupervisorDashboard() {
           <p>Logs awaiting your review</p>
           {pendingReviewsCount > 0 && (
             <Link to="/app/reviews?status=needs_revision" className="btn btn-primary">
-              Review Now
+              Review Logs Now
             </Link>
           )}
           <Link to="/app/reviews" className="btn btn-secondary">
