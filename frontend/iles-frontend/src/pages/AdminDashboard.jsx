@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
 import * as api from '../services/apiClient';
+import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
