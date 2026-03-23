@@ -109,7 +109,7 @@ function SupervisorDashboard() {
           <h3>My Students</h3>
           <div className="stat-number">{placements.length}</div>
           <p>Active placements supervised</p>
-          <Link to="/app/placements" className="btn btn-secondary">
+          <Link to="/placements" className="btn btn-secondary">
             View Students
           </Link>
         </div>
@@ -196,7 +196,7 @@ function SupervisorDashboard() {
             <Link to="/app/reviews?status=needs_revision" className="btn btn-primary">
               Review Pending Logs
             </Link>
-            <Link to="/app/placements" className="btn btn-secondary">
+            <Link to="/placements" className="btn btn-secondary">
               View Student Progress
             </Link>
             <Link to="/app/reports" className="btn btn-secondary">
