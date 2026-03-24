@@ -158,6 +158,10 @@ export const notificationsAPI = {
     const response = await api.patch(`/notifications/notifications/${id}/`, { is_read: true });
     return response.data;
   },
+  deleteNotification: async (id) => {
+    const response = await api.delete(`/notifications/notifications/${id}/`);
+    return response.data;
+  },
 };
 
 // Dashboards
@@ -167,7 +171,7 @@ export const dashboardsAPI = {
     return response.data;
   },
   refreshMetrics: async () => {
-    const response = await api.get('/dashboards/metrics/refresh_metrics/');
+    const response = await api.get('/dashboards/metrics/refresh-metrics/');
     return response.data;
   },
 };
