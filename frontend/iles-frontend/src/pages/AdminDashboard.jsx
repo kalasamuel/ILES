@@ -1,25 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
-import * as api from '../services/apiClient';
+import { dashboardsAPI, evaluationsAPI, placementsAPI } from '../services/endpoints';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState([]);
   const [placements, setPlacements] = useState([]);
+  const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [metricsRes, placementsRes] = await Promise.all([
-          api.dashboardsAPI.refreshMetrics(),
-          api.placementsAPI.getPlacements(),
+        const [metricsRes, placementsRes, evaluationsRes] = await Promise.all([
+          dashboardsAPI.refreshMetrics(),
+          placementsAPI.getPlacements(),
+          evaluationsAPI.getEvaluations(),
         ]);
 
         setMetrics(metricsRes);
-        setPlacements(placementsRes.results);
+        setPlacements(placementsRes.results || placementsRes || []);
+        setEvaluations(evaluationsRes.results || evaluationsRes || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -30,21 +33,42 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
-  const completionTrend = [
-    { month: 'Jan', completed: 12, active: 25 },
-    { month: 'Feb', completed: 18, active: 22 },
-    { month: 'Mar', completed: 15, active: 28 },
-    { month: 'Apr', completed: 22, active: 30 },
-    { month: 'May', completed: 20, active: 32 },
-  ];
+  const completionTrendMap = placements.reduce((acc, placement) => {
+    const dateValue = placement.created_at || placement.start_date;
+    const date = dateValue ? new Date(dateValue) : null;
+    if (!date || Number.isNaN(date.getTime())) return acc;
+    const month = date.toLocaleString('default', { month: 'short' });
+    if (!acc[month]) {
+      acc[month] = { month, completed: 0, active: 0 };
+    }
+    if (placement.status === 'completed') {
+      acc[month].completed += 1;
+    }
+    if (placement.status === 'approved' || placement.status === 'pending') {
+      acc[month].active += 1;
+    }
+    return acc;
+  }, {});
+
+  const completionTrend = Object.values(completionTrendMap);
 
   const scoreDistribution = [
-    { range: '90-100', count: 8 },
-    { range: '80-89', count: 15 },
-    { range: '70-79', count: 12 },
-    { range: '60-69', count: 5 },
-    { range: '<60', count: 2 },
+    { range: '90-100', count: 0 },
+    { range: '80-89', count: 0 },
+    { range: '70-79', count: 0 },
+    { range: '60-69', count: 0 },
+    { range: '<60', count: 0 },
   ];
+
+  evaluations.forEach((evaluation) => {
+    const score = Number(evaluation.total_score);
+    if (Number.isNaN(score)) return;
+    if (score >= 90) scoreDistribution[0].count += 1;
+    else if (score >= 80) scoreDistribution[1].count += 1;
+    else if (score >= 70) scoreDistribution[2].count += 1;
+    else if (score >= 60) scoreDistribution[3].count += 1;
+    else scoreDistribution[4].count += 1;
+  });
 
   const getMetricValue = (type) => {
     const metric = metrics.find(m => m.metric_type === type);
@@ -77,7 +101,7 @@ const AdminDashboard = () => {
         </div>
         <div className="metric-card">
           <h3>Average Score</h3>
-          <div className="metric-value">{getMetricValue('average_score').toFixed(1)}</div>
+          <div className="metric-value">{Number(getMetricValue('average_score') || 0).toFixed(1)}</div>
         </div>
         <div className="metric-card">
           <h3>Pending Reviews</h3>
@@ -88,17 +112,21 @@ const AdminDashboard = () => {
       <div className="dashboard-grid">
         <div className="dashboard-card chart-card">
           <h3>Internship Completion Trend</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={completionTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Area type="monotone" dataKey="completed" stackId="1" stroke="#8884d8" fill="#8884d8" name="Completed" />
-              <Area type="monotone" dataKey="active" stackId="1" stroke="#82ca9d" fill="#82ca9d" name="Active" />
-            </AreaChart>
-          </ResponsiveContainer>
+          {completionTrend.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={completionTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Area type="monotone" dataKey="completed" stackId="1" stroke="#8884d8" fill="#8884d8" name="Completed" />
+                <Area type="monotone" dataKey="active" stackId="1" stroke="#82ca9d" fill="#82ca9d" name="Active" />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <p>No trend data available.</p>
+          )}
         </div>
 
         <div className="dashboard-card chart-card">
@@ -130,7 +158,7 @@ const AdminDashboard = () => {
 
         <div className="dashboard-card">
           <h3>System Actions</h3>
-          <button className="action-btn" onClick={() => api.dashboardsAPI.refreshMetrics()}>
+          <button className="action-btn" onClick={() => dashboardsAPI.refreshMetrics()}>
             Refresh Metrics
           </button>
           <button className="action-btn">Generate Reports</button>
