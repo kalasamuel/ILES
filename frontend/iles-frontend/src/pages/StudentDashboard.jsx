@@ -16,21 +16,36 @@ const StudentDashboard = () => {
   const [logs, setLogs] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(null);
+        console.log('Fetching dashboard data...');
+        
         const [placementsRes, logsRes, notificationsRes] = await Promise.all([
           placementsAPI.getPlacements(),
           logbooksAPI.getLogs(),
           notificationsAPI.getNotifications(),
         ]);
 
-        setPlacements(placementsRes?.results || []);
-        setLogs(logsRes?.results || []);
-        setNotifications(notificationsRes?.results || []);
+        console.log('Placements response:', placementsRes);
+        console.log('Logs response:', logsRes);
+        console.log('Notifications response:', notificationsRes);
+
+        const placementsData = placementsRes?.results || placementsRes || [];
+        const logsData = logsRes?.results || logsRes || [];
+        const notificationsData = notificationsRes?.results || notificationsRes || [];
+
+        setPlacements(placementsData);
+        setLogs(logsData);
+        setNotifications(notificationsData);
+
+        console.log('Dashboard data loaded:', { placements: placementsData.length, logs: logsData.length, notifications: notificationsData.length });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        setError(error.message || 'Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
@@ -75,6 +90,19 @@ const StudentDashboard = () => {
       <div className="loading-container">
         <div className="loading-spinner"></div>
         <p>Loading your dashboard...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container" style={{ padding: '20px', margin: '20px', backgroundColor: '#ffebee', border: '1px solid #f44336', borderRadius: '4px', color: '#c62828' }}>
+        <h2>⚠️ Error Loading Dashboard</h2>
+        <p><strong>Error:</strong> {error}</p>
+        <p style={{ fontSize: '12px', marginTop: '10px' }}>Check browser console (F12) for more details.</p>
+        <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '10px' }}>
+          Retry
+        </button>
       </div>
     );
   }
