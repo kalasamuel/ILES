@@ -49,8 +49,8 @@ function SupervisorDashboard() {
     const monthlyData = {};
     
     reviews.forEach(review => {
-      if (review.created_at) {
-        const date = new Date(review.created_at);
+      if (review.reviewed_at) {
+        const date = new Date(review.reviewed_at);
         const month = date.toLocaleString('default', { month: 'short' });
         monthlyData[month] = (monthlyData[month] || 0) + 1;
       }
@@ -74,7 +74,7 @@ function SupervisorDashboard() {
 
   // Get recent activity (last 3 reviews)
   const recentActivity = [...reviews]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at))
     .slice(0, 3);
 
   if (loading) {
