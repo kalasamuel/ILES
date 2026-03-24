@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { AuthProvider, useAuth } from '../hooks/AuthContext';
+import { useAuth } from '../hooks/AuthContext';
 
 // Layouts
 import PublicLayout from '../components/layout/PublicLayout';
@@ -32,7 +32,6 @@ import ProtectedRoute from '../components/ProtectedRoute';
 
 function Router() {
   return (
-    <AuthProvider>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<PublicLayout />}>
@@ -59,7 +58,9 @@ function Router() {
           </ProtectedRoute>
         }>
           <Route path="dashboard" element={<Dashboard />} />
-         
+          <Route path="placements/*" element={<PlacementsPage />} />
+          <Route path="logs/*" element={<LogsPage />} />
+          <Route path="results" element={<EvaluationsPage />} />
           <Route path="reviews/*" element={<ReviewsPage />} />
           <Route path="evaluations/*" element={<EvaluationsPage />} />
           <Route path="reports/*" element={<ReportsPage />} />
@@ -68,7 +69,6 @@ function Router() {
           <Route path="help" element={<HelpPage />} />
         </Route>
       </Routes>
-    </AuthProvider>
   );
 }
 
