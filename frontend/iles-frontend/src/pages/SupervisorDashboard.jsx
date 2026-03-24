@@ -85,7 +85,7 @@ function SupervisorDashboard() {
     <div className="supervisor-dashboard">
       <header className="dashboard-header">
         <h1>Supervisor Dashboard</h1>
-        <p>Welcome back, {user?.first_name} {user?.last_name}</p>
+        <p>Welcome back! {user?.first_name} {user?.last_name}</p>
       </header>
 
       <div className="dashboard-grid">
@@ -96,7 +96,7 @@ function SupervisorDashboard() {
           <p>Logs awaiting your review</p>
           {pendingReviewsCount > 0 && (
             <Link to="/app/reviews?status=needs_revision" className="btn btn-primary">
-              Review Now
+              Review Logs Now
             </Link>
           )}
           <Link to="/app/reviews" className="btn btn-secondary">
@@ -109,7 +109,7 @@ function SupervisorDashboard() {
           <h3>My Students</h3>
           <div className="stat-number">{placements.length}</div>
           <p>Active placements supervised</p>
-          <Link to="/app/placements" className="btn btn-secondary">
+          <Link to="/placements" className="btn btn-secondary">
             View Students
           </Link>
         </div>
@@ -196,7 +196,7 @@ function SupervisorDashboard() {
             <Link to="/app/reviews?status=needs_revision" className="btn btn-primary">
               Review Pending Logs
             </Link>
-            <Link to="/app/placements" className="btn btn-secondary">
+            <Link to="/placements" className="btn btn-secondary">
               View Student Progress
             </Link>
             <Link to="/app/reports" className="btn btn-secondary">

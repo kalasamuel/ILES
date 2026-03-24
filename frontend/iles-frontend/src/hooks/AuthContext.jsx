@@ -23,18 +23,22 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = async (email, password) => {
-    try {
-      const response = await authAPI.login(email, password);
-      // Store tokens
-      localStorage.setItem('accessToken', response.access);
-      localStorage.setItem('refreshToken', response.refresh);
-      // Set user data from response
-      setUser(response.user);
-    } catch (error) {
-      throw error;
-    }
-  };
+ const login = async (email, password) => {
+  try {
+    const response = await authAPI.login(email, password);
+
+    localStorage.setItem('accessToken', response.access);
+    localStorage.setItem('refreshToken', response.refresh);
+
+    // 🔥 Fetch user AFTER login
+    const userData = await usersAPI.getCurrentUser();
+    setUser(userData);
+
+  } catch (error) {
+    console.error("Login failed:", error);
+    throw error;
+  }
+};
 
   const logout = () => {
     localStorage.removeItem('accessToken');

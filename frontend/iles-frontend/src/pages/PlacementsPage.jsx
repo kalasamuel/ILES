@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import './PlacementsPage.css'
 
 // Placeholder components - these should be moved to features/placements/pages/
 function PlacementList() {

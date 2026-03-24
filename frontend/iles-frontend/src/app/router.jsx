@@ -47,6 +47,7 @@ function Router() {
           
           {/* Public Dashboard Routes - No authentication required */}
           <Route path="student-dashboard" element={<StudentDashboard />} />
+          <Route path="placements/*" element={<PlacementsPage />} />
           <Route path="supervisor-dashboard" element={<SupervisorDashboard />} />
           <Route path="admin-dashboard" element={<AdminDashboard />} />
         </Route>
@@ -58,7 +59,7 @@ function Router() {
           </ProtectedRoute>
         }>
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="placements/*" element={<PlacementsPage />} />
+         
           <Route path="reviews/*" element={<ReviewsPage />} />
           <Route path="evaluations/*" element={<EvaluationsPage />} />
           <Route path="reports/*" element={<ReportsPage />} />
