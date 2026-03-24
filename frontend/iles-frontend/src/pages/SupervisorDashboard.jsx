@@ -10,10 +10,12 @@ function SupervisorDashboard() {
   const [reviews, setReviews] = useState([]);
   const [placements, setPlacements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(null);
         const [reviewsRes, placementsRes] = await Promise.all([
           reviewsAPI.getReviews(),
           placementsAPI.getPlacements(),
@@ -23,6 +25,7 @@ function SupervisorDashboard() {
         setPlacements(placementsRes.results || placementsRes);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        setError('Failed to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -81,6 +84,18 @@ function SupervisorDashboard() {
     return <div className="loading-container">Loading dashboard...</div>;
   }
 
+  if (error) {
+    return (
+      <div className="error-container" style={{ padding: '20px', textAlign: 'center', color: '#d32f2f' }}>
+        <h2>⚠️ Error</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()} className="btn btn-primary">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="supervisor-dashboard">
       <header className="dashboard-header">
@@ -109,7 +124,7 @@ function SupervisorDashboard() {
           <h3>My Students</h3>
           <div className="stat-number">{placements.length}</div>
           <p>Active placements supervised</p>
-          <Link to="/placements" className="btn btn-secondary">
+          <Link to="/app/placements" className="btn btn-secondary">
             View Students
           </Link>
         </div>
@@ -120,13 +135,13 @@ function SupervisorDashboard() {
           {recentActivity.length > 0 ? (
             <ul className="activity-list">
               {recentActivity.map((review) => (
-                <li key={review.review_id}>
+                <li key={review.review_id || review.id}>
                   <span className="activity-icon">📝</span>
                   <div className="activity-details">
-                    <strong>Week {review.log?.week_number}</strong>
+                    <strong>Week {review.log?.week_number || 'N/A'}</strong>
                     <span>
-                      {review.log?.placement?.student?.user?.first_name}{' '}
-                      {review.log?.placement?.student?.user?.last_name}
+                      {review.log?.placement?.student?.user?.first_name || 'Unknown'}{' '}
+                      {review.log?.placement?.student?.user?.last_name || 'Student'}
                     </span>
                     <span className={`status-badge status-${review.status}`}>
                       {review.status?.replace('_', ' ')}
@@ -196,14 +211,14 @@ function SupervisorDashboard() {
             <Link to="/app/reviews?status=needs_revision" className="btn btn-primary">
               Review Pending Logs
             </Link>
-            <Link to="/placements" className="btn btn-secondary">
+            <Link to="/app/placements" className="btn btn-secondary">
               View Student Progress
             </Link>
             <Link to="/app/reports" className="btn btn-secondary">
               Generate Reports
             </Link>
-            <Link to="/app/students" className="btn btn-secondary">
-              Manage Students
+            <Link to="/app/reviews" className="btn btn-secondary">
+              View All Reviews
             </Link>
           </div>
         </div>
