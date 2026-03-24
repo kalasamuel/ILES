@@ -6,6 +6,10 @@ export const authAPI = {
     const response = await api.post('/token/', { email, password });
     return response.data;
   },
+  register: async (payload) => {
+    const response = await api.post('/accounts/users/register/', payload);
+    return response.data;
+  },
 };
 
 // Users

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/AuthContext';
-import * as api from '../services/api';
+import { logbooksAPI, placementsAPI } from '../services/endpoints';
 
 const WeeklyLogForm = () => {
   const { placementId, weekNumber } = useParams();
@@ -27,11 +27,11 @@ const WeeklyLogForm = () => {
       if (!placementId) return;
 
       try {
-        const placementRes = await api.placementsAPI.getPlacement(placementId);
+        const placementRes = await placementsAPI.getPlacement(placementId);
         setPlacement(placementRes);
 
         if (weekNumber) {
-          const logsRes = await api.logbooksAPI.getLogs();
+          const logsRes = await logbooksAPI.getLogs();
           const existing = logsRes.results.find(
             (log) => log.placement.placement_id === placementId && log.week_number === parseInt(weekNumber)
           );
@@ -85,9 +85,9 @@ const WeeklyLogForm = () => {
       };
 
       if (existingLog) {
-        await api.logbooksAPI.updateLog(existingLog.log_id, logData);
+        await logbooksAPI.updateLog(existingLog.log_id, logData);
       } else {
-        await api.logbooksAPI.createLog(logData);
+        await logbooksAPI.createLog(logData);
       }
 
       navigate('/student');
@@ -102,7 +102,7 @@ const WeeklyLogForm = () => {
     if (!existingLog) return;
 
     try {
-      await api.logbooksAPI.submitLog(existingLog.log_id);
+      await logbooksAPI.submitLog(existingLog.log_id);
       navigate('/student');
     } catch (err) {
       setError('Failed to submit log');
