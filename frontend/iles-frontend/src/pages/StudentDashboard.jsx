@@ -6,7 +6,7 @@ import {
   BarChart, Bar
 } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
-import * as api from '../services/apiClient';
+import { logbooksAPI, notificationsAPI, placementsAPI } from '../services/endpoints';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
@@ -21,9 +21,9 @@ const StudentDashboard = () => {
     const fetchData = async () => {
       try {
         const [placementsRes, logsRes, notificationsRes] = await Promise.all([
-          api.placementsAPI.getPlacements(),
-          api.logbooksAPI.getLogs(),
-          api.notificationsAPI.getNotifications(),
+          placementsAPI.getPlacements(),
+          logbooksAPI.getLogs(),
+          notificationsAPI.getNotifications(),
         ]);
 
         setPlacements(placementsRes?.results || []);
@@ -41,22 +41,33 @@ const StudentDashboard = () => {
 
   // Calculate stats
   const approvedLogs = logs.filter(log => log.status === 'approved').length;
-  const pendingLogs = logs.filter(log => log.status === 'pending').length;
-  const totalHours = logs.reduce((sum, log) => sum + (log.hours || 0), 0);
-  const activePlacements = placements.filter(p => p.status === 'active').length;
+  const pendingLogs = logs.filter(log => log.status === 'submitted' || log.status === 'reviewed').length;
+  const totalHours = logs.reduce((sum, log) => sum + (Number(log.hours_worked) || 0), 0).toFixed(1);
+  const activePlacements = placements.filter(p => p.status === 'approved' || p.status === 'completed').length;
 
-  // Fallback / mock data for charts
-  const progressData = [
-    { week: 'Week 1', hours: 40, approved: 35 },
-    { week: 'Week 2', hours: 42, approved: 38 },
-    { week: 'Week 3', hours: 38, approved: 38 },
-    { week: 'Week 4', hours: 45, approved: 40 },
-  ];
+  const progressMap = logs.reduce((acc, log) => {
+    const week = `Week ${log.week_number}`;
+    if (!acc[week]) {
+      acc[week] = { week, hours: 0, approved: 0 };
+    }
+    const hours = Number(log.hours_worked) || 0;
+    acc[week].hours += hours;
+    if (log.status === 'approved') {
+      acc[week].approved += hours;
+    }
+    return acc;
+  }, {});
+
+  const progressData = Object.values(progressMap).sort((a, b) => {
+    const weekA = Number(a.week.replace('Week ', ''));
+    const weekB = Number(b.week.replace('Week ', ''));
+    return weekA - weekB;
+  });
 
   const statusData = [
-    { status: 'Approved', count: approvedLogs || 3 },
-    { status: 'Pending', count: pendingLogs || 1 },
-    { status: 'Rejected', count: 0 },
+    { status: 'Approved', count: approvedLogs },
+    { status: 'Pending', count: pendingLogs },
+    { status: 'Rejected', count: logs.filter(log => log.status === 'rejected').length },
   ];
 
   if (loading) {

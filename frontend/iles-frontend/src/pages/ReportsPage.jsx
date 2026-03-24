@@ -1,7 +1,40 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
+import { dashboardsAPI, evaluationsAPI, placementsAPI } from '../services/endpoints';
 
 function ReportsPage() {
   const [activeTab, setActiveTab] = useState('internship');
+  const [placements, setPlacements] = useState([]);
+  const [evaluations, setEvaluations] = useState([]);
+  const [metrics, setMetrics] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [placementsRes, evaluationsRes, metricsRes] = await Promise.all([
+          placementsAPI.getPlacements(),
+          evaluationsAPI.getEvaluations(),
+          dashboardsAPI.getMetrics(),
+        ]);
+
+        setPlacements(placementsRes.results || placementsRes || []);
+        setEvaluations(evaluationsRes.results || evaluationsRes || []);
+        setMetrics(metricsRes.results || metricsRes || []);
+      } catch (error) {
+        console.error('Failed to fetch reports data', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const getMetricValue = (type) => {
+    const metric = metrics.find((item) => item.metric_type === type);
+    return metric?.value ?? 0;
+  };
 
   const tabs = [
     { id: 'internship', label: 'Internship Reports' },
@@ -37,20 +70,33 @@ function ReportsPage() {
 
       {/* Tab Content */}
       <div className="bg-white rounded-lg shadow p-6">
+        {loading && <p className="text-gray-500 text-center py-8">Loading report data...</p>}
         {activeTab === 'internship' && (
-          <p className="text-gray-500 text-center py-8">
-            Your Internship reports will appear here.
-          </p>
+          !loading && (
+            <div className="space-y-3">
+              <p className="text-gray-700">Total placements: {placements.length}</p>
+              <p className="text-gray-700">Completed internships: {placements.filter((p) => p.status === 'completed').length}</p>
+              <p className="text-gray-700">Approved placements: {placements.filter((p) => p.status === 'approved').length}</p>
+            </div>
+          )
         )}
         {activeTab === 'analytics' && (
-          <p className="text-gray-500 text-center py-8">
-            Analytics data will appear here.
-          </p>
+          !loading && (
+            <div className="space-y-3">
+              <p className="text-gray-700">Total students: {getMetricValue('total_students')}</p>
+              <p className="text-gray-700">Active placements: {getMetricValue('active_placements')}</p>
+              <p className="text-gray-700">Pending reviews: {getMetricValue('pending_reviews')}</p>
+            </div>
+          )
         )}
         {activeTab === 'evaluations' && (
-          <p className="text-gray-500 text-center py-8">
-            Supervisor evaluations will appear here.
-          </p>
+          !loading && (
+            <div className="space-y-3">
+              <p className="text-gray-700">Evaluations submitted: {evaluations.length}</p>
+              <p className="text-gray-700">Average score: {Number(getMetricValue('average_score') || 0).toFixed(2)}</p>
+              <p className="text-gray-700">A grades: {evaluations.filter((item) => item.grade === 'A').length}</p>
+            </div>
+          )
         )}
       </div>
     </div>
