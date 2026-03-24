@@ -139,7 +139,7 @@ const Login = () => {
 
       {/* FOOTER */}
       <footer className="login-footer">
-        <div>© 2024 ILES. All rights reserved.</div>
+        <div>© 2026 ILES. All rights reserved.</div>
         <div className="login-footer-links">
           <Link to="/privacy">Privacy Policy</Link>
           <span className="login-footer-divider">•</span>
