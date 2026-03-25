@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { notificationsAPI } from '../services/endpoints';
+import './NotificationsPage.css';
 
 function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
