@@ -2,27 +2,71 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
-import { reviewsAPI, placementsAPI } from '../services/endpoints';
+import { dashboardsAPI, reviewsAPI, placementsAPI, logbooksAPI } from '../services/endpoints';
 import './SupervisorDashboard.css';
 
 function SupervisorDashboard() {
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [placements, setPlacements] = useState([]);
+  const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [bootstrapAttempted, setBootstrapAttempted] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setError(null);
-        const [reviewsRes, placementsRes] = await Promise.all([
+        const [reviewsRes, placementsRes, logsRes] = await Promise.all([
           reviewsAPI.getReviews(),
           placementsAPI.getPlacements(),
+          logbooksAPI.getLogs(),
         ]);
 
-        setReviews(reviewsRes.results || reviewsRes);
-        setPlacements(placementsRes.results || placementsRes);
+        let reviewsData = reviewsRes?.results || reviewsRes || [];
+        let placementsData = placementsRes?.results || placementsRes || [];
+        let logsData = logsRes?.results || logsRes || [];
+
+        let context = null;
+        try {
+          context = await dashboardsAPI.getMyDataContext();
+        } catch (ctxError) {
+          console.warn('Failed to load backend data context:', ctxError);
+        }
+
+        const roleName = String(context?.role_name || '').toLowerCase();
+        const shouldBootstrap =
+          !bootstrapAttempted &&
+          context &&
+          roleName.includes('supervisor') &&
+          context.has_supervisor_profile &&
+          (context.supervisor_owned?.placements_workplace || 0) + (context.supervisor_owned?.placements_academic || 0) === 0 &&
+          (context.supervisor_owned?.reviews || 0) === 0 &&
+          (context.supervisor_owned?.pending_logs || 0) === 0;
+
+        if (shouldBootstrap) {
+          try {
+            await dashboardsAPI.bootstrapMySupervisorData();
+            setBootstrapAttempted(true);
+
+            const [reviewsRefetch, placementsRefetch, logsRefetch] = await Promise.all([
+              reviewsAPI.getReviews(),
+              placementsAPI.getPlacements(),
+              logbooksAPI.getLogs(),
+            ]);
+
+            reviewsData = reviewsRefetch?.results || reviewsRefetch || [];
+            placementsData = placementsRefetch?.results || placementsRefetch || [];
+            logsData = logsRefetch?.results || logsRefetch || [];
+          } catch (bootstrapError) {
+            console.warn('Supervisor starter data bootstrap failed:', bootstrapError);
+          }
+        }
+
+        setReviews(reviewsData);
+        setPlacements(placementsData);
+        setLogs(logsData);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         setError('Failed to load dashboard data. Please try again.');
@@ -73,11 +117,11 @@ function SupervisorDashboard() {
   const workloadData = getWorkloadData();
 
   // Calculate pending reviews count
-  const pendingReviewsCount = reviews.filter(r => r.status === 'needs_revision').length;
+  const pendingReviewsCount = logs.filter(l => l.status === 'submitted').length;
 
   // Get recent activity (last 3 reviews)
   const recentActivity = [...reviews]
-    .sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at))
+    .sort((a, b) => new Date(b.reviewed_at || 0) - new Date(a.reviewed_at || 0))
     .slice(0, 3);
 
   if (loading) {
@@ -138,11 +182,8 @@ function SupervisorDashboard() {
                 <li key={review.review_id || review.id}>
                   <span className="activity-icon">📝</span>
                   <div className="activity-details">
-                    <strong>Week {review.log?.week_number || 'N/A'}</strong>
-                    <span>
-                      {review.log?.placement?.student?.user?.first_name || 'Unknown'}{' '}
-                      {review.log?.placement?.student?.user?.last_name || 'Student'}
-                    </span>
+                    <strong>Review {String(review.review_id || review.id || '').slice(0, 8)}</strong>
+                    <span>{review.reviewed_at ? new Date(review.reviewed_at).toLocaleDateString() : 'Date unavailable'}</span>
                     <span className={`status-badge status-${review.status}`}>
                       {review.status?.replace('_', ' ')}
                     </span>

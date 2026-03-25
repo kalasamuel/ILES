@@ -6,7 +6,7 @@ import {
   BarChart, Bar
 } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
-import { logbooksAPI, notificationsAPI, placementsAPI } from '../services/endpoints';
+import { dashboardsAPI, logbooksAPI, notificationsAPI, placementsAPI } from '../services/endpoints';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
@@ -17,6 +17,7 @@ const StudentDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [bootstrapAttempted, setBootstrapAttempted] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,13 +31,51 @@ const StudentDashboard = () => {
           notificationsAPI.getNotifications(),
         ]);
 
+        let placementsData = placementsRes?.results || placementsRes || [];
+        let logsData = logsRes?.results || logsRes || [];
+        let notificationsData = notificationsRes?.results || notificationsRes || [];
+
+        let context = null;
+        try {
+          context = await dashboardsAPI.getMyDataContext();
+          console.log('Backend data context:', context);
+        } catch (ctxError) {
+          console.warn('Failed to load backend data context:', ctxError);
+        }
+
+        const shouldBootstrap =
+          !bootstrapAttempted &&
+          context &&
+          String(context.role_name || '').toLowerCase().includes('student') &&
+          context.has_student_profile &&
+          (context.student_owned?.placements || 0) === 0 &&
+          (context.student_owned?.logs || 0) === 0 &&
+          (context.student_owned?.notifications || 0) === 0;
+
+        if (shouldBootstrap) {
+          try {
+            console.log('No owned student data found. Bootstrapping starter data...');
+            await dashboardsAPI.bootstrapMyStudentData();
+            setBootstrapAttempted(true);
+
+            const [placementsRefetch, logsRefetch, notificationsRefetch] = await Promise.all([
+              placementsAPI.getPlacements(),
+              logbooksAPI.getLogs(),
+              notificationsAPI.getNotifications(),
+            ]);
+
+            placementsData = placementsRefetch?.results || placementsRefetch || [];
+            logsData = logsRefetch?.results || logsRefetch || [];
+            notificationsData = notificationsRefetch?.results || notificationsRefetch || [];
+            console.log('Starter data bootstrapped successfully.');
+          } catch (bootstrapError) {
+            console.warn('Starter data bootstrap failed:', bootstrapError);
+          }
+        }
+
         console.log('Placements response:', placementsRes);
         console.log('Logs response:', logsRes);
         console.log('Notifications response:', notificationsRes);
-
-        const placementsData = placementsRes?.results || placementsRes || [];
-        const logsData = logsRes?.results || logsRes || [];
-        const notificationsData = notificationsRes?.results || notificationsRes || [];
 
         setPlacements(placementsData);
         setLogs(logsData);

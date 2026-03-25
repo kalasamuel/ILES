@@ -78,13 +78,17 @@ function Dashboard() {
 
   if (!user || !user.role) return <div>Loading...</div>;
 
-  const roleName = user.role.role_name || user.role_name || 'student';
+  const rawRole = user?.role?.role_name || user?.role_name || 'student';
+  const roleName = String(rawRole).trim().toLowerCase().replace(/[\s-]+/g, '_');
 
   switch (roleName) {
     case 'student':
       return <StudentDashboard />;
+    case 'supervisor':
     case 'workplace_supervisor':
     case 'academic_supervisor':
+    case 'workplace':
+    case 'academic':
       return <SupervisorDashboard />;
     case 'admin':
       return <AdminDashboard />;

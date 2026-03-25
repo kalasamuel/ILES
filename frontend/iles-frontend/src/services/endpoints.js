@@ -178,4 +178,16 @@ export const dashboardsAPI = {
     const response = await api.get('/dashboards/metrics/refresh-metrics/');
     return response.data;
   },
+  getMyDataContext: async () => {
+    const response = await api.get('/dashboards/metrics/my-data-context/');
+    return response.data;
+  },
+  bootstrapMyStudentData: async () => {
+    const response = await api.post('/dashboards/metrics/bootstrap-my-student-data/');
+    return response.data;
+  },
+  bootstrapMySupervisorData: async () => {
+    const response = await api.post('/dashboards/metrics/bootstrap-my-supervisor-data/');
+    return response.data;
+  },
 };
