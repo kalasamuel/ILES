@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from .models import Role, Department, User, Student, Supervisor
+from datetime import timedelta
+from django.utils import timezone
+import uuid
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -34,6 +37,36 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ['first_name', 'last_name', 'email', 'password', 'role']
 
+    def _generate_registration_number(self):
+        while True:
+            value = f"TEMP-{uuid.uuid4().hex[:8].upper()}"
+            if not Student.objects.filter(registration_number=value).exists():
+                return value
+
+    def _ensure_role_profile(self, user, role_name):
+        normalized = role_name.strip().lower().replace('-', ' ').replace('_', ' ')
+
+        if 'student' in normalized:
+            Student.objects.get_or_create(
+                user=user,
+                defaults={
+                    'registration_number': self._generate_registration_number(),
+                    'program': 'Not Set',
+                    'year_of_study': 1,
+                    'expected_graduation': timezone.now().date() + timedelta(days=365 * 4),
+                }
+            )
+            return
+
+        if 'supervisor' in normalized or 'academic' in normalized or 'workplace' in normalized:
+            supervisor_type = 'academic' if 'academic' in normalized else 'workplace'
+            Supervisor.objects.get_or_create(
+                user=user,
+                defaults={
+                    'supervisor_type': supervisor_type,
+                }
+            )
+
     def create(self, validated_data):
         role_name = validated_data.pop('role')
         password = validated_data.pop('password')
@@ -47,6 +80,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             role=role,
             **{k: v for k, v in validated_data.items() if k != 'email'}
         )
+
+        self._ensure_role_profile(user, role_name)
         return user
 
 
