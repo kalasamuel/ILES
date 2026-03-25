@@ -6,12 +6,43 @@ from django.utils import timezone
 from .models import WeeklyLog, LogAttachment
 from .serializers import WeeklyLogSerializer, LogAttachmentSerializer
 from reviews.models import WorkflowHistory
+from accounts.models import Student, Supervisor
 
 
 class WeeklyLogViewSet(viewsets.ModelViewSet):
     queryset = WeeklyLog.objects.all()
     serializer_class = WeeklyLogSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return WeeklyLog.objects.none()
+
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+
+        if role_name == 'admin':
+            return self.queryset
+
+        if 'student' in role_name:
+            return self.queryset.filter(placement__student__user=user)
+
+        try:
+            supervisor = Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            if 'supervisor' in role_name:
+                return self.queryset
+            return WeeklyLog.objects.none()
+
+        if supervisor.supervisor_type == 'workplace':
+            return self.queryset.filter(placement__workplace_supervisor=supervisor)
+
+        if supervisor.supervisor_type == 'academic':
+            if supervisor.department:
+                return self.queryset.filter(placement__student__user__department=supervisor.department)
+            return self.queryset.filter(placement__academic_supervisor=supervisor)
+
+        return WeeklyLog.objects.none()
 
     def perform_update(self, request):
         old_status = self.get_object().status
@@ -48,3 +79,33 @@ class LogAttachmentViewSet(viewsets.ModelViewSet):
     queryset = LogAttachment.objects.all()
     serializer_class = LogAttachmentSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return LogAttachment.objects.none()
+
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+
+        if role_name == 'admin':
+            return self.queryset
+
+        if 'student' in role_name:
+            return self.queryset.filter(log__placement__student__user=user)
+
+        try:
+            supervisor = Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            if 'supervisor' in role_name:
+                return self.queryset
+            return LogAttachment.objects.none()
+
+        if supervisor.supervisor_type == 'workplace':
+            return self.queryset.filter(log__placement__workplace_supervisor=supervisor)
+
+        if supervisor.supervisor_type == 'academic':
+            if supervisor.department:
+                return self.queryset.filter(log__placement__student__user__department=supervisor.department)
+            return self.queryset.filter(log__placement__academic_supervisor=supervisor)
+
+        return LogAttachment.objects.none()

@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum
 from .models import EvaluationCriteria, Evaluation, EvaluationScore, ScoreBreakdown
 from .serializers import EvaluationCriteriaSerializer, EvaluationSerializer, EvaluationScoreSerializer, ScoreBreakdownSerializer
+from accounts.models import Student, Supervisor
 
 
 class EvaluationCriteriaViewSet(viewsets.ModelViewSet):
@@ -17,6 +18,36 @@ class EvaluationViewSet(viewsets.ModelViewSet):
     queryset = Evaluation.objects.all()
     serializer_class = EvaluationSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Evaluation.objects.none()
+
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+
+        if role_name == 'admin':
+            return self.queryset
+
+        if 'student' in role_name:
+            return self.queryset.filter(placement__student__user=user)
+
+        try:
+            supervisor = Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            if 'supervisor' in role_name:
+                return self.queryset
+            return Evaluation.objects.none()
+
+        if supervisor.supervisor_type == 'workplace':
+            return self.queryset.filter(placement__workplace_supervisor=supervisor)
+
+        if supervisor.supervisor_type == 'academic':
+            if supervisor.department:
+                return self.queryset.filter(placement__student__user__department=supervisor.department)
+            return self.queryset.filter(placement__academic_supervisor=supervisor)
+
+        return Evaluation.objects.none()
 
     def perform_create(self, request):
         evaluation = super().perform_create(request)
@@ -90,8 +121,68 @@ class EvaluationScoreViewSet(viewsets.ModelViewSet):
     serializer_class = EvaluationScoreSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return EvaluationScore.objects.none()
+
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+
+        if role_name == 'admin':
+            return self.queryset
+
+        if 'student' in role_name:
+            return self.queryset.filter(evaluation__placement__student__user=user)
+
+        try:
+            supervisor = Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            if 'supervisor' in role_name:
+                return self.queryset
+            return EvaluationScore.objects.none()
+
+        if supervisor.supervisor_type == 'workplace':
+            return self.queryset.filter(evaluation__placement__workplace_supervisor=supervisor)
+
+        if supervisor.supervisor_type == 'academic':
+            if supervisor.department:
+                return self.queryset.filter(evaluation__placement__student__user__department=supervisor.department)
+            return self.queryset.filter(evaluation__placement__academic_supervisor=supervisor)
+
+        return EvaluationScore.objects.none()
+
 
 class ScoreBreakdownViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ScoreBreakdown.objects.all()
     serializer_class = ScoreBreakdownSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return ScoreBreakdown.objects.none()
+
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+
+        if role_name == 'admin':
+            return self.queryset
+
+        if 'student' in role_name:
+            return self.queryset.filter(placement__student__user=user)
+
+        try:
+            supervisor = Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            if 'supervisor' in role_name:
+                return self.queryset
+            return ScoreBreakdown.objects.none()
+
+        if supervisor.supervisor_type == 'workplace':
+            return self.queryset.filter(placement__workplace_supervisor=supervisor)
+
+        if supervisor.supervisor_type == 'academic':
+            if supervisor.department:
+                return self.queryset.filter(placement__student__user__department=supervisor.department)
+            return self.queryset.filter(placement__academic_supervisor=supervisor)
+
+        return ScoreBreakdown.objects.none()
