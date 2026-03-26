@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/AuthContext';
 import { logbooksAPI, placementsAPI } from '../services/endpoints';
 
 const WeeklyLogForm = () => {
   const { placementId, weekNumber } = useParams();
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -17,14 +15,47 @@ const WeeklyLogForm = () => {
   });
 
   const [placement, setPlacement] = useState(null);
+  const [placements, setPlacements] = useState([]);
+  const [selectedPlacementId, setSelectedPlacementId] = useState('');
   const [existingLog, setExistingLog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageDescription, setImageDescription] = useState('');
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!placementId) return;
+      if (!placementId) {
+        try {
+          const placementsRes = await placementsAPI.getPlacements();
+          const placementsData = placementsRes?.results || placementsRes || [];
+          setPlacements(placementsData);
+
+          const sortByRecency = (a, b) => {
+            const dateA = new Date(a.start_date || a.created_at || 0).getTime();
+            const dateB = new Date(b.start_date || b.created_at || 0).getTime();
+            return dateB - dateA;
+          };
+
+          const activePlacements = placementsData
+            .filter((item) => item.status === 'approved' || item.status === 'completed')
+            .sort(sortByRecency);
+
+          const preferredPlacement =
+            activePlacements[0] || [...placementsData].sort(sortByRecency)[0];
+
+          if (preferredPlacement) {
+            setSelectedPlacementId(preferredPlacement.placement_id);
+          }
+        } catch {
+          setError('Failed to load placements');
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
 
       try {
         const placementRes = await placementsAPI.getPlacement(placementId);
@@ -32,8 +63,9 @@ const WeeklyLogForm = () => {
 
         if (weekNumber) {
           const logsRes = await logbooksAPI.getLogs();
-          const existing = logsRes.results.find(
-            (log) => log.placement.placement_id === placementId && log.week_number === parseInt(weekNumber)
+          const logsData = logsRes?.results || logsRes || [];
+          const existing = logsData.find(
+            (log) => (log.placement === placementId || log.placement?.placement_id === placementId) && log.week_number === parseInt(weekNumber)
           );
           if (existing) {
             setExistingLog(existing);
@@ -46,7 +78,7 @@ const WeeklyLogForm = () => {
             });
           }
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load data');
       } finally {
         setLoading(false);
@@ -56,12 +88,43 @@ const WeeklyLogForm = () => {
     fetchData();
   }, [placementId, weekNumber]);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
+
+  const handlePlacementContinue = () => {
+    if (!selectedPlacementId) {
+      setError('Please select a placement to continue');
+      return;
+    }
+
+    navigate(`/app/logs/create/${selectedPlacementId}`);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: name === 'hours_worked' ? parseFloat(value) || 0 : value,
     });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedImage(file);
+
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl('');
+    }
+
+    if (file) {
+      setImagePreviewUrl(URL.createObjectURL(file));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -84,14 +147,30 @@ const WeeklyLogForm = () => {
         hours_worked: formData.hours_worked,
       };
 
+      let savedLog = existingLog;
       if (existingLog) {
-        await logbooksAPI.updateLog(existingLog.log_id, logData);
+        const updatedLog = await logbooksAPI.updateLog(existingLog.log_id, logData);
+        savedLog = updatedLog || existingLog;
       } else {
-        await logbooksAPI.createLog(logData);
+        const createdLog = await logbooksAPI.createLog(logData);
+        savedLog = createdLog;
+        setExistingLog(createdLog);
       }
 
-      navigate('/student');
-    } catch (err) {
+      const finalLogId = savedLog?.log_id;
+
+      if (selectedImage && finalLogId) {
+        const attachmentFormData = new FormData();
+        attachmentFormData.append('log', finalLogId);
+        attachmentFormData.append('file', selectedImage);
+        if (imageDescription.trim()) {
+          attachmentFormData.append('description', imageDescription.trim());
+        }
+        await logbooksAPI.createAttachment(attachmentFormData);
+      }
+
+      navigate('/app/dashboard');
+    } catch {
       setError('Failed to save log');
     } finally {
       setSaving(false);
@@ -103,14 +182,49 @@ const WeeklyLogForm = () => {
 
     try {
       await logbooksAPI.submitLog(existingLog.log_id);
-      navigate('/student');
-    } catch (err) {
+      navigate('/app/dashboard');
+    } catch {
       setError('Failed to submit log');
     }
   };
 
   if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (!placementId) {
+    return (
+      <div className="weekly-log-form">
+        <header className="form-header">
+          <h2>Create Weekly Log</h2>
+          <p>Select a placement to continue</p>
+        </header>
+
+        <div className="form-group">
+          <label htmlFor="placement">Placement:</label>
+          <select
+            id="placement"
+            value={selectedPlacementId}
+            onChange={(e) => setSelectedPlacementId(e.target.value)}
+          >
+            <option value="">Select placement</option>
+            {placements.map((item) => (
+              <option key={item.placement_id} value={item.placement_id}>
+                {item.position_title} at {item.organization?.name || 'Organization'}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <div className="form-actions">
+          <button type="button" onClick={handlePlacementContinue} disabled={!selectedPlacementId}>
+            Continue
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!placement) {
@@ -184,6 +298,36 @@ const WeeklyLogForm = () => {
             required
           />
         </div>
+
+        <div className="form-group">
+          <label htmlFor="log_image">Optional Image Upload:</label>
+          <input
+            type="file"
+            id="log_image"
+            accept="image/*"
+            onChange={handleImageChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="image_description">Image Description (optional):</label>
+          <input
+            type="text"
+            id="image_description"
+            value={imageDescription}
+            onChange={(e) => setImageDescription(e.target.value)}
+            placeholder="Brief description of the uploaded image"
+          />
+        </div>
+
+        {imagePreviewUrl && (
+          <div className="form-group">
+            <label>Image Preview:</label>
+            <div>
+              <img src={imagePreviewUrl} alt="Selected upload" style={{ maxWidth: '320px', borderRadius: '6px' }} />
+            </div>
+          </div>
+        )}
 
         {error && <div className="error-message">{error}</div>}
 

@@ -124,6 +124,20 @@ const StudentDashboard = () => {
     { status: 'Rejected', count: logs.filter(log => log.status === 'rejected').length },
   ];
 
+  const selectedPlacement = placements.find(
+    (placement) => placement.status === 'approved' || placement.status === 'completed'
+  ) || placements[0];
+
+  const nextWeekNumber = selectedPlacement
+    ? (logs
+        .filter((log) => log.placement === selectedPlacement.placement_id || log.placement?.placement_id === selectedPlacement.placement_id)
+        .reduce((maxWeek, log) => Math.max(maxWeek, Number(log.week_number) || 0), 0) + 1)
+    : 1;
+
+  const newLogPath = selectedPlacement
+    ? `/app/logs/create/${selectedPlacement.placement_id}/${nextWeekNumber}`
+    : '/app/logs/create';
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -255,7 +269,7 @@ const StudentDashboard = () => {
           </div>
           <div className="card-footer">
             <Link to="/app/logs" className="btn-link">View All Logs →</Link>
-            <Link to="/weekly-log/new" className="btn-primary-small">+ New Log</Link>
+            <Link to={newLogPath} className="btn-primary-small">+ New Log</Link>
           </div>
         </div>
 

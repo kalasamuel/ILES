@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.utils import timezone
 from .models import WeeklyLog, LogAttachment
@@ -14,6 +15,23 @@ class WeeklyLogViewSet(viewsets.ModelViewSet):
     queryset = WeeklyLog.objects.all()
     serializer_class = WeeklyLogSerializer
     permission_classes = [IsAuthenticated]
+
+    def _role_name(self, user):
+        return (user.role.role_name if user.role else '').strip().lower()
+
+    def _assert_student_or_admin_for_mutation(self, user):
+        role_name = self._role_name(user)
+        if role_name == 'admin' or 'student' in role_name:
+            return
+        raise PermissionDenied('Only students can modify weekly logs.')
+
+    def _assert_log_owner_for_student(self, user, log):
+        role_name = self._role_name(user)
+        if role_name == 'admin':
+            return
+        if 'student' in role_name and log.placement.student.user_id == user.user_id:
+            return
+        raise PermissionDenied('You can only modify your own weekly logs.')
 
     def get_queryset(self):
         user = self.request.user
@@ -45,22 +63,45 @@ class WeeklyLogViewSet(viewsets.ModelViewSet):
 
         return WeeklyLog.objects.none()
 
-    def perform_update(self, request):
+    def perform_update(self, serializer):
         old_status = self.get_object().status
-        log = super().perform_update(request)
+        log = serializer.save()
         if old_status != log.status:
             WorkflowHistory.objects.create(
                 entity_type='log',
                 entity_id=log.log_id,
                 previous_status=old_status,
                 new_status=log.status,
-                changed_by=request.user
+                changed_by=self.request.user
             )
-        return log
+
+    def create(self, request, *args, **kwargs):
+        self._assert_student_or_admin_for_mutation(request.user)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        self._assert_student_or_admin_for_mutation(request.user)
+        instance = self.get_object()
+        self._assert_log_owner_for_student(request.user, instance)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        self._assert_student_or_admin_for_mutation(request.user)
+        instance = self.get_object()
+        self._assert_log_owner_for_student(request.user, instance)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        self._assert_student_or_admin_for_mutation(request.user)
+        instance = self.get_object()
+        self._assert_log_owner_for_student(request.user, instance)
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'])
     def submit(self, request, pk=None):
         log = self.get_object()
+        self._assert_log_owner_for_student(request.user, log)
+
         if log.status == 'draft':
             log.status = 'submitted'
             log.submitted_at = timezone.now()

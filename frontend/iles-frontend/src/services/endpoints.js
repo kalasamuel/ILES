@@ -106,6 +106,18 @@ export const logbooksAPI = {
     const response = await api.post(`/logbooks/logs/${id}/submit/`);
     return response.data;
   },
+  getAttachments: async () => {
+    const response = await api.get('/logbooks/attachments/');
+    return response.data;
+  },
+  createAttachment: async (data) => {
+    const response = await api.post('/logbooks/attachments/', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };
 
 // Reviews

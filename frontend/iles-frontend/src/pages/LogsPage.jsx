@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useParams } from 'react-router-dom';
 import { logbooksAPI } from '../services/endpoints';
+import WeeklyLogForm from './WeeklyLogForm';
 
 function LogList() {
   const [logs, setLogs] = useState([]);
@@ -37,15 +38,6 @@ function LogList() {
           ))}
         </ul>
       )}
-    </div>
-  );
-}
-
-function LogCreate() {
-  return (
-    <div>
-      <h2>Create Log</h2>
-      <p>Form to create new weekly log</p>
     </div>
   );
 }
@@ -87,7 +79,9 @@ function LogsPage() {
   return (
     <Routes>
       <Route index element={<LogList />} />
-      <Route path="create" element={<LogCreate />} />
+      <Route path="create" element={<WeeklyLogForm />} />
+      <Route path="create/:placementId" element={<WeeklyLogForm />} />
+      <Route path="create/:placementId/:weekNumber" element={<WeeklyLogForm />} />
       <Route path=":id" element={<LogDetails />} />
     </Routes>
   );
