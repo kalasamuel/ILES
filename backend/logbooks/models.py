@@ -36,7 +36,8 @@ class WeeklyLog(models.Model):
 class LogAttachment(models.Model):
     attachment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     log = models.ForeignKey(WeeklyLog, on_delete=models.CASCADE)
-    file_url = models.URLField()
+    file_url = models.URLField(blank=True, null=True)
+    file = models.FileField(upload_to='log_attachments/', blank=True, null=True)
     description = models.TextField(blank=True)
     uploaded_at = models.DateTimeField(default=timezone.now)
 
