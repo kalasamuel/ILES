@@ -37,6 +37,8 @@ function Sidebar({ user }) {
       ],
       [ROLES.ACADEMIC_SUPERVISOR]: [
         { path: '/app/dashboard', label: 'Dashboard' },
+        { path: '/app/placements', label: 'Student Overview' },
+        { path: '/app/reviews', label: 'Supervisor Reviews' },
         { path: '/app/evaluations', label: 'Evaluations' },
       ],
       [ROLES.ADMIN]: [
