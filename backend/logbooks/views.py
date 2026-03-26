@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.utils import timezone
 from .models import WeeklyLog, LogAttachment
 from .serializers import WeeklyLogSerializer, LogAttachmentSerializer
@@ -79,6 +80,7 @@ class LogAttachmentViewSet(viewsets.ModelViewSet):
     queryset = LogAttachment.objects.all()
     serializer_class = LogAttachmentSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         user = self.request.user
