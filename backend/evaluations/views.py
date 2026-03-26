@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from django.db.models import Sum
 from .models import EvaluationCriteria, Evaluation, EvaluationScore, ScoreBreakdown
 from .serializers import EvaluationCriteriaSerializer, EvaluationSerializer, EvaluationScoreSerializer, ScoreBreakdownSerializer
@@ -13,11 +14,71 @@ class EvaluationCriteriaViewSet(viewsets.ModelViewSet):
     serializer_class = EvaluationCriteriaSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+        if role_name == 'admin':
+            return self.queryset
+
+        try:
+            supervisor = Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            return EvaluationCriteria.objects.none()
+
+        if supervisor.supervisor_type == 'academic':
+            return self.queryset
+        return EvaluationCriteria.objects.none()
+
+    def _assert_can_manage_criteria(self, user):
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+        if role_name == 'admin':
+            return
+
+        try:
+            supervisor = Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            raise PermissionDenied('Only academic supervisors can access evaluation criteria.')
+
+        if supervisor.supervisor_type != 'academic':
+            raise PermissionDenied('Only academic supervisors can access evaluation criteria.')
+
+    def create(self, request, *args, **kwargs):
+        self._assert_can_manage_criteria(request.user)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        self._assert_can_manage_criteria(request.user)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        self._assert_can_manage_criteria(request.user)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        self._assert_can_manage_criteria(request.user)
+        return super().destroy(request, *args, **kwargs)
+
 
 class EvaluationViewSet(viewsets.ModelViewSet):
     queryset = Evaluation.objects.all()
     serializer_class = EvaluationSerializer
     permission_classes = [IsAuthenticated]
+
+    def _get_supervisor(self, user):
+        try:
+            return Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            return None
+
+    def _assert_academic_or_admin(self, user):
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+        if role_name == 'admin':
+            return None
+
+        supervisor = self._get_supervisor(user)
+        if not supervisor or supervisor.supervisor_type != 'academic':
+            raise PermissionDenied('Only academic supervisors can create or edit evaluations.')
+        return supervisor
 
     def get_queryset(self):
         user = self.request.user
@@ -36,11 +97,11 @@ class EvaluationViewSet(viewsets.ModelViewSet):
             supervisor = Supervisor.objects.get(user=user)
         except Supervisor.DoesNotExist:
             if 'supervisor' in role_name:
-                return self.queryset
+                return Evaluation.objects.none()
             return Evaluation.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
-            return self.queryset.filter(placement__workplace_supervisor=supervisor)
+            return Evaluation.objects.none()
 
         if supervisor.supervisor_type == 'academic':
             if supervisor.department:
@@ -49,8 +110,17 @@ class EvaluationViewSet(viewsets.ModelViewSet):
 
         return Evaluation.objects.none()
 
-    def perform_create(self, request):
-        evaluation = super().perform_create(request)
+    def perform_create(self, serializer):
+        supervisor = self._assert_academic_or_admin(self.request.user)
+
+        placement = serializer.validated_data.get('placement')
+        if supervisor:
+            if placement.academic_supervisor_id != supervisor.supervisor_id:
+                raise PermissionDenied('You can only evaluate students assigned to you.')
+            evaluation = serializer.save(evaluator=supervisor)
+        else:
+            evaluation = serializer.save()
+
         # Calculate total score
         total_score = evaluation.evaluationscore_set.aggregate(
             total=Sum('score')
@@ -59,7 +129,22 @@ class EvaluationViewSet(viewsets.ModelViewSet):
         evaluation.save()
         # Update score breakdown
         self._update_score_breakdown(evaluation.placement)
-        return evaluation
+
+    def create(self, request, *args, **kwargs):
+        self._assert_academic_or_admin(request.user)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        self._assert_academic_or_admin(request.user)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        self._assert_academic_or_admin(request.user)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        self._assert_academic_or_admin(request.user)
+        return super().destroy(request, *args, **kwargs)
 
     def _update_score_breakdown(self, placement):
         # Calculate scores
@@ -121,6 +206,22 @@ class EvaluationScoreViewSet(viewsets.ModelViewSet):
     serializer_class = EvaluationScoreSerializer
     permission_classes = [IsAuthenticated]
 
+    def _get_supervisor(self, user):
+        try:
+            return Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            return None
+
+    def _assert_academic_or_admin(self, user):
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+        if role_name == 'admin':
+            return None
+
+        supervisor = self._get_supervisor(user)
+        if not supervisor or supervisor.supervisor_type != 'academic':
+            raise PermissionDenied('Only academic supervisors can manage evaluation scores.')
+        return supervisor
+
     def get_queryset(self):
         user = self.request.user
         if not user.is_authenticated:
@@ -138,11 +239,11 @@ class EvaluationScoreViewSet(viewsets.ModelViewSet):
             supervisor = Supervisor.objects.get(user=user)
         except Supervisor.DoesNotExist:
             if 'supervisor' in role_name:
-                return self.queryset
+                return EvaluationScore.objects.none()
             return EvaluationScore.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
-            return self.queryset.filter(evaluation__placement__workplace_supervisor=supervisor)
+            return EvaluationScore.objects.none()
 
         if supervisor.supervisor_type == 'academic':
             if supervisor.department:
@@ -150,6 +251,22 @@ class EvaluationScoreViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(evaluation__placement__academic_supervisor=supervisor)
 
         return EvaluationScore.objects.none()
+
+    def create(self, request, *args, **kwargs):
+        self._assert_academic_or_admin(request.user)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        self._assert_academic_or_admin(request.user)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        self._assert_academic_or_admin(request.user)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        self._assert_academic_or_admin(request.user)
+        return super().destroy(request, *args, **kwargs)
 
 
 class ScoreBreakdownViewSet(viewsets.ReadOnlyModelViewSet):
@@ -174,11 +291,11 @@ class ScoreBreakdownViewSet(viewsets.ReadOnlyModelViewSet):
             supervisor = Supervisor.objects.get(user=user)
         except Supervisor.DoesNotExist:
             if 'supervisor' in role_name:
-                return self.queryset
+                return ScoreBreakdown.objects.none()
             return ScoreBreakdown.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
-            return self.queryset.filter(placement__workplace_supervisor=supervisor)
+            return ScoreBreakdown.objects.none()
 
         if supervisor.supervisor_type == 'academic':
             if supervisor.department:

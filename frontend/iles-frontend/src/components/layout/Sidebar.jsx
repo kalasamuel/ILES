@@ -2,6 +2,23 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ROLES } from '../../constants';
 
+function normalizeRole(rawRole) {
+  const normalized = String(rawRole || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+
+  if (normalized === 'workplace' || normalized === 'supervisor') {
+    return ROLES.WORKPLACE_SUPERVISOR;
+  }
+
+  if (normalized === 'academic') {
+    return ROLES.ACADEMIC_SUPERVISOR;
+  }
+
+  return normalized;
+}
+
 function Sidebar({ user }) {
   const location = useLocation();
 
@@ -33,7 +50,7 @@ function Sidebar({ user }) {
     return items[role] || items[ROLES.STUDENT];
   };
 
-  const sidebarItems = getSidebarItems(user?.role?.role_name);
+  const sidebarItems = getSidebarItems(normalizeRole(user?.role?.role_name || user?.role_name));
 
   return (
     <aside className="sidebar">

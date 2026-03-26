@@ -16,6 +16,7 @@ import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage';
 import StudentDashboard from '../pages/StudentDashboard';
 import SupervisorDashboard from '../pages/SupervisorDashboard';
 import AdminDashboard from '../pages/AdminDashboard';
+import AcademicDashboard from '../features/dashboard/pages/AcademicDashboard';
 
 // Other Pages - placeholders for now
 import PlacementsPage from '../pages/PlacementsPage';
@@ -43,12 +44,6 @@ function Router() {
           <Route path="privacy" element={<div>Privacy Policy Page</div>} />
           <Route path="terms" element={<div>Terms Page</div>} />
           <Route path="contact" element={<div>Contact Page</div>} />
-          
-          {/* Public Dashboard Routes - No authentication required */}
-          <Route path="student-dashboard" element={<StudentDashboard />} />
-          <Route path="placements/*" element={<PlacementsPage />} />
-          <Route path="supervisor-dashboard" element={<SupervisorDashboard />} />
-          <Route path="admin-dashboard" element={<AdminDashboard />} />
         </Route>
 
         {/* Protected App Routes */}
@@ -60,9 +55,9 @@ function Router() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="placements/*" element={<PlacementsPage />} />
           <Route path="logs/*" element={<LogsPage />} />
-          <Route path="results" element={<EvaluationsPage />} />
+          <Route path="results" element={<ProtectedRoute allowedRoles={['student', 'academic_supervisor', 'admin']}><EvaluationsPage /></ProtectedRoute>} />
           <Route path="reviews/*" element={<ReviewsPage />} />
-          <Route path="evaluations/*" element={<EvaluationsPage />} />
+          <Route path="evaluations/*" element={<ProtectedRoute allowedRoles={['academic_supervisor', 'admin']}><EvaluationsPage /></ProtectedRoute>} />
           <Route path="reports/*" element={<ReportsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="settings" element={<SettingsPage />} />
@@ -86,9 +81,11 @@ function Dashboard() {
       return <StudentDashboard />;
     case 'supervisor':
     case 'workplace_supervisor':
+      return <SupervisorDashboard />;
     case 'academic_supervisor':
-    case 'workplace':
     case 'academic':
+      return <AcademicDashboard />;
+    case 'workplace':
       return <SupervisorDashboard />;
     case 'admin':
       return <AdminDashboard />;
