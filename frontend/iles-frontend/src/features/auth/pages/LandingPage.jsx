@@ -1,8 +1,49 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { dashboardsAPI } from '../../../services/endpoints';
 import './LandingPage.css';
 
 function LandingPage() {
+  const [stats, setStats] = useState({
+    students: null,
+    companies: null,
+    departments: null,
+  });
+  const [statsError, setStatsError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadPublicStats = async () => {
+      try {
+        const response = await dashboardsAPI.getPublicStats();
+        if (!mounted) {
+          return;
+        }
+        setStats({
+          students: response.students_count ?? 0,
+          companies: response.organizations_count ?? 0,
+          departments: response.departments_count ?? 0,
+        });
+      } catch (error) {
+        if (!mounted) {
+          return;
+        }
+        setStatsError('Live statistics are currently unavailable. Showing baseline values.');
+      }
+    };
+
+    loadPublicStats();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const displayStudents = stats.students !== null ? `${stats.students.toLocaleString()}+` : '15k+';
+  const displayCompanies = stats.companies !== null ? `${stats.companies.toLocaleString()}+` : '200+';
+  const displayDepartments = stats.departments !== null ? `${stats.departments.toLocaleString()}+` : '50+';
+
   return (
     <div className="landing-page">
 
@@ -37,17 +78,18 @@ function LandingPage() {
             <Link to="/register" className="btn btn-primary">Get Started Today →</Link>
             <Link to="/login" className="btn btn-secondary">System Login</Link>
           </div>
+          {statsError && <p className="hero-live-stats-note">{statsError}</p>}
           <div className="hero-stats">
             <div>
-              <div className="hero-stat-value">15k+</div>
+              <div className="hero-stat-value">{displayStudents}</div>
               <div className="hero-stat-label">Students</div>
             </div>
             <div>
-              <div className="hero-stat-value">200+</div>
+              <div className="hero-stat-value">{displayCompanies}</div>
               <div className="hero-stat-label">Companies</div>
             </div>
             <div>
-              <div className="hero-stat-value">50+</div>
+              <div className="hero-stat-value">{displayDepartments}</div>
               <div className="hero-stat-label">Departments</div>
             </div>
           </div>
