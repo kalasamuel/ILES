@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db.models import Avg
 from django.db import transaction
 from django.db.models import Q
@@ -381,6 +381,16 @@ class DashboardMetricViewSet(viewsets.ModelViewSet):
         }
 
         return Response(context, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='public-stats', permission_classes=[AllowAny])
+    def public_stats(self, request):
+        """Return public, aggregate metrics used on the landing page."""
+        metrics = {
+            'students_count': Student.objects.count(),
+            'organizations_count': Organization.objects.count(),
+            'departments_count': User.objects.exclude(department__isnull=True).values('department').distinct().count(),
+        }
+        return Response(metrics, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='refresh-metrics')
     def refresh_metrics(self, request):
