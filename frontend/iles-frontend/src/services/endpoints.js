@@ -186,6 +186,10 @@ export const dashboardsAPI = {
     const response = await api.get('/dashboards/metrics/');
     return response.data;
   },
+  getPublicStats: async () => {
+    const response = await api.get('/dashboards/metrics/public-stats/');
+    return response.data;
+  },
   refreshMetrics: async () => {
     const response = await api.get('/dashboards/metrics/refresh-metrics/');
     return response.data;
