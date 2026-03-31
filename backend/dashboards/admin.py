@@ -35,3 +35,19 @@ class DashboardMetricAdmin(admin.ModelAdmin):
 
      # Navigate by dates (very useful)
     date_hierarchy = 'calculated_date'
+
+    # Clean layout in form view
+    fieldsets = (
+        ('Metric Information', {
+            'fields': ('metric_id', 'metric_type', 'value')
+        }),
+        ('Timestamps', {
+            'fields': (
+                'calculated_date',
+                'calculated_at',
+                'created_at',
+                'updated_at',
+            )
+        }),
+    )
+ 
