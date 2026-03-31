@@ -20,3 +20,6 @@ class DashboardMetricAdmin(admin.ModelAdmin):
 
         # Search by metric type
     search_fields = ('metric_type',)
+
+    # Latest first
+    ordering = ('-calculated_at',)
