@@ -50,4 +50,17 @@ class DashboardMetricAdmin(admin.ModelAdmin):
             )
         }),
     )
+
+   # Show totals at the bottom (very professional)
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+
+        try:
+            qs = response.context_data['cl'].queryset
+            total = qs.aggregate(total_value=Sum('value'))['total_value']
+            response.context_data['total_metric_value'] = total
+        except Exception:
+            response.context_data['total_metric_value'] = None
+
+        return response 
  
