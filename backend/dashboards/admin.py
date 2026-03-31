@@ -5,4 +5,10 @@ from .models import DashboardMetric
 
 @admin.register(DashboardMetric)
 class DashboardMetricAdmin(admin.ModelAdmin):
-    list_display = ['metric_type', 'value', 'calculated_at']
+    list_display = (
+        'metric_type',
+        'value',
+        'calculated_date',
+        'calculated_at',
+        'updated_at',
+    )
