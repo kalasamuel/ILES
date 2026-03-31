@@ -17,3 +17,6 @@ class DashboardMetricAdmin(admin.ModelAdmin):
         'metric_type',
         'calculated_date',
     )
+
+        # Search by metric type
+    search_fields = ('metric_type',)
