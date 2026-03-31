@@ -12,3 +12,8 @@ class DashboardMetricAdmin(admin.ModelAdmin):
         'calculated_at',
         'updated_at',
     )
+     # Powerful filters on the right
+    list_filter = (
+        'metric_type',
+        'calculated_date',
+    )
