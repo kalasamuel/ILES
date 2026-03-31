@@ -23,3 +23,12 @@ class DashboardMetricAdmin(admin.ModelAdmin):
 
     # Latest first
     ordering = ('-calculated_at',)
+
+    # Prevent dangerous edits
+    readonly_fields = (
+        'metric_id',
+        'calculated_date',
+        'calculated_at',
+        'created_at',
+        'updated_at',
+    )
