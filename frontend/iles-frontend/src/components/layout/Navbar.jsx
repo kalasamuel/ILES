@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/AuthContext';
 import { notificationsAPI } from '../../services/endpoints';
+import './Navbar.css';
 
-function Navbar({ user }) {
+function Navbar({ user, onMenuClick }) {
   const { logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -23,14 +24,27 @@ function Navbar({ user }) {
   return (
     <header className="navbar">
       <div className="navbar-left">
-        <h1>Dashboard</h1>
+        {/* Hamburger — always visible on all screen sizes */}
+        <button
+          className="hamburger-btn"
+          onClick={onMenuClick}
+          aria-label="Toggle sidebar"
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+
+        <h1>DASHBOARD</h1>
       </div>
 
       <div className="navbar-right">
         <div className="notifications">
-          <button className="notification-btn">
+          <button className="notification-btn" aria-label="Notifications">
             🔔
-            {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+            {unreadCount > 0 && (
+              <span className="notification-badge">{unreadCount}</span>
+            )}
           </button>
         </div>
 
