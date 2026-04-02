@@ -80,7 +80,7 @@ ILES/
 
 4. **Start development server:**
    ```bash
-   npm start
+   npm run dev
    ```
 
 ## Features
