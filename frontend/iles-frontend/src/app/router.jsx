@@ -48,21 +48,32 @@ function Router() {
 
         {/* Protected App Routes */}
         <Route path="/app" element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }>
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="placements/*" element={<PlacementsPage />} />
-          <Route path="logs/*" element={<LogsPage />} />
-          <Route path="results" element={<ProtectedRoute allowedRoles={['student', 'academic_supervisor', 'admin']}><EvaluationsPage /></ProtectedRoute>} />
-          <Route path="reviews/*" element={<ReviewsPage />} />
-          <Route path="evaluations/*" element={<ProtectedRoute allowedRoles={['academic_supervisor', 'admin']}><EvaluationsPage /></ProtectedRoute>} />
-          <Route path="reports/*" element={<ReportsPage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="help" element={<HelpPage />} />
-        </Route>
+  <ProtectedRoute>
+    <AppLayout />  {/* Navbar + Sidebar applied to ALL routes below */}
+  </ProtectedRoute>
+}>
+  <Route index element={<Dashboard />} />         {/* /app → dashboard */}
+  <Route path="dashboard" element={<Dashboard />} /> {/* /app/dashboard */}
+  <Route path="placements/*" element={<PlacementsPage />} />
+  <Route path="logs/*" element={<LogsPage />} />
+  <Route path="reviews/*" element={<ReviewsPage />} />
+  <Route path="reports/*" element={<ReportsPage />} />
+  <Route path="notifications" element={<NotificationsPage />} />
+  <Route path="settings" element={<SettingsPage />} />
+  <Route path="help" element={<HelpPage />} />
+
+  {/* Role-restricted routes */}
+  <Route path="results" element={
+    <ProtectedRoute allowedRoles={['student', 'academic_supervisor', 'admin']}>
+      <EvaluationsPage />
+    </ProtectedRoute>
+  } />
+  <Route path="evaluations/*" element={
+    <ProtectedRoute allowedRoles={['academic_supervisor', 'admin']}>
+      <EvaluationsPage />
+    </ProtectedRoute>
+  } />
+</Route>
       </Routes>
   );
 }
