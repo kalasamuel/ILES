@@ -1,0 +1,127 @@
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  background: white;
+  border-right: 1.5px solid #fed7aa;
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+
+  /* Hidden off-screen by default */
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Slides in when open */
+.sidebar--open {
+  transform: translateX(0);
+  box-shadow: 4px 0 24px rgba(124, 45, 18, 0.18);
+}
+
+/* Header */
+.sidebar-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  border-bottom: 1.5px solid #fed7aa;
+  background: linear-gradient(135deg, #ea580c, #f97316);
+  flex-shrink: 0;
+}
+
+.sidebar-header h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+/* Close button — always visible inside the drawer */
+.sidebar-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1rem;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Nav */
+.sidebar-nav {
+  flex: 1;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-nav li a {
+  display: block;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #7c3d0c;
+  text-decoration: none;
+  transition: background 0.18s, color 0.18s, padding-left 0.18s;
+}
+
+.sidebar-nav li a:hover {
+  background: #fff0e4;
+  color: #ea580c;
+  padding-left: 1.3rem;
+}
+
+.sidebar-nav li a.active {
+  background: linear-gradient(135deg, #fff0e4, #ffe4cc);
+  color: #c2410c;
+  font-weight: 700;
+  border-left: 3px solid #ea580c;
+  padding-left: calc(1rem - 3px);
+}
+
+/* Footer */
+.sidebar-footer {
+  padding: 1rem 0.75rem;
+  border-top: 1.5px solid #fed7aa;
+}
+
+.sidebar-footer a {
+  display: block;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #9a4f1c;
+  text-decoration: none;
+  transition: background 0.18s, color 0.18s;
+}
+
+.sidebar-footer a:hover {
+  background: #fff0e4;
+  color: #ea580c;
+}
