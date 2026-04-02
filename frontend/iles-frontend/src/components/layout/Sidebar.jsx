@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ROLES } from '../../constants';
+import './Sidebar.css';
 
 function normalizeRole(rawRole) {
   const normalized = String(rawRole || '')
@@ -11,15 +12,13 @@ function normalizeRole(rawRole) {
   if (normalized === 'workplace' || normalized === 'supervisor') {
     return ROLES.WORKPLACE_SUPERVISOR;
   }
-
   if (normalized === 'academic') {
     return ROLES.ACADEMIC_SUPERVISOR;
   }
-
   return normalized;
 }
 
-function Sidebar({ user }) {
+function Sidebar({ user, isOpen, onClose }) {
   const location = useLocation();
 
   const getSidebarItems = (role) => {
@@ -48,16 +47,20 @@ function Sidebar({ user }) {
         { path: '/app/settings', label: 'Settings' },
       ],
     };
-
     return items[role] || items[ROLES.STUDENT];
   };
 
-  const sidebarItems = getSidebarItems(normalizeRole(user?.role?.role_name || user?.role_name));
+  const sidebarItems = getSidebarItems(
+    normalizeRole(user?.role?.role_name || user?.role_name)
+  );
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${isOpen ? ' sidebar--open' : ''}`}>
       <div className="sidebar-header">
         <h2>ILES</h2>
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">
+          ✕
+        </button>
       </div>
 
       <nav className="sidebar-nav">
@@ -67,6 +70,7 @@ function Sidebar({ user }) {
               <Link
                 to={item.path}
                 className={location.pathname.startsWith(item.path) ? 'active' : ''}
+                onClick={onClose}
               >
                 {item.label}
               </Link>
