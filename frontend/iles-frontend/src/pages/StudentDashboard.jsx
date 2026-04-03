@@ -3,11 +3,24 @@ import { Link } from 'react-router-dom';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar
+  BarChart, Bar, Cell
 } from 'recharts';
+import { 
+  LayoutDashboard, 
+  Briefcase, 
+  FileText, 
+  Clock, 
+  CheckCircle2, 
+  AlertCircle, 
+  Bell, 
+  GraduationCap, 
+  Plus, 
+  ChevronRight,
+  TrendingUp,
+  Calendar
+} from 'lucide-react';
 import { useAuth } from '../hooks/AuthContext';
 import { dashboardsAPI, logbooksAPI, notificationsAPI, placementsAPI } from '../services/endpoints';
-import './StudentDashboard.css';
 
 const StudentDashboard = () => {
   const { user } = useAuth();
@@ -23,8 +36,6 @@ const StudentDashboard = () => {
     const fetchData = async () => {
       try {
         setError(null);
-        console.log('Fetching dashboard data...');
-        
         const [placementsRes, logsRes, notificationsRes] = await Promise.all([
           placementsAPI.getPlacements(),
           logbooksAPI.getLogs(),
@@ -38,7 +49,6 @@ const StudentDashboard = () => {
         let context = null;
         try {
           context = await dashboardsAPI.getMyDataContext();
-          console.log('Backend data context:', context);
         } catch (ctxError) {
           console.warn('Failed to load backend data context:', ctxError);
         }
@@ -54,7 +64,6 @@ const StudentDashboard = () => {
 
         if (shouldBootstrap) {
           try {
-            console.log('No owned student data found. Bootstrapping starter data...');
             await dashboardsAPI.bootstrapMyStudentData();
             setBootstrapAttempted(true);
 
@@ -67,21 +76,14 @@ const StudentDashboard = () => {
             placementsData = placementsRefetch?.results || placementsRefetch || [];
             logsData = logsRefetch?.results || logsRefetch || [];
             notificationsData = notificationsRefetch?.results || notificationsRefetch || [];
-            console.log('Starter data bootstrapped successfully.');
           } catch (bootstrapError) {
             console.warn('Starter data bootstrap failed:', bootstrapError);
           }
         }
 
-        console.log('Placements response:', placementsRes);
-        console.log('Logs response:', logsRes);
-        console.log('Notifications response:', notificationsRes);
-
         setPlacements(placementsData);
         setLogs(logsData);
         setNotifications(notificationsData);
-
-        console.log('Dashboard data loaded:', { placements: placementsData.length, logs: logsData.length, notifications: notificationsData.length });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         setError(error.message || 'Failed to load dashboard data');
@@ -119,9 +121,9 @@ const StudentDashboard = () => {
   });
 
   const statusData = [
-    { status: 'Approved', count: approvedLogs },
-    { status: 'Pending', count: pendingLogs },
-    { status: 'Rejected', count: logs.filter(log => log.status === 'rejected').length },
+    { status: 'Approved', count: approvedLogs, color: '#10B981' },
+    { status: 'Pending', count: pendingLogs, color: '#F59E0B' },
+    { status: 'Rejected', count: logs.filter(log => log.status === 'rejected').length, color: '#EF4444' },
   ];
 
   const selectedPlacement = placements.find(
@@ -140,242 +142,300 @@ const StudentDashboard = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading your dashboard...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="w-12 h-12 border-4 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
+        <p className="text-zinc-500 font-medium animate-pulse">Synchronizing your dashboard...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="error-container" style={{ padding: '20px', margin: '20px', backgroundColor: '#ffebee', border: '1px solid #f44336', borderRadius: '4px', color: '#c62828' }}>
-        <h2>⚠️ Error Loading Dashboard</h2>
-        <p><strong>Error:</strong> {error}</p>
-        <p style={{ fontSize: '12px', marginTop: '10px' }}>Check browser console (F12) for more details.</p>
-        <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '10px' }}>
-          Retry
+      <div className="p-6 m-6 bg-red-50 border border-red-200 rounded-3xl text-red-700">
+        <div className="flex items-center gap-3 mb-2">
+          <AlertCircle className="w-6 h-6" />
+          <h2 className="text-xl font-bold italic">Something went wrong</h2>
+        </div>
+        <p className="text-sm opacity-90 mb-4">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-red-200 hover:bg-red-700 transition-colors"
+        >
+          Try Again
         </button>
       </div>
     );
   }
 
   return (
-    <div className="student-dashboard">
+    <div className="p-4 lg:p-8 space-y-8 bg-white min-h-screen">
+      
       {/* Welcome Header */}
-      <div className="welcome-header">
-        <div className="welcome-content">
-          <h1>
-            Welcome back, <span className="highlight">{user?.first_name || 'Student'}!</span>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-black text-zinc-900 tracking-tight leading-none italic">
+            HELLO, <span className="text-zinc-400 font-medium not-italic">{user?.first_name?.toUpperCase() || 'STUDENT'}!</span>
           </h1>
-          <p>Here's what's happening with your internship journey today.</p>
+          <p className="text-zinc-500 font-medium max-w-sm">
+            You've completed <span className="text-zinc-900 font-bold">{approvedLogs} logbooks</span> so far. Keep up the great work!
+          </p>
         </div>
-        <div className="date-badge">
-          {new Date().toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">📊</div>
-          <div className="stat-info">
-            <h3>{activePlacements}</h3>
-            <p>Active Placements</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📝</div>
-          <div className="stat-info">
-            <h3>{logs.length}</h3>
-            <p>Total Logs</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">✓</div>
-          <div className="stat-info">
-            <h3>{approvedLogs}</h3>
-            <p>Approved Logs</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">⏱️</div>
-          <div className="stat-info">
-            <h3>{totalHours}</h3>
-            <p>Total Hours</p>
-          </div>
+        <div className="bg-zinc-50 border border-zinc-100 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-sm">
+          <Calendar className="w-5 h-5 text-zinc-400" />
+          <span className="text-sm font-bold text-zinc-600">
+            {new Date().toLocaleDateString('en-US', { 
+              weekday: 'short', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }).toUpperCase()}
+          </span>
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="dashboard-grid">
-
-        {/* Placements Card */}
-        <div className="dashboard-card placements-card">
-          <div className="card-header">
-            <div className="card-icon">🏢</div>
-            <h3>My Placements</h3>
+      {/* Stats Bento Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Active Placements', value: activePlacements, icon: Briefcase, color: 'bg-indigo-50 text-indigo-600' },
+          { label: 'Total Logs', value: logs.length, icon: FileText, color: 'bg-sky-50 text-sky-600' },
+          { label: 'Approved Logs', value: approvedLogs, icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-600' },
+          { label: 'Total Hours', value: totalHours, icon: Clock, color: 'bg-rose-50 text-rose-600' },
+        ].map((stat, i) => (
+          <div key={i} className="group bg-white border border-zinc-100 p-6 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-zinc-200/50 transition-all duration-300">
+            <div className="flex items-start justify-between mb-4">
+              <div className={`p-3 rounded-2xl ${stat.color} transition-transform group-hover:scale-110`}>
+                <stat.icon className="w-6 h-6" />
+              </div>
+              <TrendingUp className="w-4 h-4 text-zinc-200 group-hover:text-zinc-400 transition-colors" />
+            </div>
+            <div className="space-y-0.5">
+              <span className="text-3xl font-black text-zinc-900 leading-none">{stat.value}</span>
+              <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{stat.label}</p>
+            </div>
           </div>
-          <div className="card-content">
-            {placements.length > 0 ? (
-              <ul className="placement-list">
-                {placements.slice(0, 3).map((placement) => (
-                  <li key={placement.placement_id} className="placement-item">
-                    <div className="placement-info">
-                      <strong>{placement.position_title}</strong>
-                      <span className="company">{placement.organization?.name}</span>
+        ))}
+      </div>
+
+      {/* Main Dashboard Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Column - Main View (2/3 width) */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Charts Card */}
+          <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm overflow-hidden relative group">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+               <TrendingUp className="w-32 h-32 text-zinc-900" />
+            </div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center text-white shadow-lg">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <h3 className="text-xl font-bold text-zinc-900 leading-none">Weekly Progress</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-wider">
+                  Live
+                </div>
+              </div>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={progressData}>
+                  <defs>
+                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#18181b" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#18181b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                  <XAxis 
+                    dataKey="week" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#a1a1aa', fontSize: 12, fontWeight: 700 }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#a1a1aa', fontSize: 12, fontWeight: 700 }}
+                  />
+                  <Tooltip 
+                    cursor={{ stroke: '#e4e4e7', strokeWidth: 2 }}
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      borderRadius: '16px', 
+                      border: '1px solid #f4f4f5', 
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                      padding: '12px'
+                    }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="hours" 
+                    stroke="#18181b" 
+                    name="Hours" 
+                    strokeWidth={4}
+                    dot={{ fill: '#18181b', strokeWidth: 2, r: 6, stroke: '#fff' }}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="approved" 
+                    stroke="#10b981" 
+                    name="Approved" 
+                    strokeWidth={3}
+                    strokeDasharray="5 5"
+                    dot={{ fill: '#10b981', r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Grid for Placements & Logs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             
+             {/* Placements Bento */}
+             <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm flex flex-col">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                      <Briefcase className="w-5 h-5" />
                     </div>
-                    <span className={`status-badge ${placement.status}`}>
-                      {placement.status}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="empty-state">No active placements yet.</p>
-            )}
-          </div>
-          <div className="card-footer">
-            <Link to="/app/placements" className="btn-link">View All Placements →</Link>
+                    <h3 className="text-lg font-bold text-zinc-900 leading-none">Placements</h3>
+                  </div>
+                  <Link to="/app/placements" className="p-2 rounded-xl bg-zinc-50 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors">
+                     <ChevronRight className="w-5 h-5" />
+                  </Link>
+                </div>
+                
+                <div className="flex-1 space-y-4">
+                  {placements.length > 0 ? (
+                    placements.slice(0, 2).map((placement) => (
+                      <div key={placement.placement_id} className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100 group hover:border-indigo-200 transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                           <p className="font-bold text-zinc-900 truncate pr-2">{placement.position_title}</p>
+                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                             placement.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'
+                           }`}>
+                             {placement.status}
+                           </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 font-bold uppercase tracking-tight truncate">{placement.organization?.name}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
+                      <Briefcase className="w-8 h-8 text-zinc-200 mb-2" />
+                      <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">No Placements</p>
+                    </div>
+                  )}
+                </div>
+             </div>
+
+             {/* Recent Logs Bento */}
+             <div className="bg-zinc-950 rounded-[2.5rem] p-8 shadow-2xl flex flex-col text-white">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center">
+                      <Plus className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-white leading-none">Quick Log</h3>
+                  </div>
+                  <Link to={newLogPath} className="p-2 rounded-xl bg-white/10 text-white/50 hover:text-white hover:bg-white/20 transition-colors">
+                     <Plus className="w-5 h-5" />
+                  </Link>
+                </div>
+                
+                <div className="flex-1 space-y-3">
+                  {logs.slice(0, 3).map((log) => (
+                    <div key={log.log_id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                       <span className="text-sm font-bold opacity-80">Week {log.week_number}</span>
+                       <div className={`w-2 h-2 rounded-full ${
+                         log.status === 'approved' ? 'bg-emerald-400' : 'bg-amber-400'
+                       }`} />
+                    </div>
+                  ))}
+                </div>
+                
+                <Link to={newLogPath} className="mt-6 w-full flex items-center justify-center py-4 bg-white text-zinc-950 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-white/5 hover:scale-[1.02] active:scale-95 transition-all">
+                  Create Log
+                </Link>
+             </div>
           </div>
         </div>
 
-        {/* Logs Card */}
-        <div className="dashboard-card logs-card">
-          <div className="card-header">
-            <div className="card-icon">📋</div>
-            <h3>Recent Logs</h3>
+        {/* Right Column - Side Panel (1/3 width) */}
+        <div className="space-y-6">
+          
+          {/* Notifications Card */}
+          <div className="bg-white border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm flex flex-col max-h-[460px]">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-zinc-900 leading-none">Activity</h3>
+              </div>
+              {notifications.length > 0 && (
+                <span className="bg-zinc-900 text-white text-[10px] font-black px-2 py-0.5 rounded-full ring-4 ring-zinc-50">
+                   {notifications.length}
+                </span>
+              )}
+            </div>
+            
+            <div className="flex-1 space-y-4 overflow-y-auto pr-2 scrollbar-none">
+              {notifications.length > 0 ? (
+                notifications.slice(0, 5).map((notification) => (
+                  <div key={notification.notification_id} className="relative pl-6 pb-2 border-l-2 border-zinc-100 group">
+                    <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-zinc-200 group-hover:bg-rose-500 transition-colors" />
+                    <p className="text-sm text-zinc-600 font-medium leading-relaxed">
+                      {notification.message}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center">
+                   <Bell className="w-10 h-10 text-zinc-100 mx-auto mb-2" />
+                   <p className="text-xs font-bold text-zinc-300 uppercase tracking-widest">No recent activity</p>
+                </div>
+              )}
+            </div>
+            
+            <Link to="/app/notifications" className="mt-6 block text-center text-xs font-bold text-zinc-400 uppercase tracking-widest hover:text-zinc-900 transition-colors">
+              View Feed
+            </Link>
           </div>
-          <div className="card-content">
-            {logs.length > 0 ? (
-              <ul className="logs-list">
-                {logs.slice(0, 3).map((log) => (
-                  <li key={log.log_id} className="log-item">
-                    <span className="week-badge">Week {log.week_number}</span>
-                    <span className={`status-badge ${log.status}`}>
-                      {log.status}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="empty-state">No logs submitted yet.</p>
-            )}
-          </div>
-          <div className="card-footer">
-            <Link to="/app/logs" className="btn-link">View All Logs →</Link>
-            <Link to={newLogPath} className="btn-primary-small">+ New Log</Link>
-          </div>
-        </div>
 
-        {/* Notifications Card */}
-        <div className="dashboard-card notifications-card">
-          <div className="card-header">
-            <div className="card-icon">🔔</div>
-            <h3>Notifications</h3>
-            {notifications.length > 0 && (
-              <span className="badge">{notifications.length}</span>
-            )}
+          {/* Results Summary Bento */}
+          <div className="bg-zinc-50 border border-zinc-100 rounded-[2.5rem] p-8 shadow-sm">
+             <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-zinc-900 leading-none">Evaluations</h3>
+              </div>
+              <div className="space-y-4 mb-6">
+                 {statusData.map((s, i) => (
+                   <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+                         <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">{s.status}</span>
+                      </div>
+                      <span className="text-sm font-black text-zinc-900">{s.count}</span>
+                   </div>
+                 ))}
+              </div>
+              <Link to="/app/evaluations" className="block text-center py-4 rounded-2xl border-2 border-zinc-200 text-zinc-900 text-xs font-black uppercase tracking-widest hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all">
+                View Reports
+              </Link>
           </div>
-          <div className="card-content">
-            {notifications.length > 0 ? (
-              <ul className="notifications-list">
-                {notifications.slice(0, 3).map((notification) => (
-                  <li key={notification.notification_id} className="notification-item">
-                    <div className="notification-dot"></div>
-                    <p>{notification.message}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="empty-state">No new notifications.</p>
-            )}
-          </div>
-          <div className="card-footer">
-            <Link to="/app/notifications" className="btn-link">View All →</Link>
-          </div>
+          
         </div>
-
-        {/* Results Card */}
-        <div className="dashboard-card results-card">
-          <div className="card-header">
-            <div className="card-icon">🎓</div>
-            <h3>Results</h3>
-          </div>
-          <div className="card-content">
-            <p className="results-message">Check your evaluation results and performance feedback.</p>
-          </div>
-          <div className="card-footer">
-            <Link to="/app/evaluations" className="btn-link">View Results →</Link>
-          </div>
-        </div>
-
-        {/* Charts - Full Width */}
-        <div className="dashboard-card chart-card full-width">
-          <div className="card-header">
-            <div className="card-icon">📈</div>
-            <h3>Weekly Progress</h3>
-          </div>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={progressData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                <XAxis dataKey="week" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="hours" 
-                  stroke="#4F46E5" 
-                  name="Total Hours" 
-                  strokeWidth={2}
-                  dot={{ fill: '#4F46E5', r: 4 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="approved" 
-                  stroke="#10B981" 
-                  name="Approved Hours" 
-                  strokeWidth={2}
-                  dot={{ fill: '#10B981', r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="dashboard-card chart-card">
-          <div className="card-header">
-            <div className="card-icon">📊</div>
-            <h3>Log Status Overview</h3>
-          </div>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={statusData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                <XAxis dataKey="status" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-                />
-                <Bar 
-                  dataKey="count" 
-                  fill="#4F46E5" 
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
       </div>
     </div>
   );
