@@ -54,6 +54,7 @@ function Sidebar({ user, isOpen, onClose }) {
       [ROLES.ADMIN]: [
         { path: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { path: '/app/users', label: 'User Management', icon: Users },
+        { path: '/app/system-status', label: 'System Status', icon: Settings },
         { path: '/app/reports', label: 'System Reports', icon: BarChart3 },
         { path: '/app/settings', label: 'System Settings', icon: Settings },
       ],
