@@ -13,7 +13,7 @@ function PublicLayout() {
       </main>
 
       <footer className="public-footer">
-        <p>&copy; 2024 ILES - Internship Log and Evaluation System</p>
+        {/* <p>&copy; 2026 ILES - Internship Log and Evaluation System</p> */}
       </footer>
     </div>
   );
