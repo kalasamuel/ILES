@@ -25,6 +25,9 @@ import LogsPage from '../pages/LogsPage';
 import ReviewsPage from '../pages/ReviewsPage';
 import EvaluationsPage from '../pages/EvaluationsPage';
 import ReportsPage from '../pages/ReportsPage';
+import ActivitiesPage from '../pages/ActivitiesPage';
+import AdminUsersPage from '../pages/AdminUsersPage';
+import SystemStatusPage from '../pages/SystemStatusPage';
 import NotificationsPage from '../pages/NotificationsPage';
 import SettingsPage from '../pages/SettingsPage';
 import HelpPage from '../pages/HelpPage';
@@ -57,6 +60,17 @@ function Router() {
   <Route path="placements/*" element={<PlacementsPage />} />
   <Route path="logs/*" element={<LogsPage />} />
   <Route path="reviews/*" element={<ReviewsPage />} />
+  <Route path="activities" element={<ActivitiesPage />} />
+  <Route path="users" element={
+    <ProtectedRoute allowedRoles={['admin']}>
+      <AdminUsersPage />
+    </ProtectedRoute>
+  } />
+  <Route path="system-status" element={
+    <ProtectedRoute allowedRoles={['admin']}>
+      <SystemStatusPage />
+    </ProtectedRoute>
+  } />
   <Route path="reports/*" element={<ReportsPage />} />
   <Route path="notifications" element={<NotificationsPage />} />
   <Route path="settings" element={<SettingsPage />} />
