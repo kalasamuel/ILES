@@ -14,8 +14,20 @@ export const authAPI = {
 
 // Users
 export const usersAPI = {
+  getUsers: async () => {
+    const response = await api.get('/accounts/users/');
+    return response.data;
+  },
   getCurrentUser: async () => {
     const response = await api.get('/accounts/users/me/');
+    return response.data;
+  },
+  getUser: async (id) => {
+    const response = await api.get(`/accounts/users/${id}/`);
+    return response.data;
+  },
+  updateUser: async (id, data) => {
+    const response = await api.patch(`/accounts/users/${id}/`, data);
     return response.data;
   },
 };
@@ -40,6 +52,13 @@ export const supervisorsAPI = {
   },
   getSupervisor: async (id) => {
     const response = await api.get(`/accounts/supervisors/${id}/`);
+    return response.data;
+  },
+};
+
+export const rolesAPI = {
+  getRoles: async () => {
+    const response = await api.get('/accounts/roles/');
     return response.data;
   },
 };
@@ -176,6 +195,18 @@ export const notificationsAPI = {
   },
   deleteNotification: async (id) => {
     const response = await api.delete(`/notifications/notifications/${id}/`);
+    return response.data;
+  },
+  getDeadlines: async () => {
+    const response = await api.get('/notifications/deadlines/');
+    return response.data;
+  },
+};
+
+// Workflow History
+export const workflowAPI = {
+  getHistory: async () => {
+    const response = await api.get('/reviews/history/');
     return response.data;
   },
 };
