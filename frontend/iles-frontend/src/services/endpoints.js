@@ -3,7 +3,7 @@ import api from './apiClient';
 // Authentication
 export const authAPI = {
   login: async (email, password) => {
-    const response = await api.post('/token/', { email, password });
+    const response = await api.post('/accounts/users/login/', { email, password });
     return response.data;
   },
   register: async (payload) => {
