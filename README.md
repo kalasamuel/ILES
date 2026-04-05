@@ -18,7 +18,7 @@ ILES/
 ├── notifications/            # Notification system
 ├── dashboards/               # Analytics and reporting
 └── frontend/                 # React.js frontend application
-    └── iles-frontend/        # React TypeScript project
+    └── iles-frontend/        # React JavaScript project
 ```
 
 ## Technology Stack
@@ -31,7 +31,7 @@ ILES/
 - **Additional**: django-cors-headers, django-environ
 
 ### Frontend (React)
-- **Framework**: React.js with TypeScript
+- **Framework**: React.js with JavaScript
 - **Routing**: React Router
 - **Charts**: Recharts for data visualization
 - **HTTP Client**: Axios
@@ -133,7 +133,7 @@ The system uses a normalized PostgreSQL database with 19+ core tables including:
 - Business logic in view methods and model methods
 
 ### Frontend Development
-- TypeScript for type safety
+- JavaScript for faster development
 - React Context for state management
 - Protected routes with role-based access
 - Recharts for interactive data visualizations
