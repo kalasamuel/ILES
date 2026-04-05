@@ -1,63 +1,50 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Briefcase, Calendar, CheckCircle2, Clock, FileText, Bell, Send, MessageSquare, ArrowUpRight } from 'lucide-react';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar
+} from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
-import { dashboardsAPI, logbooksAPI, notificationsAPI, placementsAPI, reviewsAPI } from '../services/endpoints';
+import { dashboardsAPI, logbooksAPI, notificationsAPI, placementsAPI } from '../services/endpoints';
 import './StudentDashboard.css';
 
-function toDate(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function formatDate(value) {
-  const date = toDate(value);
-  return date ? date.toLocaleDateString() : 'Date unavailable';
-}
-
-function getUserLabel(placement) {
-  const first = placement?.student_details?.user_details?.first_name || '';
-  const last = placement?.student_details?.user_details?.last_name || '';
-  const label = `${first} ${last}`.trim();
-  return label || placement?.student_details?.registration_number || 'Your placement';
-}
-
-function StudentDashboard() {
+const StudentDashboard = () => {
   const { user } = useAuth();
+
   const [placements, setPlacements] = useState([]);
   const [logs, setLogs] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const bootstrapAttemptedRef = useRef(false);
+  const [bootstrapAttempted, setBootstrapAttempted] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setError(null);
-        const [placementsRes, logsRes, notificationsRes, reviewsRes] = await Promise.all([
+        console.log('Fetching dashboard data...');
+        
+        const [placementsRes, logsRes, notificationsRes] = await Promise.all([
           placementsAPI.getPlacements(),
           logbooksAPI.getLogs(),
           notificationsAPI.getNotifications(),
-          reviewsAPI.getReviews(),
         ]);
 
         let placementsData = placementsRes?.results || placementsRes || [];
         let logsData = logsRes?.results || logsRes || [];
         let notificationsData = notificationsRes?.results || notificationsRes || [];
-        let reviewsData = reviewsRes?.results || reviewsRes || [];
 
         let context = null;
         try {
           context = await dashboardsAPI.getMyDataContext();
+          console.log('Backend data context:', context);
         } catch (ctxError) {
           console.warn('Failed to load backend data context:', ctxError);
         }
 
         const shouldBootstrap =
-          !bootstrapAttemptedRef.current &&
+          !bootstrapAttempted &&
           context &&
           String(context.role_name || '').toLowerCase().includes('student') &&
           context.has_student_profile &&
@@ -67,32 +54,37 @@ function StudentDashboard() {
 
         if (shouldBootstrap) {
           try {
+            console.log('No owned student data found. Bootstrapping starter data...');
             await dashboardsAPI.bootstrapMyStudentData();
-            bootstrapAttemptedRef.current = true;
+            setBootstrapAttempted(true);
 
-            const [placementsRefetch, logsRefetch, notificationsRefetch, reviewsRefetch] = await Promise.all([
+            const [placementsRefetch, logsRefetch, notificationsRefetch] = await Promise.all([
               placementsAPI.getPlacements(),
               logbooksAPI.getLogs(),
               notificationsAPI.getNotifications(),
-              reviewsAPI.getReviews(),
             ]);
 
             placementsData = placementsRefetch?.results || placementsRefetch || [];
             logsData = logsRefetch?.results || logsRefetch || [];
             notificationsData = notificationsRefetch?.results || notificationsRefetch || [];
-            reviewsData = reviewsRefetch?.results || reviewsRefetch || [];
+            console.log('Starter data bootstrapped successfully.');
           } catch (bootstrapError) {
             console.warn('Starter data bootstrap failed:', bootstrapError);
           }
         }
 
+        console.log('Placements response:', placementsRes);
+        console.log('Logs response:', logsRes);
+        console.log('Notifications response:', notificationsRes);
+
         setPlacements(placementsData);
         setLogs(logsData);
         setNotifications(notificationsData);
-        setReviews(reviewsData);
-      } catch (fetchError) {
-        console.error('Error fetching dashboard data:', fetchError);
-        setError(fetchError.message || 'Failed to load dashboard data');
+
+        console.log('Dashboard data loaded:', { placements: placementsData.length, logs: logsData.length, notifications: notificationsData.length });
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setError(error.message || 'Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
@@ -101,76 +93,68 @@ function StudentDashboard() {
     fetchData();
   }, []);
 
-  const approvedLogs = logs.filter((log) => log.status === 'approved').length;
-  const submittedLogs = logs.filter((log) => log.status === 'submitted').length;
+  // Calculate stats
+  const approvedLogs = logs.filter(log => log.status === 'approved').length;
+  const pendingLogs = logs.filter(log => log.status === 'submitted' || log.status === 'reviewed').length;
   const totalHours = logs.reduce((sum, log) => sum + (Number(log.hours_worked) || 0), 0).toFixed(1);
-  const activePlacements = placements.filter((placement) => placement.status === 'approved' || placement.status === 'completed').length;
+  const activePlacements = placements.filter(p => p.status === 'approved' || p.status === 'completed').length;
 
-  const selectedPlacement = placements.find((placement) => placement.status === 'approved' || placement.status === 'completed') || placements[0];
+  const progressMap = logs.reduce((acc, log) => {
+    const week = `Week ${log.week_number}`;
+    if (!acc[week]) {
+      acc[week] = { week, hours: 0, approved: 0 };
+    }
+    const hours = Number(log.hours_worked) || 0;
+    acc[week].hours += hours;
+    if (log.status === 'approved') {
+      acc[week].approved += hours;
+    }
+    return acc;
+  }, {});
+
+  const progressData = Object.values(progressMap).sort((a, b) => {
+    const weekA = Number(a.week.replace('Week ', ''));
+    const weekB = Number(b.week.replace('Week ', ''));
+    return weekA - weekB;
+  });
+
+  const statusData = [
+    { status: 'Approved', count: approvedLogs },
+    { status: 'Pending', count: pendingLogs },
+    { status: 'Rejected', count: logs.filter(log => log.status === 'rejected').length },
+  ];
+
+  const selectedPlacement = placements.find(
+    (placement) => placement.status === 'approved' || placement.status === 'completed'
+  ) || placements[0];
 
   const nextWeekNumber = selectedPlacement
-    ? logs
+    ? (logs
         .filter((log) => log.placement === selectedPlacement.placement_id || log.placement?.placement_id === selectedPlacement.placement_id)
-        .reduce((maxWeek, log) => Math.max(maxWeek, Number(log.week_number) || 0), 0) + 1
+        .reduce((maxWeek, log) => Math.max(maxWeek, Number(log.week_number) || 0), 0) + 1)
     : 1;
 
-  const submitLogPath = selectedPlacement
+  const newLogPath = selectedPlacement
     ? `/app/logs/create/${selectedPlacement.placement_id}/${nextWeekNumber}`
     : '/app/logs/create';
 
-  const recentActivities = useMemo(() => {
-    const placementMap = new Map(placements.map((placement) => [placement.placement_id, placement]));
-
-    const logActivities = logs.map((log) => ({
-      id: `log-${log.log_id}`,
-      title: `Week ${log.week_number} log ${log.status}`,
-      detail: `${log.hours_worked || 0} hours • ${getUserLabel(placementMap.get(log.placement))}`,
-      date: log.submitted_at || log.created_at,
-      kind: log.status === 'approved' ? 'success' : log.status === 'rejected' ? 'danger' : 'neutral',
-      icon: FileText,
-    }));
-
-    const feedbackActivities = reviews.map((review) => ({
-      id: `review-${review.review_id}`,
-      title: 'Supervisor feedback received',
-      detail: review.comments || `Status: ${String(review.status || 'unknown').replace('_', ' ')}`,
-      date: review.reviewed_at,
-      kind: review.status === 'approved' ? 'success' : review.status === 'rejected' ? 'danger' : 'warning',
-      icon: MessageSquare,
-    }));
-
-    const notificationActivities = notifications.map((notification) => ({
-      id: `notification-${notification.notification_id}`,
-      title: notification.notification_type?.replace('_', ' ') || 'Notification',
-      detail: notification.message,
-      date: notification.created_at,
-      kind: notification.is_read ? 'neutral' : 'warning',
-      icon: Bell,
-    }));
-
-    return [...logActivities, ...feedbackActivities, ...notificationActivities]
-      .sort((a, b) => (toDate(b.date)?.getTime() || 0) - (toDate(a.date)?.getTime() || 0))
-      .slice(0, 5);
-  }, [logs, reviews, notifications, placements]);
-
   if (loading) {
     return (
-      <div className="student-dashboard loading-state">
-        <div className="loading-spinner" />
-        <p>Synchronizing your dashboard...</p>
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading your dashboard...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="student-dashboard error-state">
-        <div>
-          <h2>Something went wrong</h2>
-          <p>{error}</p>
-        </div>
-        <button type="button" onClick={() => window.location.reload()} className="student-button student-button-primary">
-          Try Again
+      <div className="error-container" style={{ padding: '20px', margin: '20px', backgroundColor: '#ffebee', border: '1px solid #f44336', borderRadius: '4px', color: '#c62828' }}>
+        <h2>⚠️ Error Loading Dashboard</h2>
+        <p><strong>Error:</strong> {error}</p>
+        <p style={{ fontSize: '12px', marginTop: '10px' }}>Check browser console (F12) for more details.</p>
+        <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '10px' }}>
+          Retry
         </button>
       </div>
     );
@@ -178,153 +162,248 @@ function StudentDashboard() {
 
   return (
     <div className="student-dashboard">
-      <div className="student-header">
-        <div>
-          <p className="eyebrow">Student Dashboard</p>
-          <h1>Hello, {user?.first_name?.toUpperCase() || 'STUDENT'}!</h1>
-          <p className="header-copy">
-            You've completed <strong>{approvedLogs}</strong> logs and submitted <strong>{submittedLogs}</strong> pending entries so far.
-          </p>
+      {/* Welcome Header */}
+      <div className="welcome-header">
+        <div className="welcome-content">
+          <h1>
+            Welcome back, <span className="highlight">{user?.first_name || 'Student'}!</span>
+          </h1>
+          <p>Here's what's happening with your internship journey today.</p>
         </div>
-        <div className="date-pill">
-          <Calendar className="date-icon" />
-          <span>
-            {new Date().toLocaleDateString('en-US', {
-              weekday: 'short',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </span>
+        <div className="date-badge">
+          {new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
         </div>
       </div>
 
-      <div className="student-actions-grid">
-        <Link to={submitLogPath} className="action-card action-card-primary">
-          <div className="action-icon action-icon-primary"><Send className="icon" /></div>
-          <div>
-            <h3>Submit Logs</h3>
-            <p>Submit your internship activities.</p>
-          </div>
-          <ArrowUpRight className="action-arrow" />
-        </Link>
-
-        <Link to="/app/logs" className="action-card">
-          <div className="action-icon"><FileText className="icon" /></div>
-          <div>
-            <h3>View Submissions</h3>
-            <p>View your submitted logs.</p>
-          </div>
-          <ArrowUpRight className="action-arrow" />
-        </Link>
-
-        <Link to="/app/reviews" className="action-card">
-          <div className="action-icon"><MessageSquare className="icon" /></div>
-          <div>
-            <h3>See Feedback</h3>
-            <p>Check feedback from supervisors.</p>
-          </div>
-          <ArrowUpRight className="action-arrow" />
-        </Link>
-      </div>
-
-      <div className="student-summary-grid">
-        <div className="summary-card">
-          <div className="summary-icon summary-icon-indigo"><Briefcase className="icon" /></div>
-          <div>
-            <span>{activePlacements}</span>
-            <p>Active placements</p>
+      {/* Stats Cards */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon">📊</div>
+          <div className="stat-info">
+            <h3>{activePlacements}</h3>
+            <p>Active Placements</p>
           </div>
         </div>
-        <div className="summary-card">
-          <div className="summary-icon summary-icon-sky"><FileText className="icon" /></div>
-          <div>
-            <span>{logs.length}</span>
-            <p>Total logs</p>
+        <div className="stat-card">
+          <div className="stat-icon">📝</div>
+          <div className="stat-info">
+            <h3>{logs.length}</h3>
+            <p>Total Logs</p>
           </div>
         </div>
-        <div className="summary-card">
-          <div className="summary-icon summary-icon-emerald"><CheckCircle2 className="icon" /></div>
-          <div>
-            <span>{approvedLogs}</span>
-            <p>Approved logs</p>
+        <div className="stat-card">
+          <div className="stat-icon">✓</div>
+          <div className="stat-info">
+            <h3>{approvedLogs}</h3>
+            <p>Approved Logs</p>
           </div>
         </div>
-        <div className="summary-card">
-          <div className="summary-icon summary-icon-rose"><Clock className="icon" /></div>
-          <div>
-            <span>{totalHours}</span>
-            <p>Total hours</p>
+        <div className="stat-card">
+          <div className="stat-icon">⏱️</div>
+          <div className="stat-info">
+            <h3>{totalHours}</h3>
+            <p>Total Hours</p>
           </div>
         </div>
       </div>
 
-      <div className="student-content-grid">
-        <div className="content-card">
-          <div className="card-head">
-            <div>
-              <p className="eyebrow">Recent Activities</p>
-              <h2>Latest updates</h2>
-            </div>
-            <Link to="/app/logs" className="text-link">View Submissions</Link>
-          </div>
+      {/* Main Grid */}
+      <div className="dashboard-grid">
 
-          <div className="activity-list">
-            {recentActivities.length > 0 ? recentActivities.map((activity) => {
-              const Icon = activity.icon;
-              return (
-                <div key={activity.id} className="activity-item">
-                  <div className={`activity-badge activity-badge-${activity.kind}`}>
-                    <Icon className="icon" />
-                  </div>
-                  <div className="activity-body">
-                    <div className="activity-top">
-                      <strong>{activity.title}</strong>
-                      <span>{formatDate(activity.date)}</span>
+        {/* Placements Card */}
+        <div className="dashboard-card placements-card">
+          <div className="card-header">
+            <div className="card-icon">🏢</div>
+            <h3>My Placements</h3>
+          </div>
+          <div className="card-content">
+            {placements.length > 0 ? (
+              <ul className="placement-list">
+                {placements.slice(0, 3).map((placement) => (
+                  <li key={placement.placement_id} className="placement-item">
+                    <div className="placement-info">
+                      <strong>{placement.position_title}</strong>
+                      <span className="company">{placement.organization?.name}</span>
                     </div>
-                    <p>{activity.detail}</p>
-                  </div>
-                </div>
-              );
-            }) : (
-              <p className="empty-state">No recent activities yet.</p>
+                    <span className={`status-badge ${placement.status}`}>
+                      {placement.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-state">No active placements yet.</p>
             )}
           </div>
-        </div>
-
-        <div className="content-card side-card">
-          <div className="card-head">
-            <div>
-              <p className="eyebrow">Quick Access</p>
-              <h2>Your internship tools</h2>
-            </div>
-          </div>
-
-          <div className="quick-links">
-            <Link to={submitLogPath} className="quick-link">Submit Logs</Link>
-            <Link to="/app/logs" className="quick-link">View Submissions</Link>
-            <Link to="/app/reviews" className="quick-link">See Feedback</Link>
-            <Link to="/app/notifications" className="quick-link">Notifications</Link>
-          </div>
-
-          <div className="status-stack">
-            <div className="status-line">
-              <span>Current placement</span>
-              <strong>{selectedPlacement ? selectedPlacement.position_title : 'No active placement'}</strong>
-            </div>
-            <div className="status-line">
-              <span>Pending logs</span>
-              <strong>{submittedLogs}</strong>
-            </div>
-            <div className="status-line">
-              <span>Feedback items</span>
-              <strong>{reviews.length}</strong>
-            </div>
+          <div className="card-footer">
+            <Link to="/app/placements" className="btn-view-all">
+              <span>View All Placements</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
           </div>
         </div>
+
+        {/* Logs Card */}
+        <div className="dashboard-card logs-card">
+          <div className="card-header">
+            <div className="card-icon">📋</div>
+            <h3>Recent Logs</h3>
+          </div>
+          <div className="card-content">
+            {logs.length > 0 ? (
+              <ul className="logs-list">
+                {logs.slice(0, 3).map((log) => (
+                  <li key={log.log_id} className="log-item">
+                    <span className="week-badge">Week {log.week_number}</span>
+                    <span className={`status-badge ${log.status}`}>
+                      {log.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-state">No logs submitted yet.</p>
+            )}
+          </div>
+          <div className="card-footer">
+            <Link to="/app/logs" className="btn-view-all">
+              <span>View All Logs</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+            <Link to={newLogPath} className="btn-primary-small">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              New Log
+            </Link>
+          </div>
+        </div>
+
+        {/* Notifications Card */}
+        <div className="dashboard-card notifications-card">
+          <div className="card-header">
+            <div className="card-icon">🔔</div>
+            <h3>Notifications</h3>
+            {notifications.length > 0 && (
+              <span className="badge">{notifications.length}</span>
+            )}
+          </div>
+          <div className="card-content">
+            {notifications.length > 0 ? (
+              <ul className="notifications-list">
+                {notifications.slice(0, 3).map((notification) => (
+                  <li key={notification.notification_id} className="notification-item">
+                    <div className="notification-dot"></div>
+                    <p>{notification.message}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-state">No new notifications.</p>
+            )}
+          </div>
+          <div className="card-footer">
+            <Link to="/app/notifications" className="btn-view-all">
+              <span>View All</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+          </div>
+        </div>
+
+        {/* Results Card */}
+        <div className="dashboard-card results-card">
+          <div className="card-header">
+            <div className="card-icon">🎓</div>
+            <h3>Results</h3>
+          </div>
+          <div className="card-content">
+            <p className="results-message">Check your evaluation results and performance feedback.</p>
+          </div>
+          <div className="card-footer">
+            <Link to="/app/evaluations" className="btn-view-all">
+              <span>View Results</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+          </div>
+        </div>
+
+        {/* Charts - Full Width */}
+        <div className="dashboard-card chart-card full-width">
+          <div className="card-header">
+            <div className="card-icon">📈</div>
+            <h3>Weekly Progress</h3>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={progressData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="week" stroke="#666" />
+                <YAxis stroke="#666" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="hours" 
+                  stroke="#4F46E5" 
+                  name="Total Hours" 
+                  strokeWidth={2}
+                  dot={{ fill: '#4F46E5', r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="approved" 
+                  stroke="#10B981" 
+                  name="Approved Hours" 
+                  strokeWidth={2}
+                  dot={{ fill: '#10B981', r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="dashboard-card chart-card">
+          <div className="card-header">
+            <div className="card-icon">📊</div>
+            <h3>Log Status Overview</h3>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={statusData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="status" stroke="#666" />
+                <YAxis stroke="#666" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                />
+                <Bar 
+                  dataKey="count" 
+                  fill="#4F46E5" 
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
       </div>
     </div>
   );
-}
+};
 
 export default StudentDashboard;
