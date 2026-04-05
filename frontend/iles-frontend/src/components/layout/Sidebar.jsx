@@ -1,18 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Briefcase, 
-  FileText, 
-  GraduationCap, 
-  Users, 
-  BarChart3, 
-  Settings, 
-  X,
-  ClipboardCheck,
-  Search
-} from 'lucide-react';
 import { ROLES } from '../../constants';
+import './Sidebar.css';
 
 function normalizeRole(rawRole) {
   const normalized = String(rawRole || '')
@@ -29,124 +18,153 @@ function normalizeRole(rawRole) {
   return normalized;
 }
 
+// SVG icons replacing lucide-react
+const Icons = {
+  Dashboard: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+    </svg>
+  ),
+  Briefcase: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+    </svg>
+  ),
+  FileText: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+    </svg>
+  ),
+  ClipboardCheck: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+      <rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 12 2 2 4-4"/>
+    </svg>
+  ),
+  Users: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  ),
+  GraduationCap: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+      <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5"/>
+    </svg>
+  ),
+  BarChart: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+    </svg>
+  ),
+  Settings: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  ),
+  Search: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+  ),
+  Close: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  ),
+};
+
+function getSidebarItems(role) {
+  const items = {
+    [ROLES.STUDENT]: [
+      { path: '/app/dashboard', label: 'Dashboard',   Icon: Icons.Dashboard },
+      { path: '/app/placements', label: 'Placements',  Icon: Icons.Briefcase },
+      { path: '/app/logs',       label: 'My Logs',     Icon: Icons.FileText },
+      { path: '/app/results',    label: 'My Results',  Icon: Icons.ClipboardCheck },
+    ],
+    [ROLES.WORKPLACE_SUPERVISOR]: [
+      { path: '/app/dashboard',  label: 'Dashboard',       Icon: Icons.Dashboard },
+      { path: '/app/placements', label: 'Assigned Interns', Icon: Icons.Users },
+      { path: '/app/reviews',    label: 'Review Logs',     Icon: Icons.ClipboardCheck },
+    ],
+    [ROLES.ACADEMIC_SUPERVISOR]: [
+      { path: '/app/dashboard',   label: 'Dashboard',         Icon: Icons.Dashboard },
+      { path: '/app/placements',  label: 'Student Overview',  Icon: Icons.Search },
+      { path: '/app/reviews',     label: 'Supervisor Reviews', Icon: Icons.ClipboardCheck },
+      { path: '/app/evaluations', label: 'Final Evaluations', Icon: Icons.GraduationCap },
+    ],
+    [ROLES.ADMIN]: [
+      { path: '/app/dashboard',     label: 'Dashboard',       Icon: Icons.Dashboard },
+      { path: '/app/users',         label: 'User Management', Icon: Icons.Users },
+      { path: '/app/system-status', label: 'System Status',   Icon: Icons.Settings },
+      { path: '/app/reports',       label: 'System Reports',  Icon: Icons.BarChart },
+      { path: '/app/settings',      label: 'System Settings', Icon: Icons.Settings },
+    ],
+  };
+  return items[role] || items[ROLES.STUDENT];
+}
+
 function Sidebar({ user, isOpen, onClose }) {
   const location = useLocation();
-
-  const getSidebarItems = (role) => {
-    const items = {
-      [ROLES.STUDENT]: [
-        { path: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/app/placements', label: 'Placements', icon: Briefcase },
-        { path: '/app/logs', label: 'My Logs', icon: FileText },
-        { path: '/app/results', label: 'My Results', icon: ClipboardCheck },
-      ],
-      [ROLES.WORKPLACE_SUPERVISOR]: [
-        { path: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/app/placements', label: 'Assigned Interns', icon: Users },
-        { path: '/app/reviews', label: 'Review Logs', icon: ClipboardCheck },
-      ],
-      [ROLES.ACADEMIC_SUPERVISOR]: [
-        { path: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/app/placements', label: 'Student Overview', icon: Search },
-        { path: '/app/reviews', label: 'Supervisor Reviews', icon: ClipboardCheck },
-        { path: '/app/evaluations', label: 'Final Evaluations', icon: GraduationCap },
-      ],
-      [ROLES.ADMIN]: [
-        { path: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/app/users', label: 'User Management', icon: Users },
-        { path: '/app/system-status', label: 'System Status', icon: Settings },
-        { path: '/app/reports', label: 'System Reports', icon: BarChart3 },
-        { path: '/app/settings', label: 'System Settings', icon: Settings },
-      ],
-    };
-    return items[role] || items[ROLES.STUDENT];
-  };
-
-  const sidebarItems = getSidebarItems(
-    normalizeRole(user?.role?.role_name || user?.role_name)
-  );
+  const role = normalizeRole(user?.role?.role_name || user?.role_name);
+  const sidebarItems = getSidebarItems(role);
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* Overlay */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 z-50 bg-zinc-950/20 backdrop-blur-sm transition-opacity lg:hidden" 
-          onClick={onClose}
-        />
+        <div className="sidebar-overlay" onClick={onClose} />
       )}
 
-      {/* Sidebar Aside */}
-      <aside className={`
-        fixed left-0 top-0 z-50 h-screen w-72 bg-white border-r border-zinc-200 
-        transition-transform duration-300 ease-in-out lg:translate-x-0
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        {/* Header (hidden on desktop if navbar handles logo) */}
-        <div className="flex h-16 items-center justify-between px-6 border-b border-zinc-100 lg:hidden">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-900 text-white">
-               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                 <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                 <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5"/>
-               </svg>
-            </div>
-            <span className="font-bold text-zinc-900 tracking-tight">ILES</span>
-          </div>
-          <button 
-            className="inline-flex items-center justify-center rounded-lg w-9 h-9 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100" 
-            onClick={onClose}
-          >
-            <X className="w-5 h-5" />
+      <aside className={`sidebar${isOpen ? ' sidebar--open' : ''}`}>
+
+        {/* Header */}
+        <div className="sidebar-header">
+          <h2>ILES</h2>
+          <button className="sidebar-close-btn" onClick={onClose} aria-label="Close sidebar">
+            <Icons.Close />
           </button>
         </div>
 
-        {/* Navigation Content */}
-        <div className="flex flex-col h-full py-6 overflow-y-auto scrollbar-none">
-          <div className="px-6 mb-4">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-              Main Menu
-            </h3>
-          </div>
-
-          <nav className="flex-1 space-y-1 px-3">
+        {/* Nav */}
+        <nav className="sidebar-nav">
+          <p className="sidebar-section-label">Main Menu</p>
+          <ul>
             {sidebarItems.map((item) => {
               const isActive = location.pathname.startsWith(item.path);
-              const Icon = item.icon;
-              
               return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={onClose}
-                  className={`
-                    group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all
-                    ${isActive 
-                      ? 'bg-zinc-900 text-white shadow-lg shadow-zinc-200' 
-                      : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'}
-                  `}
-                >
-                  <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-900'}`} />
-                  {item.label}
-                  {isActive && (
-                    <div className="ml-auto w-1 h-1 rounded-full bg-white opacity-50" />
-                  )}
-                </Link>
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    onClick={onClose}
+                    className={isActive ? 'active' : ''}
+                  >
+                    <item.Icon />
+                    {item.label}
+                  </Link>
+                </li>
               );
             })}
-          </nav>
+          </ul>
+        </nav>
 
-          {/* Bottom Footer or Info */}
-          <div className="mt-auto px-6 pt-6 border-t border-zinc-100">
-            <div className="rounded-2xl bg-zinc-50 p-4 border border-zinc-100">
-              <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-tight mb-1">Current User</p>
-              <p className="text-sm font-bold text-zinc-900 truncate">{user?.first_name} {user?.last_name}</p>
-              <p className="text-[10px] text-zinc-400 truncate capitalize">
-                {user?.role?.role_name || user?.role_name || 'Guest'}
-              </p>
-            </div>
+        {/* Footer */}
+        <div className="sidebar-footer">
+          <div className="sidebar-user-card">
+            <p className="sidebar-user-label">Current User</p>
+            <p className="sidebar-user-name">{user?.first_name} {user?.last_name}</p>
+            <p className="sidebar-user-role">{user?.role?.role_name || user?.role_name || 'Guest'}</p>
           </div>
         </div>
+
       </aside>
     </>
   );
