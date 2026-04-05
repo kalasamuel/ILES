@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -16,13 +16,13 @@
   --radius-sm:    8px;
   --radius-md:    14px;
   --radius-lg:    22px;
-  --font-head:    'Sora', sans-serif;
-  --font-body:    'DM Sans', sans-serif;
+  --font:         'Outfit', sans-serif;
+  --font-display: 'Playfair Display', serif;
 }
 
 /* ── Base ── */
 body {
-  font-family: var(--font-body);
+  font-family: var(--font);
   background-color: var(--page);
   background-image:
     radial-gradient(circle at 15% 20%, rgba(232,113,26,0.06) 0%, transparent 45%),
@@ -123,11 +123,11 @@ body {
   font-weight: 700;
   color: var(--orange);
   letter-spacing: 3px;
-  font-family: var(--font-head);
+  font-family: var(--font);
 }
 
 .login-title {
-  font-family: var(--font-head);
+  font-family: var(--font-display);
   font-size: 1.8rem;
   color: var(--ink);
   line-height: 1.2;
@@ -180,7 +180,7 @@ body {
 }
 
 .login-card h2 {
-  font-family: var(--font-head);
+  font-family: var(--font-display);
   font-size: 1.55rem;
   color: var(--ink);
   margin-bottom: 6px;
@@ -251,7 +251,7 @@ body {
 .input-wrapper input {
   width: 100%;
   padding: 14px 16px 14px 44px;
-  font-family: var(--font-body);
+  font-family: var(--font);
   font-size: 0.92rem;
   color: var(--ink);
   background: var(--page);
@@ -259,6 +259,16 @@ body {
   border-radius: var(--radius-md);
   outline: none;
   transition: all 0.2s;
+}
+
+.input-wrapper input[type="password"] {
+  letter-spacing: 2px;
+  padding-left: 48px;
+}
+
+.input-wrapper input[type="text"] {
+  letter-spacing: normal;
+  padding-left: 48px;
 }
 .input-wrapper input::placeholder { color: #C0BDB8; }
 .input-wrapper input:hover { border-color: #CCCAC4; }
@@ -342,7 +352,7 @@ body {
   color: white;
   border: none;
   border-radius: var(--radius-md);
-  font-family: var(--font-head);
+  font-family: var(--font);
   font-size: 0.925rem;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -415,7 +425,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  font-family: var(--font-body);
+  font-family: var(--font);
   text-decoration: none;
   position: relative;
   overflow: hidden;
