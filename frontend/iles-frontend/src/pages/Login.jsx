@@ -75,7 +75,7 @@ const Login = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="name@university.edu"
+                placeholder="name@gmail.com"
                 required
               />
             </div>
