@@ -73,6 +73,18 @@ export const organizationsAPI = {
     const response = await api.get(`/organizations/organizations/${id}/`);
     return response.data;
   },
+  createOrganization: async (data) => {
+    const response = await api.post('/organizations/organizations/', data);
+    return response.data;
+  },
+  updateOrganization: async (id, data) => {
+    const response = await api.patch(`/organizations/organizations/${id}/`, data);
+    return response.data;
+  },
+  deleteOrganization: async (id) => {
+    const response = await api.delete(`/organizations/organizations/${id}/`);
+    return response.data;
+  },
 };
 
 // Placements
