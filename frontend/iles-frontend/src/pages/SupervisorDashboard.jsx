@@ -137,7 +137,7 @@ function SupervisorDashboard() {
     };
 
     fetchData();
-  }, []);
+  }, [bootstrapAttempted]);
 
   const placementsById = useMemo(
     () => new Map(placements.map((placement) => [placement?.placement_id, placement])),

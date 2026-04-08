@@ -18,7 +18,7 @@ function ForgotPasswordPage() {
       console.log('Forgot password for:', email);
       setMessage('Password reset instructions sent to your email.');
       setMessageType('success');
-    } catch (err) {
+    } catch {
       setMessage('Failed to send reset instructions. Please try again.');
       setMessageType('error');
     } finally {
