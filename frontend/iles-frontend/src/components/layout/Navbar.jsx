@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/AuthContext';
 import { notificationsAPI } from '../../services/endpoints';
+import { ROLES } from '../../constants';
 import './Navbar.css';
 
 function Navbar({ user, onMenuClick }) {
   const { logout } = useAuth();
+  const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -25,6 +28,47 @@ function Navbar({ user, onMenuClick }) {
     .filter(Boolean)
     .map((n) => n[0].toUpperCase())
     .join('') || 'U';
+
+  const normalizeRole = (rawRole) => {
+    const normalized = String(rawRole || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, '_');
+
+    if (normalized === 'supervisor' || normalized === 'workplace') {
+      return ROLES.WORKPLACE_SUPERVISOR;
+    }
+    if (normalized === 'academic') {
+      return ROLES.ACADEMIC_SUPERVISOR;
+    }
+    return normalized;
+  };
+
+  const handleNotificationClick = () => {
+    const role = normalizeRole(user?.role?.role_name || user?.role_name);
+
+    if (role === ROLES.ADMIN) {
+      navigate('/app/reports');
+      return;
+    }
+
+    if (role === ROLES.ACADEMIC_SUPERVISOR) {
+      navigate('/app/evaluations');
+      return;
+    }
+
+    if (role === ROLES.WORKPLACE_SUPERVISOR) {
+      navigate('/app/reviews');
+      return;
+    }
+
+    if (role === ROLES.STUDENT) {
+      navigate('/app/logs/create');
+      return;
+    }
+
+    navigate('/app/notifications');
+  };
 
   return (
     <header className="navbar">
@@ -57,7 +101,12 @@ function Navbar({ user, onMenuClick }) {
 
         {/* Notifications */}
         <div className="notifications">
-          <button className="notification-btn" aria-label="Notifications">
+          <button
+            type="button"
+            className="notification-btn"
+            aria-label="Notifications"
+            onClick={handleNotificationClick}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
               <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
