@@ -208,7 +208,7 @@ function PlacementCreate() {
             <label htmlFor="description">Description</label>
             <textarea id="description" name="description" value={form.description} onChange={handleChange} placeholder="Brief description of the role…" rows={4} />
           </div>
-          {error && <p style={{ color: '#ef4444', fontSize: '13px' }}>{error}</p>}
+          {error && <p className="pl-error-message">{error}</p>}
           <button type="submit" className="pl-submit-btn" disabled={submitting}>
             {submitting ? 'Creating…' : 'Create Placement'}
           </button>

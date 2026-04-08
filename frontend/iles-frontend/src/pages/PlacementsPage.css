@@ -400,3 +400,10 @@
 .lp-btn-primary:active {
   transform: translateY(0);
 }
+
+.pl-error-message {
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 8px;
+  font-weight: 500;
+}
