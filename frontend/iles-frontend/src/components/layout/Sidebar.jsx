@@ -106,6 +106,7 @@ function getSidebarItems(role) {
       { path: '/app/users',         label: 'User Management', Icon: Icons.Users },
       { path: '/app/organizations', label: 'Organizations',   Icon: Icons.Briefcase },
       { path: '/app/system-status', label: 'System Status',   Icon: Icons.Settings },
+      { path: '/app/deadlines',     label: 'Deadlines',       Icon: Icons.FileText },
       { path: '/app/reports',       label: 'System Reports',  Icon: Icons.BarChart },
       { path: '/app/settings',      label: 'System Settings', Icon: Icons.Settings },
     ],
