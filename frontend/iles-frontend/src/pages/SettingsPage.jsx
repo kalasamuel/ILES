@@ -8,7 +8,6 @@ const SettingsPage = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
 
-  // Profile Settings
   const [profile, setProfile] = useState({
     first_name: '',
     last_name: '',
@@ -17,7 +16,6 @@ const SettingsPage = () => {
     department: '',
   });
 
-  // Notification Settings
   const [notifications, setNotifications] = useState({
     email_notifications: true,
     push_notifications: true,
@@ -26,14 +24,12 @@ const SettingsPage = () => {
     weekly_summary: false,
   });
 
-  // Privacy Settings
   const [privacy, setPrivacy] = useState({
     profile_visible: true,
     show_email: false,
     show_phone: false,
   });
 
-  // Password Change
   const [passwordData, setPasswordData] = useState({
     current_password: '',
     new_password: '',
@@ -57,7 +53,6 @@ const SettingsPage = () => {
     setLoading(true);
     setSuccess('');
     try {
-      // Call your API here
       // await api.userAPI.updateProfile(profile);
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
@@ -76,7 +71,6 @@ const SettingsPage = () => {
     }
     setLoading(true);
     try {
-      // Call your API here
       // await api.userAPI.changePassword(passwordData);
       setSuccess('Password changed successfully!');
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
@@ -91,7 +85,6 @@ const SettingsPage = () => {
   const handleNotificationUpdate = async () => {
     setLoading(true);
     try {
-      // Call your API here
       // await api.userAPI.updateNotifications(notifications);
       setSuccess('Notification preferences saved!');
       setTimeout(() => setSuccess(''), 3000);
@@ -105,7 +98,6 @@ const SettingsPage = () => {
   const handlePrivacyUpdate = async () => {
     setLoading(true);
     try {
-      // Call your API here
       // await api.userAPI.updatePrivacy(privacy);
       setSuccess('Privacy settings saved!');
       setTimeout(() => setSuccess(''), 3000);
@@ -117,10 +109,10 @@ const SettingsPage = () => {
   };
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: '👤' },
-    { id: 'password', label: 'Password', icon: '🔒' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔' },
-    { id: 'privacy', label: 'Privacy', icon: '🛡️' },
+    { id: 'profile',       label: 'Profile',       icon: '👤' },
+    { id: 'password',      label: 'Password',       icon: '🔒' },
+    { id: 'notifications', label: 'Notifications',  icon: '🔔' },
+    { id: 'privacy',       label: 'Privacy',        icon: '🛡️' },
   ];
 
   return (
@@ -131,13 +123,12 @@ const SettingsPage = () => {
       </div>
 
       {success && (
-        <div className="success-message">
-          {success}
-        </div>
+        <div className="success-message">{success}</div>
       )}
 
       <div className="settings-container">
-        {/* Sidebar Tabs */}
+
+        {/* ── Tab Sidebar ── */}
         <div className="settings-sidebar">
           {tabs.map((tab) => (
             <button
@@ -145,38 +136,40 @@ const SettingsPage = () => {
               className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
-              <span className="tab-icon">{tab.icon}</span>
+              <span className="tab-icon-wrap">{tab.icon}</span>
               {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Main Content */}
+        {/* ── Content Panel ── */}
         <div className="settings-content">
-          {/* Profile Tab */}
+
+          {/* Profile */}
           {activeTab === 'profile' && (
             <form onSubmit={handleProfileUpdate} className="settings-form">
               <h2>Profile Information</h2>
-              <p className="form-description">Update your personal information</p>
+              <p className="form-description">Update your personal details below</p>
 
-              <div className="form-group">
-                <label>First Name</label>
-                <input
-                  type="text"
-                  value={profile.first_name}
-                  onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
-                  placeholder="Enter your first name"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Last Name</label>
-                <input
-                  type="text"
-                  value={profile.last_name}
-                  onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
-                  placeholder="Enter your last name"
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label>First Name</label>
+                  <input
+                    type="text"
+                    value={profile.first_name}
+                    onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                    placeholder="First name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Last Name</label>
+                  <input
+                    type="text"
+                    value={profile.last_name}
+                    onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                    placeholder="Last name"
+                  />
+                </div>
               </div>
 
               <div className="form-group">
@@ -185,7 +178,7 @@ const SettingsPage = () => {
                   type="email"
                   value={profile.email}
                   onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                  placeholder="Enter your email"
+                  placeholder="you@example.com"
                 />
               </div>
 
@@ -195,7 +188,7 @@ const SettingsPage = () => {
                   type="tel"
                   value={profile.phone}
                   onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  placeholder="Enter your phone number"
+                  placeholder="+256 700 000 000"
                 />
               </div>
 
@@ -205,21 +198,21 @@ const SettingsPage = () => {
                   type="text"
                   value={profile.department}
                   onChange={(e) => setProfile({ ...profile, department: e.target.value })}
-                  placeholder="Enter your department"
+                  placeholder="e.g. Computer Science"
                 />
               </div>
 
               <button type="submit" className="btn-save" disabled={loading}>
-                {loading ? 'Saving...' : 'Save Changes'}
+                {loading ? 'Saving…' : 'Save Changes'}
               </button>
             </form>
           )}
 
-          {/* Password Tab */}
+          {/* Password */}
           {activeTab === 'password' && (
             <form onSubmit={handlePasswordUpdate} className="settings-form">
               <h2>Change Password</h2>
-              <p className="form-description">Update your password to keep your account secure</p>
+              <p className="form-description">Keep your account secure with a strong password</p>
 
               <div className="form-group">
                 <label>Current Password</label>
@@ -227,7 +220,7 @@ const SettingsPage = () => {
                   type="password"
                   value={passwordData.current_password}
                   onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
-                  placeholder="Enter your current password"
+                  placeholder="Enter current password"
                   required
                 />
               </div>
@@ -255,158 +248,83 @@ const SettingsPage = () => {
               </div>
 
               <button type="submit" className="btn-save" disabled={loading}>
-                {loading ? 'Updating...' : 'Update Password'}
+                {loading ? 'Updating…' : 'Update Password'}
               </button>
             </form>
           )}
 
-          {/* Notifications Tab */}
+          {/* Notifications */}
           {activeTab === 'notifications' && (
             <div className="settings-section">
               <h2>Notification Preferences</h2>
-              <p className="form-description">Choose how you want to be notified</p>
+              <p className="form-description">Choose how and when you want to be notified</p>
 
               <div className="toggle-group">
-                <div className="toggle-item">
-                  <div className="toggle-info">
-                    <span className="toggle-label">Email Notifications</span>
-                    <span className="toggle-description">Receive updates via email</span>
+                {[
+                  { key: 'email_notifications', label: 'Email Notifications', desc: 'Receive updates via email' },
+                  { key: 'push_notifications',  label: 'Push Notifications',  desc: 'Receive browser notifications' },
+                  { key: 'log_reminders',       label: 'Log Reminders',       desc: 'Get reminded to submit weekly logs' },
+                  { key: 'review_alerts',       label: 'Review Alerts',       desc: 'Get notified when logs are reviewed' },
+                  { key: 'weekly_summary',      label: 'Weekly Summary',      desc: 'Receive a weekly progress summary' },
+                ].map(({ key, label, desc }) => (
+                  <div className="toggle-item" key={key}>
+                    <div className="toggle-info">
+                      <span className="toggle-label">{label}</span>
+                      <span className="toggle-description">{desc}</span>
+                    </div>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={notifications[key]}
+                        onChange={(e) => setNotifications({ ...notifications, [key]: e.target.checked })}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
                   </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={notifications.email_notifications}
-                      onChange={(e) => setNotifications({ ...notifications, email_notifications: e.target.checked })}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div className="toggle-item">
-                  <div className="toggle-info">
-                    <span className="toggle-label">Push Notifications</span>
-                    <span className="toggle-description">Receive browser notifications</span>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={notifications.push_notifications}
-                      onChange={(e) => setNotifications({ ...notifications, push_notifications: e.target.checked })}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div className="toggle-item">
-                  <div className="toggle-info">
-                    <span className="toggle-label">Log Reminders</span>
-                    <span className="toggle-description">Get reminded to submit weekly logs</span>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={notifications.log_reminders}
-                      onChange={(e) => setNotifications({ ...notifications, log_reminders: e.target.checked })}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div className="toggle-item">
-                  <div className="toggle-info">
-                    <span className="toggle-label">Review Alerts</span>
-                    <span className="toggle-description">Get notified when logs are reviewed</span>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={notifications.review_alerts}
-                      onChange={(e) => setNotifications({ ...notifications, review_alerts: e.target.checked })}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div className="toggle-item">
-                  <div className="toggle-info">
-                    <span className="toggle-label">Weekly Summary</span>
-                    <span className="toggle-description">Receive weekly progress summary</span>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={notifications.weekly_summary}
-                      onChange={(e) => setNotifications({ ...notifications, weekly_summary: e.target.checked })}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
+                ))}
               </div>
 
               <button onClick={handleNotificationUpdate} className="btn-save" disabled={loading}>
-                {loading ? 'Saving...' : 'Save Preferences'}
+                {loading ? 'Saving…' : 'Save Preferences'}
               </button>
             </div>
           )}
 
-          {/* Privacy Tab */}
+          {/* Privacy */}
           {activeTab === 'privacy' && (
             <div className="settings-section">
               <h2>Privacy Settings</h2>
               <p className="form-description">Control who can see your information</p>
 
               <div className="toggle-group">
-                <div className="toggle-item">
-                  <div className="toggle-info">
-                    <span className="toggle-label">Profile Visibility</span>
-                    <span className="toggle-description">Allow others to view your profile</span>
+                {[
+                  { key: 'profile_visible', label: 'Profile Visibility', desc: 'Allow others to view your profile' },
+                  { key: 'show_email',      label: 'Show Email',         desc: 'Display your email on your profile' },
+                  { key: 'show_phone',      label: 'Show Phone',         desc: 'Display your phone number on your profile' },
+                ].map(({ key, label, desc }) => (
+                  <div className="toggle-item" key={key}>
+                    <div className="toggle-info">
+                      <span className="toggle-label">{label}</span>
+                      <span className="toggle-description">{desc}</span>
+                    </div>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={privacy[key]}
+                        onChange={(e) => setPrivacy({ ...privacy, [key]: e.target.checked })}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
                   </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={privacy.profile_visible}
-                      onChange={(e) => setPrivacy({ ...privacy, profile_visible: e.target.checked })}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div className="toggle-item">
-                  <div className="toggle-info">
-                    <span className="toggle-label">Show Email</span>
-                    <span className="toggle-description">Display email on your profile</span>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={privacy.show_email}
-                      onChange={(e) => setPrivacy({ ...privacy, show_email: e.target.checked })}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div className="toggle-item">
-                  <div className="toggle-info">
-                    <span className="toggle-label">Show Phone</span>
-                    <span className="toggle-description">Display phone number on your profile</span>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={privacy.show_phone}
-                      onChange={(e) => setPrivacy({ ...privacy, show_phone: e.target.checked })}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
+                ))}
               </div>
 
               <button onClick={handlePrivacyUpdate} className="btn-save" disabled={loading}>
-                {loading ? 'Saving...' : 'Save Privacy Settings'}
+                {loading ? 'Saving…' : 'Save Privacy Settings'}
               </button>
             </div>
           )}
+
         </div>
       </div>
     </div>
