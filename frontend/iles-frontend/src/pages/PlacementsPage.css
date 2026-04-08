@@ -372,3 +372,31 @@
   .placements-full-page { padding: 20px 16px; }
   .pl-form-row { grid-template-columns: 1fr; }
 }
+
+/* Primary Button Utility */
+.lp-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f97316;
+  color: #fff;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lp-btn-primary:hover {
+  background: #ea6c0a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.3);
+}
+
+.lp-btn-primary:active {
+  transform: translateY(0);
+}
