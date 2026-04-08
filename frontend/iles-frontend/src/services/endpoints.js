@@ -63,6 +63,29 @@ export const rolesAPI = {
   },
 };
 
+export const departmentsAPI = {
+  getDepartments: async () => {
+    const response = await api.get('/accounts/departments/');
+    return response.data;
+  },
+  getDepartment: async (id) => {
+    const response = await api.get(`/accounts/departments/${id}/`);
+    return response.data;
+  },
+  createDepartment: async (data) => {
+    const response = await api.post('/accounts/departments/', data);
+    return response.data;
+  },
+  updateDepartment: async (id, data) => {
+    const response = await api.patch(`/accounts/departments/${id}/`, data);
+    return response.data;
+  },
+  deleteDepartment: async (id) => {
+    const response = await api.delete(`/accounts/departments/${id}/`);
+    return response.data;
+  },
+};
+
 // Organizations
 export const organizationsAPI = {
   getOrganizations: async () => {
