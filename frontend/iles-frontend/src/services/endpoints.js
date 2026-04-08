@@ -73,6 +73,18 @@ export const organizationsAPI = {
     const response = await api.get(`/organizations/organizations/${id}/`);
     return response.data;
   },
+  createOrganization: async (data) => {
+    const response = await api.post('/organizations/organizations/', data);
+    return response.data;
+  },
+  updateOrganization: async (id, data) => {
+    const response = await api.patch(`/organizations/organizations/${id}/`, data);
+    return response.data;
+  },
+  deleteOrganization: async (id) => {
+    const response = await api.delete(`/organizations/organizations/${id}/`);
+    return response.data;
+  },
 };
 
 // Placements
@@ -199,6 +211,18 @@ export const notificationsAPI = {
   },
   getDeadlines: async () => {
     const response = await api.get('/notifications/deadlines/');
+    return response.data;
+  },
+  createDeadline: async (data) => {
+    const response = await api.post('/notifications/deadlines/', data);
+    return response.data;
+  },
+  updateDeadline: async (id, data) => {
+    const response = await api.patch(`/notifications/deadlines/${id}/`, data);
+    return response.data;
+  },
+  deleteDeadline: async (id) => {
+    const response = await api.delete(`/notifications/deadlines/${id}/`);
     return response.data;
   },
 };

@@ -25,7 +25,7 @@ function LandingPage() {
           companies: response.organizations_count ?? 0,
           departments: response.departments_count ?? 0,
         });
-      } catch (error) {
+      } catch {
         if (!mounted) {
           return;
         }

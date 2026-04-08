@@ -27,8 +27,10 @@ import EvaluationsPage from '../pages/EvaluationsPage';
 import ReportsPage from '../pages/ReportsPage';
 import ActivitiesPage from '../pages/ActivitiesPage';
 import AdminUsersPage from '../pages/AdminUsersPage';
+import OrganizationsPage from '../pages/OrganizationsPage';
 import SystemStatusPage from '../pages/SystemStatusPage';
 import NotificationsPage from '../pages/NotificationsPage';
+import DeadlinesPage from '../pages/DeadlinesPage';
 import SettingsPage from '../pages/SettingsPage';
 import HelpPage from '../pages/HelpPage';
 import PrivacyPage from '../pages/PrivacyPage';
@@ -95,9 +97,19 @@ function Router() {
             <AdminUsersPage />
           </ProtectedRoute>
         } />
+        <Route path="organizations" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <OrganizationsPage />
+          </ProtectedRoute>
+        } />
         <Route path="system-status" element={
           <ProtectedRoute allowedRoles={['admin']}>
             <SystemStatusPage />
+          </ProtectedRoute>
+        } />
+        <Route path="deadlines" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <DeadlinesPage />
           </ProtectedRoute>
         } />
         <Route path="reports/*" element={<ReportsPage />} />

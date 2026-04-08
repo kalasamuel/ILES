@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI, usersAPI } from '../services/endpoints';
 
@@ -5,7 +6,7 @@ const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('accessToken'));
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -18,8 +19,6 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('refreshToken');
         })
         .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
     }
   }, []);
 

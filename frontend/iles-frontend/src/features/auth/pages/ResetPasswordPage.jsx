@@ -36,7 +36,7 @@ function ResetPasswordPage() {
       console.log('Reset password with token:', token, 'new password:', formData.password);
       setMessage('Password reset successfully');
       setTimeout(() => navigate('/login'), 2000);
-    } catch (err) {
+    } catch {
       setMessage('Failed to reset password');
     } finally {
       setIsLoading(false);

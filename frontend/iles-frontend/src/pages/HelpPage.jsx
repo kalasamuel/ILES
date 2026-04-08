@@ -121,7 +121,7 @@ function HelpPage() {
         {filteredFAQ.length === 0 ? (
           <p style={{ color: '#9ca3af', fontSize: '14px', padding: '16px 0' }}>No matching questions found.</p>
         ) : (
-          filteredFAQ.map((faq, i) => {
+          filteredFAQ.map((faq) => {
             const realIdx = FAQ_DATA.indexOf(faq);
             const isOpen  = openIdx === realIdx;
             return (

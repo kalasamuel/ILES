@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/AuthContext';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');

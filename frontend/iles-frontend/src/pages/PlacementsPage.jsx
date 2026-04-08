@@ -59,7 +59,7 @@ function PlacementList() {
           <h1>Placements</h1>
           <p>Manage internship placements and their approval status</p>
         </div>
-        <Link to="create" className="lp-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: '#f97316', color: '#fff', borderRadius: 8, fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, textDecoration: 'none', boxShadow: '0 2px 8px rgba(249,115,22,0.28)', transition: 'all 0.2s' }}>
+        <Link to="create" className="lp-btn-primary">
           + New Placement
         </Link>
       </div>
@@ -208,7 +208,7 @@ function PlacementCreate() {
             <label htmlFor="description">Description</label>
             <textarea id="description" name="description" value={form.description} onChange={handleChange} placeholder="Brief description of the role…" rows={4} />
           </div>
-          {error && <p style={{ color: '#ef4444', fontSize: '13px' }}>{error}</p>}
+          {error && <p className="pl-error-message">{error}</p>}
           <button type="submit" className="pl-submit-btn" disabled={submitting}>
             {submitting ? 'Creating…' : 'Create Placement'}
           </button>
