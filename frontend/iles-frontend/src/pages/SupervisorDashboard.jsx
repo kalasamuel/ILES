@@ -1,9 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
 import { dashboardsAPI, reviewsAPI, placementsAPI, logbooksAPI, evaluationsAPI } from '../services/endpoints';
 import './SupervisorDashboard.css';
+
+function toDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function sortByDateDesc(leftValue, rightValue) {
+  return (toDate(rightValue)?.getTime() || 0) - (toDate(leftValue)?.getTime() || 0);
+}
+
+function formatDate(value) {
+  const date = toDate(value);
+  return date ? date.toLocaleDateString() : 'Date unavailable';
+}
+
+function getStudentLabel(placement) {
+  const first = placement?.student_details?.user_details?.first_name || '';
+  const last = placement?.student_details?.user_details?.last_name || '';
+  const fullName = `${first} ${last}`.trim();
+  if (fullName) return fullName;
+  return placement?.student_details?.registration_number || 'Unknown student';
+}
+
+function getPlacementIdFromLog(log) {
+  return log?.placement?.placement_id || log?.placement || null;
+}
+
+function getPlacementDate(placement) {
+  return placement?.created_at || placement?.start_date || placement?.end_date || null;
+}
+
+function getReviewDate(item) {
+  return item?.submitted_at || item?.reviewed_at || item?.evaluation_date || null;
+}
+
+function getEvaluationPercentage(evaluation) {
+  const scores = Array.isArray(evaluation?.scores) ? evaluation.scores : [];
+  let scoreSum = 0;
+  let maxSum = 0;
+
+  scores.forEach((entry) => {
+    const score = Number(entry?.score) || 0;
+    const maxScore = Number(entry?.criteria_details?.max_score) || 100;
+    scoreSum += score;
+    maxSum += maxScore;
+  });
+
+  if (maxSum > 0) {
+    return (scoreSum / maxSum) * 100;
+  }
+
+  return Number(evaluation?.total_score) || 0;
+}
 
 function SupervisorDashboard() {
   const { user } = useAuth();
@@ -13,12 +67,13 @@ function SupervisorDashboard() {
   const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [bootstrapAttempted, setBootstrapAttempted] = useState(false);
+  const bootstrapAttemptedRef = useRef(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setError(null);
+
         const [reviewsRes, placementsRes, logsRes, evaluationsRes] = await Promise.all([
           reviewsAPI.getReviews(),
           placementsAPI.getPlacements(),
@@ -35,12 +90,12 @@ function SupervisorDashboard() {
         try {
           context = await dashboardsAPI.getMyDataContext();
         } catch (ctxError) {
-          console.warn('Failed to load backend data context:', ctxError);
+          console.warn('Failed to load dashboard context:', ctxError);
         }
 
         const roleName = String(context?.role_name || '').toLowerCase();
         const shouldBootstrap =
-          !bootstrapAttempted &&
+          !bootstrapAttemptedRef.current &&
           context &&
           roleName.includes('supervisor') &&
           context.has_supervisor_profile &&
@@ -51,19 +106,19 @@ function SupervisorDashboard() {
         if (shouldBootstrap) {
           try {
             await dashboardsAPI.bootstrapMySupervisorData();
-            setBootstrapAttempted(true);
+            bootstrapAttemptedRef.current = true;
 
-            const [reviewsRefetch, placementsRefetch, logsRefetch] = await Promise.all([
+            const [reviewsRefetch, placementsRefetch, logsRefetch, evaluationsRefetch] = await Promise.all([
               reviewsAPI.getReviews(),
               placementsAPI.getPlacements(),
               logbooksAPI.getLogs(),
+              evaluationsAPI.getEvaluations(),
             ]);
 
             reviewsData = reviewsRefetch?.results || reviewsRefetch || [];
             placementsData = placementsRefetch?.results || placementsRefetch || [];
             logsData = logsRefetch?.results || logsRefetch || [];
-            const evalRefetch = await evaluationsAPI.getEvaluations();
-            evaluationsData = evalRefetch?.results || evalRefetch || [];
+            evaluationsData = evaluationsRefetch?.results || evaluationsRefetch || [];
           } catch (bootstrapError) {
             console.warn('Supervisor starter data bootstrap failed:', bootstrapError);
           }
@@ -73,8 +128,8 @@ function SupervisorDashboard() {
         setPlacements(placementsData);
         setLogs(logsData);
         setEvaluations(evaluationsData);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+      } catch (fetchError) {
+        console.error('Error fetching dashboard data:', fetchError);
         setError('Failed to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
@@ -84,166 +139,119 @@ function SupervisorDashboard() {
     fetchData();
   }, []);
 
-  const toNumber = (value) => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
+  const placementsById = useMemo(
+    () => new Map(placements.map((placement) => [placement?.placement_id, placement])),
+    [placements]
+  );
 
-  const formatDate = (value) => {
-    if (!value) {
-      return 'Date unavailable';
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return 'Date unavailable';
-    }
-
-    return date.toLocaleDateString();
-  };
-
-  const getStudentLabel = (placement) => {
-    const first = placement?.student_details?.user_details?.first_name || '';
-    const last = placement?.student_details?.user_details?.last_name || '';
-    const fullName = `${first} ${last}`.trim();
-    if (fullName) {
-      return fullName;
-    }
-    return placement?.student_details?.registration_number || 'Unknown student';
-  };
-
-  const getPlacementSortDate = (placement) => {
-    const value = placement?.created_at || placement?.start_date || placement?.end_date;
-    if (!value) {
-      return 0;
-    }
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
-  };
-
-  const getReviewSortDate = (item) => {
-    const value = item?.submitted_at || item?.reviewed_at || item?.evaluation_date;
-    if (!value) {
-      return 0;
-    }
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
-  };
-
-  const assignedStudents = [...placements]
-    .sort((a, b) => getPlacementSortDate(b) - getPlacementSortDate(a))
-    .slice(0, 5);
-
-  const pendingLogs = logs
-    .filter((log) => log?.status === 'submitted')
-    .sort((a, b) => getReviewSortDate(b) - getReviewSortDate(a));
-
-  const recentPendingReviews = pendingLogs.slice(0, 5);
-
-  const completedEvaluations = evaluations.filter((evaluation) => {
-    return evaluation && (evaluation.total_score !== null || evaluation.grade || evaluation.evaluation_date);
-  });
-
-  const criteriaMap = new Map();
-  const evaluationPercentages = [];
-
-  completedEvaluations.forEach((evaluation) => {
-    const scores = Array.isArray(evaluation?.scores) ? evaluation.scores : [];
-    let evalScoreSum = 0;
-    let evalMaxSum = 0;
-
-    scores.forEach((entry, index) => {
-      const criteriaId = entry?.criteria_details?.criteria_id || entry?.criteria || `${evaluation.evaluation_id || 'ev'}-${index}`;
-      const criteriaName = entry?.criteria_details?.name || `Criteria ${index + 1}`;
-      const score = toNumber(entry?.score);
-      const maxScore = toNumber(entry?.criteria_details?.max_score);
-
-      const baselineMax = maxScore > 0 ? maxScore : 100;
-      const percentage = Math.max(0, Math.min(100, (score / baselineMax) * 100));
-
-      evalScoreSum += score;
-      evalMaxSum += baselineMax;
-
-      if (!criteriaMap.has(criteriaId)) {
-        criteriaMap.set(criteriaId, {
-          criteria: criteriaName,
-          percentageTotal: 0,
-          count: 0,
-        });
+  const activeStudents = useMemo(() => {
+    const uniqueStudents = new Map();
+    placements.forEach((placement) => {
+      const studentId = placement?.student_details?.student_id || placement?.student || placement?.student_details?.user_details?.user_id;
+      if (studentId && !uniqueStudents.has(String(studentId))) {
+        uniqueStudents.set(String(studentId), placement);
       }
-
-      const metric = criteriaMap.get(criteriaId);
-      metric.percentageTotal += percentage;
-      metric.count += 1;
     });
 
-    if (evalMaxSum > 0) {
-      evaluationPercentages.push((evalScoreSum / evalMaxSum) * 100);
-    } else if (evaluation?.total_score !== null && evaluation?.total_score !== undefined) {
-      evaluationPercentages.push(toNumber(evaluation.total_score));
-    }
-  });
+    return Array.from(uniqueStudents.values())
+      .sort((left, right) => sortByDateDesc(getPlacementDate(left), getPlacementDate(right)));
+  }, [placements]);
 
-  const criteriaChartData = Array.from(criteriaMap.values())
-    .map((item) => ({
-      criteria: item.criteria,
-      avgPercentage: Number((item.percentageTotal / Math.max(item.count, 1)).toFixed(1)),
-    }))
-    .sort((a, b) => b.avgPercentage - a.avgPercentage)
-    .slice(0, 8);
+  const assignedStudents = activeStudents.slice(0, 5);
 
-  const averageEvaluationPercentage = evaluationPercentages.length
-    ? (evaluationPercentages.reduce((sum, value) => sum + value, 0) / evaluationPercentages.length)
-    : 0;
+  const pendingReviews = useMemo(() => {
+    return [...logs]
+      .filter((log) => String(log?.status || '').toLowerCase() === 'submitted')
+      .sort((left, right) => sortByDateDesc(getReviewDate(left), getReviewDate(right)));
+  }, [logs]);
 
-  const evaluatedStudents = new Set(completedEvaluations.map((item) => item?.placement).filter(Boolean)).size;
+  const recentPendingReviews = pendingReviews.slice(0, 5);
 
-  const pendingReviewsCount = pendingLogs.length;
+  const completedEvaluations = useMemo(() => {
+    return [...evaluations].filter((evaluation) => {
+      return evaluation && (evaluation.total_score !== null || evaluation.grade || evaluation.evaluation_date || Array.isArray(evaluation.scores));
+    });
+  }, [evaluations]);
 
-  const placementsById = new Map(placements.map((placement) => [placement?.placement_id, placement]));
+  const criteriaChartData = useMemo(() => {
+    const map = new Map();
 
-  const recentActivity = [
-    ...recentPendingReviews.map((log) => ({
-      id: `pending-${log.log_id || log.id}`,
-      title: `Pending review: Week ${log.week_number || 'N/A'}`,
-      subtitle: getStudentLabel(log?.placement_details || placementsById.get(log?.placement)),
-      date: log.submitted_at,
-      status: 'pending',
-      link: '/app/reviews',
-    })),
-    ...reviews.map((review) => ({
-      id: `review-${review.review_id || review.id}`,
-      title: `Review ${String(review.review_id || review.id || '').slice(0, 8)} updated`,
-      subtitle: `Status: ${(review.status || 'unknown').replace('_', ' ')}`,
-      date: review.reviewed_at,
-      status: review.status || 'approved',
-      link: '/app/reviews',
-    })),
-    ...completedEvaluations.map((evaluation) => {
-      const placement = placementsById.get(evaluation?.placement);
-      return {
-        id: `evaluation-${evaluation.evaluation_id || evaluation.id}`,
-        title: 'Evaluation completed',
-        subtitle: getStudentLabel(placement),
-        date: evaluation.evaluation_date,
-        status: 'approved',
-        link: '/app/reports',
-      };
-    }),
-  ]
-    .sort((a, b) => getReviewSortDate(b) - getReviewSortDate(a))
-    .slice(0, 5);
+    completedEvaluations.forEach((evaluation) => {
+      (Array.isArray(evaluation?.scores) ? evaluation.scores : []).forEach((entry, index) => {
+        const criteriaId = entry?.criteria_details?.criteria_id || entry?.criteria || `${evaluation.evaluation_id || 'evaluation'}-${index}`;
+        const criteriaName = entry?.criteria_details?.name || `Criteria ${index + 1}`;
+        const score = Number(entry?.score) || 0;
+        const maxScore = Number(entry?.criteria_details?.max_score) || 100;
+        const percentage = maxScore > 0 ? Math.max(0, Math.min(100, (score / maxScore) * 100)) : 0;
 
-  const downloadFullReport = () => {
-    const headers = [
-      'Evaluation ID',
-      'Student',
-      'Placement ID',
-      'Evaluation Date',
-      'Total Score',
-      'Grade',
+        if (!map.has(criteriaId)) {
+          map.set(criteriaId, {
+            criteria: criteriaName,
+            totalPercentage: 0,
+            count: 0,
+          });
+        }
+
+        const metric = map.get(criteriaId);
+        metric.totalPercentage += percentage;
+        metric.count += 1;
+      });
+    });
+
+    return Array.from(map.values())
+      .map((item) => ({
+        criteria: item.criteria,
+        avgPercentage: Number((item.totalPercentage / Math.max(item.count, 1)).toFixed(1)),
+      }))
+      .sort((left, right) => right.avgPercentage - left.avgPercentage)
+      .slice(0, 8);
+  }, [completedEvaluations]);
+
+  const averageEvaluationPercentage = useMemo(() => {
+    const percentages = completedEvaluations.map((evaluation) => getEvaluationPercentage(evaluation));
+    if (percentages.length === 0) return 0;
+    return percentages.reduce((sum, value) => sum + value, 0) / percentages.length;
+  }, [completedEvaluations]);
+
+  const evaluatedStudents = useMemo(() => {
+    return new Set(completedEvaluations.map((evaluation) => evaluation?.placement).filter(Boolean)).size;
+  }, [completedEvaluations]);
+
+  const recentActivity = useMemo(() => {
+    const items = [
+      ...recentPendingReviews.map((log) => ({
+        id: `pending-${log.log_id || log.id}`,
+        title: `Pending review: Week ${log.week_number || 'N/A'}`,
+        subtitle: getStudentLabel(placementsById.get(getPlacementIdFromLog(log))),
+        date: log.submitted_at,
+        status: 'pending',
+        link: '/app/reviews',
+      })),
+      ...reviews.map((review) => ({
+        id: `review-${review.review_id || review.id}`,
+        title: `Review ${String(review.review_id || review.id || '').slice(0, 8)} updated`,
+        subtitle: `Status: ${String(review.status || 'unknown').replace(/_/g, ' ')}`,
+        date: review.reviewed_at,
+        status: review.status || 'approved',
+        link: '/app/reviews',
+      })),
+      ...completedEvaluations.map((evaluation) => {
+        const placement = placementsById.get(evaluation?.placement);
+        return {
+          id: `evaluation-${evaluation.evaluation_id || evaluation.id}`,
+          title: 'Evaluation completed',
+          subtitle: getStudentLabel(placement),
+          date: evaluation.evaluation_date,
+          status: 'approved',
+          link: '/app/reports',
+        };
+      }),
     ];
 
+    return items.sort((left, right) => sortByDateDesc(left.date, right.date)).slice(0, 5);
+  }, [recentPendingReviews, reviews, completedEvaluations, placementsById]);
+
+  const downloadFullReport = () => {
     const escapeCsv = (value) => {
       const text = String(value ?? '');
       if (text.includes(',') || text.includes('"') || text.includes('\n')) {
@@ -252,7 +260,8 @@ function SupervisorDashboard() {
       return text;
     };
 
-    const rows = completedEvaluations.map((evaluation) => {
+    const summaryHeaders = ['Evaluation ID', 'Student', 'Placement ID', 'Evaluation Date', 'Total Score', 'Grade'];
+    const summaryRows = completedEvaluations.map((evaluation) => {
       const placement = placementsById.get(evaluation?.placement);
       return [
         evaluation?.evaluation_id || evaluation?.id || '',
@@ -264,7 +273,19 @@ function SupervisorDashboard() {
       ].map(escapeCsv).join(',');
     });
 
-    const csvContent = [headers.join(','), ...rows].join('\n');
+    const criteriaHeaders = ['Criteria', 'Average Percentage'];
+    const criteriaRows = criteriaChartData.map((item) => [item.criteria, item.avgPercentage].map(escapeCsv).join(','));
+
+    const csvContent = [
+      'Evaluation Summary',
+      summaryHeaders.join(','),
+      ...summaryRows,
+      '',
+      'Criteria Averages',
+      criteriaHeaders.join(','),
+      ...criteriaRows,
+    ].join('\n');
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -296,14 +317,14 @@ function SupervisorDashboard() {
     <div className="supervisor-dashboard">
       <header className="dashboard-header">
         <h1>Supervisor Dashboard</h1>
-        <p>Welcome back! {user?.first_name} {user?.last_name}</p>
+        <p>Welcome back, {user?.first_name} {user?.last_name}</p>
       </header>
 
       <div className="dashboard-grid">
         <div className="dashboard-card stat-card">
           <h3>Assigned Students</h3>
           <Link to="/app/placements" className="stat-link" aria-label="View all assigned students">
-            <div className="stat-number">{placements.length}</div>
+            <div className="stat-number">{activeStudents.length}</div>
           </Link>
           <p>Students currently assigned to you</p>
 
@@ -332,13 +353,13 @@ function SupervisorDashboard() {
         <div className="dashboard-card stat-card">
           <h3>Pending Reviews</h3>
           <Link to="/app/reviews" className="stat-link" aria-label="Go to pending reviews">
-            <div className="stat-number">{pendingReviewsCount}</div>
+            <div className="stat-number">{pendingReviews.length}</div>
           </Link>
           <p>Submitted logs waiting for your review</p>
 
           <ul className="activity-list compact-list">
             {recentPendingReviews.length > 0 ? recentPendingReviews.map((log) => {
-              const placement = placementsById.get(log?.placement);
+              const placement = placementsById.get(getPlacementIdFromLog(log));
               return (
                 <li key={log.log_id || log.id}>
                   <div className="activity-details">
