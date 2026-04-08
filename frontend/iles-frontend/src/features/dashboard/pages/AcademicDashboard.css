@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg-base:            #f8f9fb;
+  --bg-surface:         #ffffff;
+  --bg-elevated:        #fff7ed;
+  --accent-orange:      #f97316;
+  --accent-orange-dim:  rgba(249,115,22,0.10);
+  --accent-orange-dark: #ea6c0a;
+  --text-primary:       #111827;
+  --text-secondary:     #6b7280;
+  --text-muted:         #9ca3af;
+  --border:             #e5e7eb;
+  --success:            #10b981;
+  --warning:            #f59e0b;
+  --danger:             #ef4444;
+  --info:               #06b6d4;
+  --radius-sm:          8px;
+  --radius-md:          12px;
+  --radius-lg:          16px;
+  --shadow-card:        0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-glow:        0 4px 12px rgba(0,0,0,0.08);
+  --font-display:       'DM Sans', sans-serif;
+}
+
+.academic-dashboard {
+  min-height: 100vh;
+  background: var(--bg-base);
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  padding: 28px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  animation: ac-fadein 0.45s ease;
+}
+
+@keyframes ac-fadein {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ac-slideup {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.academic-dashboard .dashboard-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.academic-dashboard .dashboard-header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+  line-height: 1;
+}
+
+.academic-dashboard .dashboard-header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Stat cards */
+.academic-dashboard .metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.academic-dashboard .metric-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s, background 0.25s;
+  position: relative;
+  overflow: hidden;
+  animation: ac-slideup 0.4s ease both;
+  cursor: default;
+}
+
+.academic-dashboard .metric-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent-orange);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s ease;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.academic-dashboard .metric-card:hover {
+  background: var(--bg-elevated);
+  border-color: rgba(249,115,22,0.35);
+  box-shadow: 0 4px 16px rgba(249,115,22,0.12);
+  transform: translateY(-3px);
+}
+
+.academic-dashboard .metric-card:hover::after { transform: scaleX(1); }
+
+.academic-dashboard .metric-card h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.academic-dashboard .metric-value {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.academic-dashboard .metric-card:hover .metric-value { color: var(--accent-orange); }
+
+/* Dashboard grid */
+.academic-dashboard .dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.academic-dashboard .dashboard-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-card);
+  animation: ac-slideup 0.4s ease both;
+  transition: box-shadow 0.2s, transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.academic-dashboard .dashboard-card:hover {
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+
+.academic-dashboard .dashboard-card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.academic-dashboard .chart-card { min-height: 300px; }
+
+/* Evaluation list items */
+.academic-dashboard .dashboard-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.academic-dashboard .dashboard-card ul li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s;
+}
+
+.academic-dashboard .dashboard-card ul li:hover {
+  border-color: #d1d5db;
+}
+
+/* Quick action buttons */
+.academic-dashboard .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  margin-top: 6px;
+  width: fit-content;
+}
+
+.academic-dashboard .btn-primary {
+  background: var(--accent-orange);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(249,115,22,0.25);
+}
+
+.academic-dashboard .btn-primary:hover {
+  background: var(--accent-orange-dark);
+  box-shadow: 0 2px 10px rgba(249,115,22,0.35);
+  transform: translateY(-1px);
+}
+
+.academic-dashboard .btn-secondary {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.academic-dashboard .btn-secondary:hover {
+  background: #f1f3f5;
+  border-color: #d1d5db;
+}
+
+/* Status badges */
+.academic-dashboard .status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.academic-dashboard .status.completed { background: #d1fae5; color: #065f46; }
+.academic-dashboard .status.pending   { background: #e0f2fe; color: #075985; }
+.academic-dashboard .status.overdue   { background: #fee2e2; color: #991b1b; }
+
+/* Responsive */
+@media (max-width: 960px) {
+  .academic-dashboard .dashboard-grid { grid-template-columns: 1fr; }
+  .academic-dashboard .metrics-grid   { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 640px) {
+  .academic-dashboard { padding: 20px 16px; }
+  .academic-dashboard .metrics-grid { grid-template-columns: 1fr; }
+}
