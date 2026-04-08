@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useParams, useNavigate, Link } from 'react-router-dom';
-import { logbooksAPI } from '../services/endpoints';
+import { logbooksAPI, reviewsAPI } from '../services/endpoints';
 import WeeklyLogForm from './WeeklyLogForm';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './LogsPage.css';
@@ -144,18 +144,30 @@ function LogDetails() {
   const { id }      = useParams();
   const navigate    = useNavigate();
   const [log, setLog] = useState(null);
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        const data = await logbooksAPI.getLog(id);
-        setLog(data);
+        const [logData, reviewsData] = await Promise.all([
+          logbooksAPI.getLog(id),
+          reviewsAPI.getReviews(),
+        ]);
+        setLog(logData);
+        setReviews(reviewsData.results || reviewsData || []);
       } catch (err) {
         console.error('Failed to fetch log', err);
       }
     };
     if (id) fetch();
   }, [id]);
+
+  const relatedReviews = reviews
+    .filter((review) => {
+      const reviewLogId = review?.log?.log_id || review?.log?.id || review?.log;
+      return String(reviewLogId) === String(id);
+    })
+    .sort((left, right) => new Date(right.reviewed_at || 0).getTime() - new Date(left.reviewed_at || 0).getTime());
 
   if (!log) return <LoadingSpinner text="Loading log details…" fullscreen />;
 
@@ -178,6 +190,47 @@ function LogDetails() {
             <span>{value}</span>
           </div>
         ))}
+
+        <div className="lp-detail-row" style={{ alignItems: 'flex-start' }}>
+          <label>Supervisor Feedback</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', width: '100%' }}>
+            {relatedReviews.length > 0 ? (
+              relatedReviews.map((review) => (
+                <div
+                  key={review.review_id}
+                  style={{
+                    border: '1px solid #fde8d0',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    background: '#fffaf6',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                    <strong>
+                      {review.supervisor_details?.first_name || 'Supervisor'} {review.supervisor_details?.last_name || ''}
+                    </strong>
+                    <span className={`lp-status ${review.status || 'approved'}`}>
+                      {String(review.status || 'feedback').replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <p style={{ margin: '0.75rem 0 0', color: '#431407', lineHeight: 1.6 }}>
+                    {review.comments || 'No written feedback was provided.'}
+                  </p>
+                  <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', color: '#9a4f1c', fontSize: '0.875rem' }}>
+                    {review.rating !== null && review.rating !== undefined && (
+                      <span>Rating: {review.rating}/5</span>
+                    )}
+                    <span>{review.reviewed_at ? new Date(review.reviewed_at).toLocaleString() : 'Review date unavailable'}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '1rem', borderRadius: '12px', background: '#fff7ed', border: '1px dashed #fcd0a0', color: '#9a3412' }}>
+                No supervisor feedback has been added yet for this log.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
