@@ -120,7 +120,7 @@ function Navbar({ user, onMenuClick }) {
         </div>
 
         {/* User menu */}
-        <div className="user-menu" style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setProfileOpen(!profileOpen)}>
+        <div className="user-menu" onClick={() => setProfileOpen(!profileOpen)}>
           <div className="user-avatar">{initials}</div>
           <span>{user?.first_name} {user?.last_name}</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9a4f1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
