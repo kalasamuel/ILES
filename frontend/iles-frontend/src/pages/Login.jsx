@@ -25,7 +25,15 @@ const Login = () => {
       await login(formData.email, formData.password);
       navigate('/app/dashboard');
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      console.error('Login error details:', err);
+      const backendError = err.response?.data?.detail || err.response?.data?.message;
+      if (backendError) {
+        setError(backendError);
+      } else if (err.message === 'Network Error') {
+        setError('Server unreachable. Please check your internet or contact support.');
+      } else {
+        setError('Login failed. Please verify your credentials and try again.');
+      }
     } finally {
       setIsLoading(false);
     }
