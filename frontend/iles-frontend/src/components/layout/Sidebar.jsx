@@ -107,6 +107,7 @@ function getSidebarItems(role) {
     [ROLES.ADMIN]: [
       { path: '/app/dashboard',     label: 'Dashboard',       Icon: Icons.Dashboard },
       { path: '/app/users',         label: 'User Management', Icon: Icons.Users },
+      { path: '/app/departments',   label: 'Departments',     Icon: Icons.GraduationCap },
       { path: '/app/organizations', label: 'Organizations',   Icon: Icons.Briefcase },
       { path: '/app/system-status', label: 'System Status',   Icon: Icons.Settings },
       { path: '/app/deadlines',     label: 'Deadlines',       Icon: Icons.FileText },
