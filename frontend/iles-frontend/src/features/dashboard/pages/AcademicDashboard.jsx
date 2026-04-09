@@ -18,8 +18,8 @@ function AcademicDashboard() {
           placementsAPI.getPlacements(),
         ]);
 
-        setEvaluations(evaluationsRes.results);
-        setPlacements(placementsRes.results);
+        setEvaluations(evaluationsRes?.results ?? []);
+        setPlacements(placementsRes?.results ?? []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
