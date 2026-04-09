@@ -67,14 +67,14 @@ function TermsPage() {
         <h2>7. Termination</h2>
         <p>
           The institution reserves the right to suspend or terminate accounts that violate
-          these terms. You may request account deletion by contacting the administrator.
+          these terms. You may request for account deletion by contacting the administrator.
         </p>
 
         <hr className="sp-divider" />
 
         <h2>8. Contact</h2>
         <p>
-          Questions about these Terms? Contact us at{' '}
+          Questions about these Terms? Contact us at {' '}
           <a href="mailto:support@iles.ac.ug">support@iles.ac.ug</a>.
         </p>
       </div>
