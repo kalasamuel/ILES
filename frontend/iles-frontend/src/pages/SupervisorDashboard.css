@@ -151,25 +151,20 @@ ul {
   transform: translateY(-1px);
 }
 
-/* Stat cards (Pending Reviews + My Students) — top row, 2 columns each */
-.dashboard-card:nth-child(1),
-.dashboard-card:nth-child(2) {
+/* Assigned Students + Pending Reviews */
+.dashboard-card.stat-card {
   grid-column: span 2;
 }
 
-/* Recent Activity — full width row */
-.dashboard-card:nth-child(3) {
-  grid-column: span 4;
-}
-
-/* Charts — 2 columns each */
+/* Completed evaluations analytics */
 .dashboard-card.chart-card {
-  grid-column: span 2;
+  grid-column: span 4;
 }
 
-/* Quick Actions — 4 columns */
+/* Recent activity + quick actions */
+.dashboard-card:nth-last-child(2),
 .dashboard-card:last-child {
-  grid-column: span 4;
+  grid-column: span 2;
 }
 
 /* ── Card Headings ─────────────────────────────────────────── */
@@ -196,6 +191,15 @@ ul {
   font-size: 13px;
   color: var(--text-secondary);
   margin-bottom: 8px;
+}
+
+.stat-link {
+  display: inline-flex;
+  width: fit-content;
+}
+
+.stat-link:hover .stat-number {
+  color: var(--brand-orange);
 }
 
 /* ── Buttons ───────────────────────────────────────────────── */
@@ -260,6 +264,7 @@ ul {
   flex-direction: column;
   gap: 12px;
   width: 100%;
+  margin-top: 4px;
 }
 
 .activity-list li {
@@ -302,6 +307,19 @@ ul {
   color: var(--text-secondary);
 }
 
+.compact-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.compact-list li {
+  padding: 10px 12px;
+}
+
+.no-data-inline {
+  color: var(--text-muted);
+}
+
 /* ── Status Badges ─────────────────────────────────────────── */
 .status-badge {
   display: inline-flex;
@@ -338,11 +356,58 @@ ul {
 
 /* ── Chart Cards ───────────────────────────────────────────── */
 .chart-card {
-  min-height: 320px;
+  min-height: 360px;
 }
 
 .chart-card h3 {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+}
+
+.chart-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-top: 8px;
+}
+
+.evaluation-overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.overview-pill {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--bg-page);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 8px 10px;
+  min-width: 170px;
+}
+
+.overview-pill span {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.overview-pill strong {
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.card-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 /* Recharts overrides */
@@ -368,13 +433,14 @@ ul {
 /* ── Quick Actions ─────────────────────────────────────────── */
 .quick-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
   margin-top: 4px;
 }
 
 .quick-actions .btn {
   margin-top: 0;
+  width: 100%;
 }
 
 /* ── No Data State ─────────────────────────────────────────── */
@@ -392,14 +458,13 @@ ul {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .dashboard-card:nth-child(1),
-  .dashboard-card:nth-child(2) {
+  .dashboard-card.stat-card,
+  .dashboard-card:nth-last-child(2),
+  .dashboard-card:last-child {
     grid-column: span 1;
   }
 
-  .dashboard-card:nth-child(3),
-  .dashboard-card.chart-card,
-  .dashboard-card:last-child {
+  .dashboard-card.chart-card {
     grid-column: span 2;
   }
 }
@@ -413,10 +478,9 @@ ul {
     grid-template-columns: 1fr;
   }
 
-  .dashboard-card:nth-child(1),
-  .dashboard-card:nth-child(2),
-  .dashboard-card:nth-child(3),
+  .dashboard-card.stat-card,
   .dashboard-card.chart-card,
+  .dashboard-card:nth-last-child(2),
   .dashboard-card:last-child {
     grid-column: span 1;
   }
@@ -430,6 +494,10 @@ ul {
   }
 
   .quick-actions .btn {
+    width: 100%;
+  }
+
+  .card-actions-row .btn {
     width: 100%;
   }
 }

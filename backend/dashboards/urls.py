@@ -6,5 +6,5 @@ router = DefaultRouter()
 router.register(r'metrics', DashboardMetricViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('',  include(router.urls)),
 ]

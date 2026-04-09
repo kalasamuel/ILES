@@ -44,9 +44,12 @@ body {
 /* ── Page Layout ── */
 .register-page {
   min-height: 100vh;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  background: var(--gray-50);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background:
+    radial-gradient(circle at top left, rgba(244, 123, 32, 0.12), transparent 28%),
+    linear-gradient(180deg, #fff8f1 0%, #f9fafb 34%, #f3f4f6 100%);
 }
 
 /* ── Navbar ── */
@@ -133,7 +136,10 @@ body {
 .register-main {
   display: grid;
   grid-template-columns: 40% 1fr;
-  min-height: calc(100vh - 64px - 56px);
+  width: 100%;
+  min-height: 100vh;
+  max-width: 1440px;
+  box-shadow: 0 20px 60px rgba(17, 24, 39, 0.08);
 }
 
 /* ── Left Panel ── */
@@ -145,6 +151,21 @@ body {
   justify-content: space-between;
   position: relative;
   overflow: hidden;
+}
+
+.register-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .register-left-panel::before {
@@ -604,6 +625,17 @@ body {
   gap: 8px;
 }
 
+.success-message {
+  background: #F0FDF4;
+  border: 1px solid #86EFAC;
+  color: #15803D;
+  font-size: 0.825rem;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
 /* ── Submit Button ── */
 .btn-primary,
 .btn.btn-primary {
@@ -691,8 +723,13 @@ body {
 
 /* ── Responsive ── */
 @media (max-width: 960px) {
+  .register-page {
+    display: block;
+  }
+
   .register-main {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .register-left-panel {

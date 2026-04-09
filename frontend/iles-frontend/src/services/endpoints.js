@@ -3,7 +3,7 @@ import api from './apiClient';
 // Authentication
 export const authAPI = {
   login: async (email, password) => {
-    const response = await api.post('/token/', { email, password });
+    const response = await api.post('/accounts/users/login/', { email, password });
     return response.data;
   },
   register: async (payload) => {
@@ -14,8 +14,20 @@ export const authAPI = {
 
 // Users
 export const usersAPI = {
+  getUsers: async () => {
+    const response = await api.get('/accounts/users/');
+    return response.data;
+  },
   getCurrentUser: async () => {
     const response = await api.get('/accounts/users/me/');
+    return response.data;
+  },
+  getUser: async (id) => {
+    const response = await api.get(`/accounts/users/${id}/`);
+    return response.data;
+  },
+  updateUser: async (id, data) => {
+    const response = await api.patch(`/accounts/users/${id}/`, data);
     return response.data;
   },
 };
@@ -44,6 +56,36 @@ export const supervisorsAPI = {
   },
 };
 
+export const rolesAPI = {
+  getRoles: async () => {
+    const response = await api.get('/accounts/roles/');
+    return response.data;
+  },
+};
+
+export const departmentsAPI = {
+  getDepartments: async () => {
+    const response = await api.get('/accounts/departments/');
+    return response.data;
+  },
+  getDepartment: async (id) => {
+    const response = await api.get(`/accounts/departments/${id}/`);
+    return response.data;
+  },
+  createDepartment: async (data) => {
+    const response = await api.post('/accounts/departments/', data);
+    return response.data;
+  },
+  updateDepartment: async (id, data) => {
+    const response = await api.patch(`/accounts/departments/${id}/`, data);
+    return response.data;
+  },
+  deleteDepartment: async (id) => {
+    const response = await api.delete(`/accounts/departments/${id}/`);
+    return response.data;
+  },
+};
+
 // Organizations
 export const organizationsAPI = {
   getOrganizations: async () => {
@@ -52,6 +94,18 @@ export const organizationsAPI = {
   },
   getOrganization: async (id) => {
     const response = await api.get(`/organizations/organizations/${id}/`);
+    return response.data;
+  },
+  createOrganization: async (data) => {
+    const response = await api.post('/organizations/organizations/', data);
+    return response.data;
+  },
+  updateOrganization: async (id, data) => {
+    const response = await api.patch(`/organizations/organizations/${id}/`, data);
+    return response.data;
+  },
+  deleteOrganization: async (id) => {
+    const response = await api.delete(`/organizations/organizations/${id}/`);
     return response.data;
   },
 };
@@ -176,6 +230,30 @@ export const notificationsAPI = {
   },
   deleteNotification: async (id) => {
     const response = await api.delete(`/notifications/notifications/${id}/`);
+    return response.data;
+  },
+  getDeadlines: async () => {
+    const response = await api.get('/notifications/deadlines/');
+    return response.data;
+  },
+  createDeadline: async (data) => {
+    const response = await api.post('/notifications/deadlines/', data);
+    return response.data;
+  },
+  updateDeadline: async (id, data) => {
+    const response = await api.patch(`/notifications/deadlines/${id}/`, data);
+    return response.data;
+  },
+  deleteDeadline: async (id) => {
+    const response = await api.delete(`/notifications/deadlines/${id}/`);
+    return response.data;
+  },
+};
+
+// Workflow History
+export const workflowAPI = {
+  getHistory: async () => {
+    const response = await api.get('/reviews/history/');
     return response.data;
   },
 };

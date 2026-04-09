@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+.not-found-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fb;
+  font-family: 'DM Sans', sans-serif;
+  padding: 32px 20px;
+}
+
+.not-found-inner {
+  text-align: center;
+  max-width: 480px;
+  animation: nf-fadein 0.5s ease;
+}
+
+@keyframes nf-fadein {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform:  translateY(0); }
+}
+
+.not-found-code {
+  font-size: 120px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -6px;
+  color: #111827;
+  position: relative;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.not-found-code::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: #f97316;
+  border-radius: 99px;
+  margin: 16px auto 0;
+}
+
+.not-found-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 12px;
+}
+
+.not-found-msg {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.not-found-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-nf-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  background: #f97316;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+}
+
+.btn-nf-primary:hover {
+  background: #ea6c0a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4);
+}
+
+.btn-nf-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.btn-nf-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+}

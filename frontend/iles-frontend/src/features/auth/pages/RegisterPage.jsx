@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../../services/endpoints';
 import { useAuth } from '../../../hooks/AuthContext';
-import './RegisterPage.css'
+import './RegisterPage.css';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -20,15 +20,15 @@ function RegisterPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleChange = (event) => {
+    setFormData((current) => ({
+      ...current,
+      [event.target.name]: event.target.value,
+    }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     setSuccess('');
 
@@ -78,89 +78,152 @@ function RegisterPage() {
 
   return (
     <div className="register-page">
-      <div className="register-form-container">
-        <h2>Register for ILES</h2>
-        <form onSubmit={handleSubmit} className="register-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="firstName">First Name:</label>
-              <input
-                type="text"
-                id="firstName"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="lastName">Last Name:</label>
-              <input
-                type="text"
-                id="lastName"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-              />
+      <div className="register-main">
+        <aside className="register-left-panel">
+          <div>
+            <p className="register-eyebrow">Join ILES</p>
+            <h1 className="left-panel-headline">Create your account and start managing internship work with clarity.</h1>
+            <p className="left-panel-subtext">
+              Register as a student, workplace supervisor, or academic supervisor to access logs, reviews, reports, and feedback in one place.
+            </p>
+
+            <div className="feature-list">
+              <div className="feature-card">
+                <div className="feature-card-title">Structured internship tracking</div>
+                <div className="feature-card-desc">Keep placements, submissions, and feedback aligned from day one.</div>
+              </div>
+              <div className="feature-card">
+                <div className="feature-card-title">Supervisor-ready workflows</div>
+                <div className="feature-card-desc">Review, approve, and evaluate activity with consistent role access.</div>
+              </div>
             </div>
           </div>
-          <div className="form-group">
-            <label htmlFor="email">Email:</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
+
+          <div className="left-panel-social-proof">
+            <div className="avatar-stack">
+              <div className="avatar">S</div>
+              <div className="avatar">A</div>
+              <div className="avatar">W</div>
+            </div>
+            <div className="social-proof-text">Built for students and supervisors working on internship progress together.</div>
           </div>
-          <div className="form-group">
-            <label htmlFor="role">Role:</label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-            >
-              <option value="student">Student</option>
-              <option value="workplace_supervisor">Workplace Supervisor</option>
-              <option value="academic_supervisor">Academic Supervisor</option>
-            </select>
+        </aside>
+
+        <main className="register-right-panel">
+          <div className="register-form-container">
+            <div className="register-card-header">
+              <div>
+                <h2>Register for ILES</h2>
+                <p className="register-card-subtitle">Enter your details to create a new account.</p>
+              </div>
+              <Link to="/login" className="already-registered-link">Already have an account?</Link>
+            </div>
+
+            <form onSubmit={handleSubmit} className="register-form">
+              <div className="form-section-label">Account Details</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="firstName">First Name</label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                    className="no-icon"
+                    placeholder="Jane"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="lastName">Last Name</label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                    className="no-icon"
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="no-icon"
+                  placeholder="name@university.edu"
+                />
+              </div>
+
+              <div className="form-section-label">Role & Security</div>
+              <div className="form-group">
+                <label htmlFor="role">Role</label>
+                <div className="select-wrapper">
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="student">Student</option>
+                    <option value="workplace_supervisor">Workplace Supervisor</option>
+                    <option value="academic_supervisor">Academic Supervisor</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="password">Password</label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="no-icon"
+                    placeholder="Create a password"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="confirmPassword">Confirm Password</label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    className="no-icon"
+                    placeholder="Repeat your password"
+                  />
+                </div>
+              </div>
+
+              {error && <div className="error-message">{error}</div>}
+              {success && <div className="success-message">{success}</div>}
+
+              <button type="submit" disabled={isLoading} className="btn btn-primary">
+                {isLoading ? 'Registering...' : 'Register'}
+              </button>
+
+              <div className="register-links">
+                <span>Need help? <Link to="/contact" className="contact-support-link">Contact support</Link></span>
+              </div>
+            </form>
           </div>
-          <div className="form-group">
-            <label htmlFor="password">Password:</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password:</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
-          <button type="submit" disabled={isLoading} className="btn btn-primary">
-            {isLoading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-        <div className="register-links">
-          <Link to="/login">Already have an account? Login</Link>
-        </div>
+        </main>
       </div>
     </div>
   );

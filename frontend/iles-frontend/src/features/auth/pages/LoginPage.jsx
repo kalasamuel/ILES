@@ -28,7 +28,7 @@ function LoginPage() {
     try {
       await login(formData.email, formData.password);
       navigate('/app/dashboard');
-    } catch (err) {
+    } catch {
       setError('Invalid email or password');
     } finally {
       setIsLoading(false);

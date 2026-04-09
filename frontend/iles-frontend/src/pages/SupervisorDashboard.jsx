@@ -1,43 +1,101 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
-import { dashboardsAPI, reviewsAPI, placementsAPI, logbooksAPI } from '../services/endpoints';
+import { dashboardsAPI, reviewsAPI, placementsAPI, logbooksAPI, evaluationsAPI } from '../services/endpoints';
 import './SupervisorDashboard.css';
+
+function toDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function sortByDateDesc(leftValue, rightValue) {
+  return (toDate(rightValue)?.getTime() || 0) - (toDate(leftValue)?.getTime() || 0);
+}
+
+function formatDate(value) {
+  const date = toDate(value);
+  return date ? date.toLocaleDateString() : 'Date unavailable';
+}
+
+function getStudentLabel(placement) {
+  const first = placement?.student_details?.user_details?.first_name || '';
+  const last = placement?.student_details?.user_details?.last_name || '';
+  const fullName = `${first} ${last}`.trim();
+  if (fullName) return fullName;
+  return placement?.student_details?.registration_number || 'Unknown student';
+}
+
+function getPlacementIdFromLog(log) {
+  return log?.placement?.placement_id || log?.placement || null;
+}
+
+function getPlacementDate(placement) {
+  return placement?.created_at || placement?.start_date || placement?.end_date || null;
+}
+
+function getReviewDate(item) {
+  return item?.submitted_at || item?.reviewed_at || item?.evaluation_date || null;
+}
+
+function getEvaluationPercentage(evaluation) {
+  const scores = Array.isArray(evaluation?.scores) ? evaluation.scores : [];
+  let scoreSum = 0;
+  let maxSum = 0;
+
+  scores.forEach((entry) => {
+    const score = Number(entry?.score) || 0;
+    const maxScore = Number(entry?.criteria_details?.max_score) || 100;
+    scoreSum += score;
+    maxSum += maxScore;
+  });
+
+  if (maxSum > 0) {
+    return (scoreSum / maxSum) * 100;
+  }
+
+  return Number(evaluation?.total_score) || 0;
+}
 
 function SupervisorDashboard() {
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [placements, setPlacements] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [bootstrapAttempted, setBootstrapAttempted] = useState(false);
+  const bootstrapAttemptedRef = useRef(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setError(null);
-        const [reviewsRes, placementsRes, logsRes] = await Promise.all([
+
+        const [reviewsRes, placementsRes, logsRes, evaluationsRes] = await Promise.all([
           reviewsAPI.getReviews(),
           placementsAPI.getPlacements(),
           logbooksAPI.getLogs(),
+          evaluationsAPI.getEvaluations(),
         ]);
 
         let reviewsData = reviewsRes?.results || reviewsRes || [];
         let placementsData = placementsRes?.results || placementsRes || [];
         let logsData = logsRes?.results || logsRes || [];
+        let evaluationsData = evaluationsRes?.results || evaluationsRes || [];
 
         let context = null;
         try {
           context = await dashboardsAPI.getMyDataContext();
         } catch (ctxError) {
-          console.warn('Failed to load backend data context:', ctxError);
+          console.warn('Failed to load dashboard context:', ctxError);
         }
 
         const roleName = String(context?.role_name || '').toLowerCase();
         const shouldBootstrap =
-          !bootstrapAttempted &&
+          !bootstrapAttemptedRef.current &&
           context &&
           roleName.includes('supervisor') &&
           context.has_supervisor_profile &&
@@ -48,17 +106,19 @@ function SupervisorDashboard() {
         if (shouldBootstrap) {
           try {
             await dashboardsAPI.bootstrapMySupervisorData();
-            setBootstrapAttempted(true);
+            bootstrapAttemptedRef.current = true;
 
-            const [reviewsRefetch, placementsRefetch, logsRefetch] = await Promise.all([
+            const [reviewsRefetch, placementsRefetch, logsRefetch, evaluationsRefetch] = await Promise.all([
               reviewsAPI.getReviews(),
               placementsAPI.getPlacements(),
               logbooksAPI.getLogs(),
+              evaluationsAPI.getEvaluations(),
             ]);
 
             reviewsData = reviewsRefetch?.results || reviewsRefetch || [];
             placementsData = placementsRefetch?.results || placementsRefetch || [];
             logsData = logsRefetch?.results || logsRefetch || [];
+            evaluationsData = evaluationsRefetch?.results || evaluationsRefetch || [];
           } catch (bootstrapError) {
             console.warn('Supervisor starter data bootstrap failed:', bootstrapError);
           }
@@ -67,8 +127,9 @@ function SupervisorDashboard() {
         setReviews(reviewsData);
         setPlacements(placementsData);
         setLogs(logsData);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        setEvaluations(evaluationsData);
+      } catch (fetchError) {
+        console.error('Error fetching dashboard data:', fetchError);
         setError('Failed to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
@@ -78,51 +139,163 @@ function SupervisorDashboard() {
     fetchData();
   }, []);
 
-  // Calculate real data from API responses
-  const getReviewStatusData = () => {
-    const approved = reviews.filter(r => r.status === 'approved').length;
-    const needsRevision = reviews.filter(r => r.status === 'needs_revision').length;
-    const rejected = reviews.filter(r => r.status === 'rejected').length;
-    
-    return [
-      { name: 'Approved', value: approved, color: '#00C49F' },
-      { name: 'Needs Revision', value: needsRevision, color: '#FFBB28' },
-      { name: 'Rejected', value: rejected, color: '#FF8042' },
-    ].filter(item => item.value > 0);
-  };
+  const placementsById = useMemo(
+    () => new Map(placements.map((placement) => [placement?.placement_id, placement])),
+    [placements]
+  );
 
-  // Calculate monthly workload from reviews
-  const getWorkloadData = () => {
-    const monthlyData = {};
-    
-    reviews.forEach(review => {
-      if (review.reviewed_at) {
-        const date = new Date(review.reviewed_at);
-        const month = date.toLocaleString('default', { month: 'short' });
-        monthlyData[month] = (monthlyData[month] || 0) + 1;
+  const activeStudents = useMemo(() => {
+    const uniqueStudents = new Map();
+    placements.forEach((placement) => {
+      const studentId = placement?.student_details?.student_id || placement?.student || placement?.student_details?.user_details?.user_id;
+      if (studentId && !uniqueStudents.has(String(studentId))) {
+        uniqueStudents.set(String(studentId), placement);
       }
     });
-    
-    // Convert to array and sort by month
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months
-      .filter(month => monthlyData[month])
-      .map(month => ({
-        month,
-        reviews: monthlyData[month]
-      }));
+
+    return Array.from(uniqueStudents.values())
+      .sort((left, right) => sortByDateDesc(getPlacementDate(left), getPlacementDate(right)));
+  }, [placements]);
+
+  const assignedStudents = activeStudents.slice(0, 5);
+
+  const pendingReviews = useMemo(() => {
+    return [...logs]
+      .filter((log) => String(log?.status || '').toLowerCase() === 'submitted')
+      .sort((left, right) => sortByDateDesc(getReviewDate(left), getReviewDate(right)));
+  }, [logs]);
+
+  const recentPendingReviews = pendingReviews.slice(0, 5);
+
+  const completedEvaluations = useMemo(() => {
+    return [...evaluations].filter((evaluation) => {
+      return evaluation && (evaluation.total_score !== null || evaluation.grade || evaluation.evaluation_date || Array.isArray(evaluation.scores));
+    });
+  }, [evaluations]);
+
+  const criteriaChartData = useMemo(() => {
+    const map = new Map();
+
+    completedEvaluations.forEach((evaluation) => {
+      (Array.isArray(evaluation?.scores) ? evaluation.scores : []).forEach((entry, index) => {
+        const criteriaId = entry?.criteria_details?.criteria_id || entry?.criteria || `${evaluation.evaluation_id || 'evaluation'}-${index}`;
+        const criteriaName = entry?.criteria_details?.name || `Criteria ${index + 1}`;
+        const score = Number(entry?.score) || 0;
+        const maxScore = Number(entry?.criteria_details?.max_score) || 100;
+        const percentage = maxScore > 0 ? Math.max(0, Math.min(100, (score / maxScore) * 100)) : 0;
+
+        if (!map.has(criteriaId)) {
+          map.set(criteriaId, {
+            criteria: criteriaName,
+            totalPercentage: 0,
+            count: 0,
+          });
+        }
+
+        const metric = map.get(criteriaId);
+        metric.totalPercentage += percentage;
+        metric.count += 1;
+      });
+    });
+
+    return Array.from(map.values())
+      .map((item) => ({
+        criteria: item.criteria,
+        avgPercentage: Number((item.totalPercentage / Math.max(item.count, 1)).toFixed(1)),
+      }))
+      .sort((left, right) => right.avgPercentage - left.avgPercentage)
+      .slice(0, 8);
+  }, [completedEvaluations]);
+
+  const averageEvaluationPercentage = useMemo(() => {
+    const percentages = completedEvaluations.map((evaluation) => getEvaluationPercentage(evaluation));
+    if (percentages.length === 0) return 0;
+    return percentages.reduce((sum, value) => sum + value, 0) / percentages.length;
+  }, [completedEvaluations]);
+
+  const evaluatedStudents = useMemo(() => {
+    return new Set(completedEvaluations.map((evaluation) => evaluation?.placement).filter(Boolean)).size;
+  }, [completedEvaluations]);
+
+  const recentActivity = useMemo(() => {
+    const items = [
+      ...recentPendingReviews.map((log) => ({
+        id: `pending-${log.log_id || log.id}`,
+        title: `Pending review: Week ${log.week_number || 'N/A'}`,
+        subtitle: getStudentLabel(placementsById.get(getPlacementIdFromLog(log))),
+        date: log.submitted_at,
+        status: 'pending',
+        link: '/app/reviews',
+      })),
+      ...reviews.map((review) => ({
+        id: `review-${review.review_id || review.id}`,
+        title: `Review ${String(review.review_id || review.id || '').slice(0, 8)} updated`,
+        subtitle: `Status: ${String(review.status || 'unknown').replace(/_/g, ' ')}`,
+        date: review.reviewed_at,
+        status: review.status || 'approved',
+        link: '/app/reviews',
+      })),
+      ...completedEvaluations.map((evaluation) => {
+        const placement = placementsById.get(evaluation?.placement);
+        return {
+          id: `evaluation-${evaluation.evaluation_id || evaluation.id}`,
+          title: 'Evaluation completed',
+          subtitle: getStudentLabel(placement),
+          date: evaluation.evaluation_date,
+          status: 'approved',
+          link: '/app/reports',
+        };
+      }),
+    ];
+
+    return items.sort((left, right) => sortByDateDesc(left.date, right.date)).slice(0, 5);
+  }, [recentPendingReviews, reviews, completedEvaluations, placementsById]);
+
+  const downloadFullReport = () => {
+    const escapeCsv = (value) => {
+      const text = String(value ?? '');
+      if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+      return text;
+    };
+
+    const summaryHeaders = ['Evaluation ID', 'Student', 'Placement ID', 'Evaluation Date', 'Total Score', 'Grade'];
+    const summaryRows = completedEvaluations.map((evaluation) => {
+      const placement = placementsById.get(evaluation?.placement);
+      return [
+        evaluation?.evaluation_id || evaluation?.id || '',
+        getStudentLabel(placement),
+        evaluation?.placement || '',
+        evaluation?.evaluation_date || '',
+        evaluation?.total_score ?? '',
+        evaluation?.grade || '',
+      ].map(escapeCsv).join(',');
+    });
+
+    const criteriaHeaders = ['Criteria', 'Average Percentage'];
+    const criteriaRows = criteriaChartData.map((item) => [item.criteria, item.avgPercentage].map(escapeCsv).join(','));
+
+    const csvContent = [
+      'Evaluation Summary',
+      summaryHeaders.join(','),
+      ...summaryRows,
+      '',
+      'Criteria Averages',
+      criteriaHeaders.join(','),
+      ...criteriaRows,
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'supervisor-evaluation-report.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
-
-  const reviewStatusData = getReviewStatusData();
-  const workloadData = getWorkloadData();
-
-  // Calculate pending reviews count
-  const pendingReviewsCount = logs.filter(l => l.status === 'submitted').length;
-
-  // Get recent activity (last 3 reviews)
-  const recentActivity = [...reviews]
-    .sort((a, b) => new Date(b.reviewed_at || 0) - new Date(a.reviewed_at || 0))
-    .slice(0, 3);
 
   if (loading) {
     return <div className="loading-container">Loading dashboard...</div>;
@@ -144,48 +317,126 @@ function SupervisorDashboard() {
     <div className="supervisor-dashboard">
       <header className="dashboard-header">
         <h1>Supervisor Dashboard</h1>
-        <p>Welcome back! {user?.first_name} {user?.last_name}</p>
+        <p>Welcome back, {user?.first_name} {user?.last_name}</p>
       </header>
 
       <div className="dashboard-grid">
-        {/* Pending Reviews Card */}
-        <div className="dashboard-card">
+        <div className="dashboard-card stat-card">
+          <h3>Assigned Students</h3>
+          <Link to="/app/placements" className="stat-link" aria-label="View all assigned students">
+            <div className="stat-number">{activeStudents.length}</div>
+          </Link>
+          <p>Students currently assigned to you</p>
+
+          <ul className="activity-list compact-list">
+            {assignedStudents.length > 0 ? assignedStudents.map((placement) => (
+              <li key={placement.placement_id || placement.id}>
+                <div className="activity-details">
+                  <strong>{getStudentLabel(placement)}</strong>
+                  <span>{placement.position_title || 'Internship placement'}</span>
+                </div>
+              </li>
+            )) : (
+              <li>
+                <div className="activity-details">
+                  <span className="no-data-inline">No assigned students yet</span>
+                </div>
+              </li>
+            )}
+          </ul>
+
+          <Link to="/app/placements" className="btn-link">
+            View All Students →
+          </Link>
+        </div>
+
+        <div className="dashboard-card stat-card">
           <h3>Pending Reviews</h3>
-          <div className="stat-number">{pendingReviewsCount}</div>
-          <p>Logs awaiting your review</p>
-          {pendingReviewsCount > 0 && (
-            <Link to="/app/reviews?status=needs_revision" className="btn btn-primary">
-              Review Logs Now
-            </Link>
+          <Link to="/app/reviews" className="stat-link" aria-label="Go to pending reviews">
+            <div className="stat-number">{pendingReviews.length}</div>
+          </Link>
+          <p>Submitted logs waiting for your review</p>
+
+          <ul className="activity-list compact-list">
+            {recentPendingReviews.length > 0 ? recentPendingReviews.map((log) => {
+              const placement = placementsById.get(getPlacementIdFromLog(log));
+              return (
+                <li key={log.log_id || log.id}>
+                  <div className="activity-details">
+                    <strong>{getStudentLabel(placement)}</strong>
+                    <span>Week {log.week_number || 'N/A'} • {formatDate(log.submitted_at)}</span>
+                  </div>
+                </li>
+              );
+            }) : (
+              <li>
+                <div className="activity-details">
+                  <span className="no-data-inline">No pending reviews</span>
+                </div>
+              </li>
+            )}
+          </ul>
+
+          <Link to="/app/reviews" className="btn-link">
+            View All Reviews →
+          </Link>
+        </div>
+
+        <div className="dashboard-card chart-card">
+          <h3>Completed Evaluations</h3>
+          <Link to="/app/reports" className="stat-link" aria-label="Open evaluation summaries">
+            <div className="stat-number">{completedEvaluations.length}</div>
+          </Link>
+          <p>Click to view summaries and full evaluation analytics</p>
+
+          <div className="evaluation-overview">
+            <div className="overview-pill">
+              <span>Average score</span>
+              <strong>{averageEvaluationPercentage.toFixed(1)}%</strong>
+            </div>
+            <div className="overview-pill">
+              <span>Evaluated students</span>
+              <strong>{evaluatedStudents}</strong>
+            </div>
+          </div>
+
+          <h4 className="chart-subtitle">Average Score by Criteria (%)</h4>
+          {criteriaChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={criteriaChartData} layout="vertical" margin={{ left: 12, right: 16 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 100]} unit="%" />
+                <YAxis dataKey="criteria" type="category" width={130} />
+                <Tooltip />
+                <Bar dataKey="avgPercentage" fill="#f97316" radius={[4, 4, 4, 4]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="no-data">No completed evaluation data available</p>
           )}
-          <Link to="/app/reviews" className="btn btn-secondary">
-            View All Reviews
-          </Link>
+
+          <div className="card-actions-row">
+            <Link to="/app/reports" className="btn btn-secondary">
+              View Summaries
+            </Link>
+            <button type="button" onClick={downloadFullReport} className="btn btn-primary">
+              Download Full Report
+            </button>
+          </div>
         </div>
 
-        {/* My Students Card */}
-        <div className="dashboard-card">
-          <h3>My Students</h3>
-          <div className="stat-number">{placements.length}</div>
-          <p>Active placements supervised</p>
-          <Link to="/app/placements" className="btn btn-secondary">
-            View Students
-          </Link>
-        </div>
-
-        {/* Recent Activity Card */}
         <div className="dashboard-card">
           <h3>Recent Activity</h3>
           {recentActivity.length > 0 ? (
             <ul className="activity-list">
-              {recentActivity.map((review) => (
-                <li key={review.review_id || review.id}>
-                  <span className="activity-icon">📝</span>
+              {recentActivity.map((item) => (
+                <li key={item.id}>
                   <div className="activity-details">
-                    <strong>Review {String(review.review_id || review.id || '').slice(0, 8)}</strong>
-                    <span>{review.reviewed_at ? new Date(review.reviewed_at).toLocaleDateString() : 'Date unavailable'}</span>
-                    <span className={`status-badge status-${review.status}`}>
-                      {review.status?.replace('_', ' ')}
+                    <strong>{item.title}</strong>
+                    <span>{item.subtitle}</span>
+                    <span>{formatDate(item.date)}</span>
+                    <span className={`status-badge status-${item.status}`}>
+                      {String(item.status).replace('_', ' ')}
                     </span>
                   </div>
                 </li>
@@ -194,72 +445,22 @@ function SupervisorDashboard() {
           ) : (
             <p className="no-data">No recent activity</p>
           )}
-          <Link to="/app/reviews" className="btn-link">
-            View All Activity →
+          <Link to="/app/activities" className="btn-link">
+            View All Activities →
           </Link>
         </div>
 
-        {/* Review Status Distribution Chart */}
-        <div className="dashboard-card chart-card">
-          <h3>Review Status Distribution</h3>
-          {reviewStatusData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={reviewStatusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {reviewStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="no-data">No review data available</p>
-          )}
-        </div>
-
-        {/* Monthly Workload Chart */}
-        <div className="dashboard-card chart-card">
-          <h3>Monthly Workload</h3>
-          {workloadData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={workloadData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="reviews" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="no-data">No workload data available</p>
-          )}
-        </div>
-
-        {/* Quick Actions Card */}
         <div className="dashboard-card">
           <h3>Quick Actions</h3>
           <div className="quick-actions">
-            <Link to="/app/reviews?status=needs_revision" className="btn btn-primary">
-              Review Pending Logs
-            </Link>
             <Link to="/app/placements" className="btn btn-secondary">
-              View Student Progress
+              View My Students
+            </Link>
+            <Link to="/app/reviews" className="btn btn-primary">
+              Review Submissions
             </Link>
             <Link to="/app/reports" className="btn btn-secondary">
-              Generate Reports
-            </Link>
-            <Link to="/app/reviews" className="btn btn-secondary">
-              View All Reviews
+              Generate Report
             </Link>
           </div>
         </div>
