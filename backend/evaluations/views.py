@@ -101,7 +101,7 @@ class EvaluationViewSet(viewsets.ModelViewSet):
             return Evaluation.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
-            return Evaluation.objects.none()
+            return self.queryset.filter(placement__workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
             if supervisor.department:
@@ -243,7 +243,7 @@ class EvaluationScoreViewSet(viewsets.ModelViewSet):
             return EvaluationScore.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
-            return EvaluationScore.objects.none()
+            return self.queryset.filter(evaluation__placement__workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
             if supervisor.department:
@@ -295,7 +295,7 @@ class ScoreBreakdownViewSet(viewsets.ReadOnlyModelViewSet):
             return ScoreBreakdown.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
-            return ScoreBreakdown.objects.none()
+            return self.queryset.filter(placement__workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
             if supervisor.department:
