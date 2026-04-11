@@ -35,9 +35,8 @@ function LogList() {
   const total     = logs.length;
   const submitted = logs.filter((l) => l.status === 'submitted').length;
   const approved  = logs.filter((l) => l.status === 'approved').length;
-          { label: 'Challenges',   value: log.challenges || '—' },
-          { label: 'Skills Learned',value: log.skills_learned || '—' },
-          { label: 'Solutions',    value: log.solutions || '—' },
+  const totalHrs  = logs.reduce((s, l) => s + (Number(l.hours_worked) || 0), 0);
+  return (
     <div className="logs-page">
       {/* Header */}
       <div className="lp-header">
