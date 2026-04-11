@@ -77,7 +77,6 @@ const SettingsPage = () => {
           show_phone: userSettings?.show_phone ?? false,
         });
 
-        await refreshUser?.();
       } catch (fetchError) {
         console.error('Error loading settings:', fetchError);
         setError('Failed to load settings from the server.');
@@ -87,7 +86,7 @@ const SettingsPage = () => {
     };
 
     loadSettings();
-  }, [user, refreshUser]);
+  }, []);
 
   const clearFeedbackLater = () => {
     window.setTimeout(() => setSuccess(''), 3000);
