@@ -22,6 +22,22 @@ export const usersAPI = {
     const response = await api.get('/accounts/users/me/');
     return response.data;
   },
+  updateCurrentUser: async (data) => {
+    const response = await api.patch('/accounts/users/me/', data);
+    return response.data;
+  },
+  getCurrentUserSettings: async () => {
+    const response = await api.get('/accounts/users/me/settings/');
+    return response.data;
+  },
+  updateCurrentUserSettings: async (data) => {
+    const response = await api.patch('/accounts/users/me/settings/', data);
+    return response.data;
+  },
+  changePassword: async (data) => {
+    const response = await api.post('/accounts/users/me/change-password/', data);
+    return response.data;
+  },
   getUser: async (id) => {
     const response = await api.get(`/accounts/users/${id}/`);
     return response.data;
