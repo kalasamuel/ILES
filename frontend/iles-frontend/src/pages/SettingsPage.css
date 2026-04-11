@@ -92,6 +92,21 @@
   flex-shrink: 0;
 }
 
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.875rem 1.125rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  border: 1px solid #fecaca;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -253,6 +268,33 @@
   box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
+.form-group select {
+  width: 100%;
+  padding: 0.6875rem 0.9375rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: var(--surface-2);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
 /* ─── Save Button ────────────────────────────────────────────────── */
 .btn-save {
   display: inline-flex;
@@ -385,6 +427,16 @@ input:checked + .toggle-slider:before {
   height: 1px;
   background: var(--border-light);
   margin: 1.75rem 0;
+}
+
+.settings-loading {
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-secondary);
+  font-size: 0.95rem;
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────── */
