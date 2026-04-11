@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI, usersAPI } from '../services/endpoints';
 
 const AuthContext = createContext(undefined);
@@ -8,11 +8,11 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('accessToken'));
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const userData = await usersAPI.getCurrentUser();
     setUser(userData);
     return userData;
-  };
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
