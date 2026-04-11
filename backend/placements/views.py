@@ -2,11 +2,10 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.utils import timezone
 from .models import InternshipPlacement, PlacementDocument
 from .serializers import InternshipPlacementSerializer, PlacementDocumentSerializer
 from reviews.models import WorkflowHistory
-from accounts.models import Supervisor, Student
+from accounts.models import Supervisor
 
 
 class InternshipPlacementViewSet(viewsets.ModelViewSet):
@@ -45,29 +44,27 @@ class InternshipPlacementViewSet(viewsets.ModelViewSet):
 
         return InternshipPlacement.objects.none()
 
-    def perform_create(self, request):
-        # Create workflow history
-        placement = super().perform_create(request)
+    def perform_create(self, serializer):
+        # Create workflow history after persistence.
+        placement = serializer.save()
         WorkflowHistory.objects.create(
             entity_type='placement',
             entity_id=placement.placement_id,
             new_status=placement.status,
-            changed_by=request.user
+            changed_by=self.request.user
         )
-        return placement
 
-    def perform_update(self, request):
+    def perform_update(self, serializer):
         old_status = self.get_object().status
-        placement = super().perform_update(request)
+        placement = serializer.save()
         if old_status != placement.status:
             WorkflowHistory.objects.create(
                 entity_type='placement',
                 entity_id=placement.placement_id,
                 previous_status=old_status,
                 new_status=placement.status,
-                changed_by=request.user
+                changed_by=self.request.user
             )
-        return placement
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
