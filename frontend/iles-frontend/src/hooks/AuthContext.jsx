@@ -8,6 +8,12 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(() => !!localStorage.getItem('accessToken'));
 
+  const refreshUser = async () => {
+    const userData = await usersAPI.getCurrentUser();
+    setUser(userData);
+    return userData;
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (token) {
@@ -49,6 +55,7 @@ export const AuthProvider = ({ children }) => {
     user,
     login,
     logout,
+    refreshUser,
     isAuthenticated: !!user,
     isLoading,
   };
