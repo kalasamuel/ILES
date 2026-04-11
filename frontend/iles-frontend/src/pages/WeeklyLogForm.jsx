@@ -247,16 +247,6 @@ const WeeklyLogForm = () => {
               </button>
             </div>
           </section>
-
-          <aside className="wl-card wl-side-card">
-            <h3>How it works</h3>
-            <ul>
-              <li>Pick the placement you want to report on.</li>
-              <li>Write your weekly activities, skills, and challenges.</li>
-              <li>Attach an image if needed and save a draft first.</li>
-              <li>Submit for review when the week is complete.</li>
-            </ul>
-          </aside>
         </div>
       </div>
     );
