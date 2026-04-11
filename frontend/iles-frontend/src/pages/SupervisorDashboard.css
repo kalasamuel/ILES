@@ -403,6 +403,58 @@ ul {
   color: var(--text-primary);
 }
 
+.completed-evaluations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.completed-evaluation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-page);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+}
+
+.completed-evaluation-row strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.completed-evaluation-row span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.completed-evaluation-score {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.completed-evaluation-score span {
+  margin-top: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.completed-evaluation-score small {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 .card-actions-row {
   display: flex;
   flex-wrap: wrap;
@@ -499,5 +551,14 @@ ul {
 
   .card-actions-row .btn {
     width: 100%;
+  }
+
+  .completed-evaluation-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .completed-evaluation-score {
+    align-items: flex-start;
   }
 }
