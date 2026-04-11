@@ -4,7 +4,7 @@ import { departmentsAPI, usersAPI } from '../services/endpoints';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
-  const { user, refreshUser } = useAuth();
+  const { refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
   const [savingAction, setSavingAction] = useState('');
@@ -56,9 +56,9 @@ const SettingsPage = () => {
         setDepartments(departmentOptions);
 
         setProfile({
-          first_name: currentUser?.first_name || user?.first_name || '',
-          last_name: currentUser?.last_name || user?.last_name || '',
-          email: currentUser?.email || user?.email || '',
+          first_name: currentUser?.first_name || '',
+          last_name: currentUser?.last_name || '',
+          email: currentUser?.email || '',
           phone_number: currentUser?.phone_number || '',
           department_id: currentUser?.department?.department_id || '',
         });
