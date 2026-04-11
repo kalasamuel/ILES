@@ -3,7 +3,7 @@
 import uuid
 from django.db import migrations, models
 import django.db.models.deletion
-import django.conf.settings
+from django.conf import settings
 
 
 class Migration(migrations.Migration):
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('profile_visible', models.BooleanField(default=True)),
                 ('show_email', models.BooleanField(default=False)),
                 ('show_phone', models.BooleanField(default=False)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='settings', to=django.conf.settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='settings', to=settings.AUTH_USER_MODEL)),
             ],
         ),
     ]
