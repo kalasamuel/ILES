@@ -194,3 +194,24 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
+# ── Email ──────────────────────────────────────────────
+# Development: prints emails to terminal
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Production: uncomment and fill in real SMTP details
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your@gmail.com'
+# EMAIL_HOST_PASSWORD = 'your-app-password'  # Use Gmail App Password, not your real password
+
+DEFAULT_FROM_EMAIL = 'ILES Support <noreply@iles.edu>'
+FRONTEND_URL = 'http://localhost:5173'  # Change to your deployed frontend URL in production
+
+# ── Cache (required for reset tokens) ──────────────────
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
