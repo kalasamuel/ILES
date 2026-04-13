@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/AuthContext';
+import { departmentsAPI, usersAPI } from '../services/endpoints';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
-  const { user } = useAuth();
+  const { refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [savingAction, setSavingAction] = useState('');
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+  const [departments, setDepartments] = useState([]);
 
   const [profile, setProfile] = useState({
     first_name: '',
     last_name: '',
     email: '',
-    phone: '',
-    department: '',
+    phone_number: '',
+    department_id: '',
   });
 
   const [notifications, setNotifications] = useState({
@@ -37,75 +41,139 @@ const SettingsPage = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      setProfile({
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        department: user.department || '',
-      });
-    }
-  }, [user]);
+    const loadSettings = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const [currentUser, userSettings, departmentsRes] = await Promise.all([
+          usersAPI.getCurrentUser(),
+          usersAPI.getCurrentUserSettings(),
+          departmentsAPI.getDepartments(),
+        ]);
+
+        const departmentOptions = departmentsRes?.results || departmentsRes || [];
+        setDepartments(departmentOptions);
+
+        setProfile({
+          first_name: currentUser?.first_name || '',
+          last_name: currentUser?.last_name || '',
+          email: currentUser?.email || '',
+          phone_number: currentUser?.phone_number || '',
+          department_id: currentUser?.department?.department_id || '',
+        });
+
+        setNotifications({
+          email_notifications: userSettings?.email_notifications ?? true,
+          push_notifications: userSettings?.push_notifications ?? true,
+          log_reminders: userSettings?.log_reminders ?? true,
+          review_alerts: userSettings?.review_alerts ?? true,
+          weekly_summary: userSettings?.weekly_summary ?? false,
+        });
+
+        setPrivacy({
+          profile_visible: userSettings?.profile_visible ?? true,
+          show_email: userSettings?.show_email ?? false,
+          show_phone: userSettings?.show_phone ?? false,
+        });
+
+      } catch (fetchError) {
+        console.error('Error loading settings:', fetchError);
+        setError('Failed to load settings from the server.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  const clearFeedbackLater = () => {
+    window.setTimeout(() => setSuccess(''), 3000);
+  };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSavingAction('profile');
     setSuccess('');
+    setError('');
     try {
-      // await api.userAPI.updateProfile(profile);
+      await usersAPI.updateCurrentUser({
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        email: profile.email,
+        phone_number: profile.phone_number,
+        department_id: profile.department_id || null,
+      });
+      await refreshUser?.();
       setSuccess('Profile updated successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      clearFeedbackLater();
     } catch (error) {
       console.error('Error updating profile:', error);
+      setError(error?.response?.data?.detail || 'Failed to update profile.');
     } finally {
-      setLoading(false);
+      setSavingAction('');
     }
   };
 
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     if (passwordData.new_password !== passwordData.confirm_password) {
-      alert('New passwords do not match');
+      setError('New passwords do not match.');
       return;
     }
-    setLoading(true);
+    setSavingAction('password');
+    setSuccess('');
+    setError('');
     try {
-      // await api.userAPI.changePassword(passwordData);
+      await usersAPI.changePassword(passwordData);
       setSuccess('Password changed successfully!');
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
-      setTimeout(() => setSuccess(''), 3000);
+      clearFeedbackLater();
     } catch (error) {
       console.error('Error changing password:', error);
+      setError(error?.response?.data?.error || 'Failed to change password.');
     } finally {
-      setLoading(false);
+      setSavingAction('');
     }
   };
 
   const handleNotificationUpdate = async () => {
-    setLoading(true);
+    setSavingAction('notifications');
+    setSuccess('');
+    setError('');
     try {
-      // await api.userAPI.updateNotifications(notifications);
+      await usersAPI.updateCurrentUserSettings(notifications);
       setSuccess('Notification preferences saved!');
-      setTimeout(() => setSuccess(''), 3000);
+      clearFeedbackLater();
     } catch (error) {
       console.error('Error updating notifications:', error);
+      setError('Failed to save notification preferences.');
     } finally {
-      setLoading(false);
+      setSavingAction('');
     }
   };
 
   const handlePrivacyUpdate = async () => {
-    setLoading(true);
+    setSavingAction('privacy');
+    setSuccess('');
+    setError('');
     try {
-      // await api.userAPI.updatePrivacy(privacy);
+      await usersAPI.updateCurrentUserSettings(privacy);
       setSuccess('Privacy settings saved!');
-      setTimeout(() => setSuccess(''), 3000);
+      clearFeedbackLater();
     } catch (error) {
       console.error('Error updating privacy:', error);
+      setError('Failed to save privacy settings.');
     } finally {
-      setLoading(false);
+      setSavingAction('');
     }
+  };
+
+  const getDepartmentLabel = (departmentId) => {
+    if (!departmentId) return 'No department selected';
+    const match = departments.find((department) => String(department.department_id) === String(departmentId));
+    return match ? `${match.department_name} • ${match.faculty}` : 'Selected department';
   };
 
   const tabs = [
@@ -122,10 +190,14 @@ const SettingsPage = () => {
         <p>Manage your account preferences and security</p>
       </div>
 
+      {error && <div className="error-message">{error}</div>}
       {success && (
         <div className="success-message">{success}</div>
       )}
 
+      {loading ? (
+        <div className="settings-loading">Loading settings…</div>
+      ) : (
       <div className="settings-container">
 
         {/* ── Tab Sidebar ── */}
@@ -186,24 +258,30 @@ const SettingsPage = () => {
                 <label>Phone Number</label>
                 <input
                   type="tel"
-                  value={profile.phone}
-                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  value={profile.phone_number}
+                  onChange={(e) => setProfile({ ...profile, phone_number: e.target.value })}
                   placeholder="+256 700 000 000"
                 />
               </div>
 
               <div className="form-group">
                 <label>Department</label>
-                <input
-                  type="text"
-                  value={profile.department}
-                  onChange={(e) => setProfile({ ...profile, department: e.target.value })}
-                  placeholder="e.g. Computer Science"
-                />
+                <select
+                  value={profile.department_id}
+                  onChange={(e) => setProfile({ ...profile, department_id: e.target.value })}
+                >
+                  <option value="">Select department</option>
+                  {departments.map((department) => (
+                    <option key={department.department_id} value={department.department_id}>
+                      {department.department_name} • {department.faculty}
+                    </option>
+                  ))}
+                </select>
+                <small className="field-hint">{getDepartmentLabel(profile.department_id)}</small>
               </div>
 
-              <button type="submit" className="btn-save" disabled={loading}>
-                {loading ? 'Saving…' : 'Save Changes'}
+              <button type="submit" className="btn-save" disabled={savingAction === 'profile'}>
+                {savingAction === 'profile' ? 'Saving…' : 'Save Changes'}
               </button>
             </form>
           )}
@@ -247,8 +325,8 @@ const SettingsPage = () => {
                 />
               </div>
 
-              <button type="submit" className="btn-save" disabled={loading}>
-                {loading ? 'Updating…' : 'Update Password'}
+              <button type="submit" className="btn-save" disabled={savingAction === 'password'}>
+                {savingAction === 'password' ? 'Updating…' : 'Update Password'}
               </button>
             </form>
           )}
@@ -284,8 +362,8 @@ const SettingsPage = () => {
                 ))}
               </div>
 
-              <button onClick={handleNotificationUpdate} className="btn-save" disabled={loading}>
-                {loading ? 'Saving…' : 'Save Preferences'}
+              <button onClick={handleNotificationUpdate} className="btn-save" disabled={savingAction === 'notifications'}>
+                {savingAction === 'notifications' ? 'Saving…' : 'Save Preferences'}
               </button>
             </div>
           )}
@@ -319,14 +397,15 @@ const SettingsPage = () => {
                 ))}
               </div>
 
-              <button onClick={handlePrivacyUpdate} className="btn-save" disabled={loading}>
-                {loading ? 'Saving…' : 'Save Privacy Settings'}
+              <button onClick={handlePrivacyUpdate} className="btn-save" disabled={savingAction === 'privacy'}>
+                {savingAction === 'privacy' ? 'Saving…' : 'Save Privacy Settings'}
               </button>
             </div>
           )}
 
         </div>
       </div>
+      )}
     </div>
   );
 };

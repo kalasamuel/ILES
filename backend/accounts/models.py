@@ -93,3 +93,19 @@ class Supervisor(models.Model):
 
     def __str__(self):
         return f"{self.user} ({self.supervisor_type})"
+
+
+class UserSettings(models.Model):
+    settings_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
+    email_notifications = models.BooleanField(default=True)
+    push_notifications = models.BooleanField(default=True)
+    log_reminders = models.BooleanField(default=True)
+    review_alerts = models.BooleanField(default=True)
+    weekly_summary = models.BooleanField(default=False)
+    profile_visible = models.BooleanField(default=True)
+    show_email = models.BooleanField(default=False)
+    show_phone = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Settings for {self.user}"

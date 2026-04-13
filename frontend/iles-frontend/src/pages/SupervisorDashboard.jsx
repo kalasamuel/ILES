@@ -59,6 +59,23 @@ function getEvaluationPercentage(evaluation) {
   return Number(evaluation?.total_score) || 0;
 }
 
+function getEvaluationDisplayScore(evaluation) {
+  const score = Number(evaluation?.total_score);
+  if (Number.isFinite(score) && score > 0) {
+    return Math.min(score, 100);
+  }
+
+  return getEvaluationPercentage(evaluation);
+}
+
+function getGradeBucket(score) {
+  if (score >= 90) return 'A';
+  if (score >= 80) return 'B';
+  if (score >= 70) return 'C';
+  if (score >= 60) return 'D';
+  return 'F';
+}
+
 function SupervisorDashboard() {
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
@@ -205,6 +222,37 @@ function SupervisorDashboard() {
       }))
       .sort((left, right) => right.avgPercentage - left.avgPercentage)
       .slice(0, 8);
+  }, [completedEvaluations]);
+
+  const completedScoreTrend = useMemo(() => {
+    return [...completedEvaluations]
+      .sort((left, right) => sortByDateDesc(left?.evaluation_date, right?.evaluation_date))
+      .slice(0, 6)
+      .map((evaluation, index) => ({
+        label: `#${index + 1}`,
+        score: Number(getEvaluationDisplayScore(evaluation).toFixed(1)),
+        grade: evaluation?.grade || getGradeBucket(getEvaluationDisplayScore(evaluation)),
+      }))
+      .reverse();
+  }, [completedEvaluations]);
+
+  const gradeDistribution = useMemo(() => {
+    const buckets = [
+      { grade: 'A', count: 0 },
+      { grade: 'B', count: 0 },
+      { grade: 'C', count: 0 },
+      { grade: 'D', count: 0 },
+      { grade: 'F', count: 0 },
+    ];
+
+    completedEvaluations.forEach((evaluation) => {
+      const score = getEvaluationDisplayScore(evaluation);
+      const grade = String(evaluation?.grade || getGradeBucket(score)).toUpperCase().slice(0, 1);
+      const bucket = buckets.find((item) => item.grade === grade) || buckets[buckets.length - 1];
+      bucket.count += 1;
+    });
+
+    return buckets.filter((item) => item.count > 0);
   }, [completedEvaluations]);
 
   const averageEvaluationPercentage = useMemo(() => {
@@ -398,9 +446,13 @@ function SupervisorDashboard() {
               <span>Evaluated students</span>
               <strong>{evaluatedStudents}</strong>
             </div>
+            <div className="overview-pill">
+              <span>Completion rate</span>
+              <strong>{evaluations.length ? `${Math.round((completedEvaluations.length / evaluations.length) * 100)}%` : '0%'}</strong>
+            </div>
           </div>
 
-          <h4 className="chart-subtitle">Average Score by Criteria (%)</h4>
+          <h4 className="chart-subtitle">Completed Evaluation Scores</h4>
           {criteriaChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={criteriaChartData} layout="vertical" margin={{ left: 12, right: 16 }}>
@@ -411,8 +463,49 @@ function SupervisorDashboard() {
                 <Bar dataKey="avgPercentage" fill="#f97316" radius={[4, 4, 4, 4]} />
               </BarChart>
             </ResponsiveContainer>
+          ) : completedScoreTrend.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={completedScoreTrend} margin={{ left: 8, right: 12 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="label" />
+                <YAxis allowDecimals={false} domain={[0, 100]} unit="%" />
+                <Tooltip />
+                <Bar dataKey="score" fill="#f97316" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : gradeDistribution.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={gradeDistribution} margin={{ left: 8, right: 12 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="grade" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           ) : (
             <p className="no-data">No completed evaluation data available</p>
+          )}
+
+          {completedEvaluations.length > 0 && (
+            <div className="completed-evaluations-list">
+              {completedEvaluations.slice(0, 4).map((evaluation) => {
+                const placement = placementsById.get(evaluation?.placement);
+                const score = getEvaluationDisplayScore(evaluation);
+                return (
+                  <div key={evaluation.evaluation_id || evaluation.id} className="completed-evaluation-row">
+                    <div>
+                      <strong>{getStudentLabel(placement)}</strong>
+                      <span>{placement?.position_title || 'Placement'} • {formatDate(evaluation?.evaluation_date)}</span>
+                    </div>
+                    <div className="completed-evaluation-score">
+                      <span>{score.toFixed(1)}%</span>
+                      <small>{evaluation?.grade || getGradeBucket(score)}</small>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           <div className="card-actions-row">

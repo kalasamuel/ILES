@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Role, Department, User, Student, Supervisor
+from .models import Role, Department, User, Student, Supervisor, UserSettings
 from datetime import timedelta
 from django.utils import timezone
 import uuid
@@ -29,6 +29,22 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
+
+    def update(self, instance, validated_data):
+        role = validated_data.pop('role', None)
+        department = validated_data.pop('department', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if role is not None:
+            instance.role = role
+
+        if department is not None:
+            instance.department = department
+
+        instance.save()
+        return instance
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -103,3 +119,20 @@ class SupervisorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supervisor
         fields = '__all__'
+
+
+class UserSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSettings
+        fields = [
+            'settings_id',
+            'email_notifications',
+            'push_notifications',
+            'log_reminders',
+            'review_alerts',
+            'weekly_summary',
+            'profile_visible',
+            'show_email',
+            'show_phone',
+        ]
+        read_only_fields = ['settings_id']

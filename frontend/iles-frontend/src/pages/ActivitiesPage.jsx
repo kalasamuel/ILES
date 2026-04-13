@@ -1,11 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { evaluationsAPI, logbooksAPI, placementsAPI, reviewsAPI } from '../services/endpoints';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import './ActivitiesPage.css';
 
 function ActivitiesPage() {
   const [reviews, setReviews] = useState([]);
   const [logs, setLogs] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [placements, setPlacements] = useState([]);
+  const [activeType, setActiveType] = useState('All');
+  const [query, setQuery] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +29,7 @@ function ActivitiesPage() {
         setPlacements(placementsRes?.results || placementsRes || []);
       } catch (error) {
         console.error('Failed to fetch activities', error);
+        setError('Failed to load activity feed. Please refresh and try again.');
       } finally {
         setLoading(false);
       }
@@ -65,6 +71,17 @@ function ActivitiesPage() {
     return date.toLocaleString();
   };
 
+  const formatDateOnly = (value) => {
+    if (!value) {
+      return 'N/A';
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return 'N/A';
+    }
+    return date.toLocaleDateString();
+  };
+
   const activities = useMemo(() => {
     const pendingActivities = logs
       .filter((log) => log?.status === 'submitted')
@@ -72,10 +89,12 @@ function ActivitiesPage() {
         const placement = placementsById.get(log?.placement);
         return {
           id: `pending-${log.log_id || log.id}`,
-          title: 'Pending log submission review',
+          title: 'Pending weekly log review',
           detail: `${getStudentLabel(placement)} • Week ${log.week_number || 'N/A'}`,
+          subtitle: placement?.position_title ? `${placement.position_title} at ${placement?.organization_details?.name || 'Organization'}` : 'Placement details unavailable',
           date: log?.submitted_at,
           type: 'Pending Review',
+          icon: '⏳',
         };
       });
 
@@ -83,8 +102,10 @@ function ActivitiesPage() {
       id: `review-${review.review_id || review.id}`,
       title: 'Log review updated',
       detail: `Status: ${String(review?.status || 'unknown').replace('_', ' ')}`,
+      subtitle: review?.comments ? review.comments : 'No comment provided',
       date: review?.reviewed_at,
       type: 'Review',
+      icon: '📝',
     }));
 
     const evaluationActivities = evaluations.map((evaluation) => {
@@ -93,8 +114,10 @@ function ActivitiesPage() {
         id: `evaluation-${evaluation.evaluation_id || evaluation.id}`,
         title: 'Evaluation completed',
         detail: `${getStudentLabel(placement)} • Grade: ${evaluation?.grade || 'N/A'}`,
+        subtitle: placement?.position_title ? `${placement.position_title} at ${placement?.organization_details?.name || 'Organization'}` : 'Placement details unavailable',
         date: evaluation?.evaluation_date,
         type: 'Evaluation',
+        icon: '✅',
       };
     });
 
@@ -102,38 +125,125 @@ function ActivitiesPage() {
       .sort((a, b) => parseDate(b.date) - parseDate(a.date));
   }, [logs, reviews, evaluations, placementsById]);
 
+  const typeStats = useMemo(() => {
+    const pending = activities.filter((activity) => activity.type === 'Pending Review').length;
+    const review = activities.filter((activity) => activity.type === 'Review').length;
+    const evaluation = activities.filter((activity) => activity.type === 'Evaluation').length;
+
+    return {
+      total: activities.length,
+      pending,
+      review,
+      evaluation,
+    };
+  }, [activities]);
+
+  const filteredActivities = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return activities.filter((activity) => {
+      const byType = activeType === 'All' || activity.type === activeType;
+      if (!byType) {
+        return false;
+      }
+
+      if (!normalizedQuery) {
+        return true;
+      }
+
+      const haystack = `${activity.title} ${activity.detail} ${activity.subtitle || ''}`.toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+  }, [activities, activeType, query]);
+
+  const lastUpdated = useMemo(() => {
+    return activities.length > 0 ? formatDateOnly(activities[0].date) : 'N/A';
+  }, [activities]);
+
   return (
-    <div className="p-6">
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">All Activities</h2>
-        <p className="text-gray-600 mt-1">Recent supervisor activity across reviews and evaluations</p>
+    <div className="activities-page">
+      <div className="ac-header">
+        <div>
+          <h1>Activities</h1>
+          <p>Track recent review and evaluation events across your internship workflow.</p>
+        </div>
+
+        <div className="ac-header-meta">
+          <span className="ac-updated-pill">Last update: {lastUpdated}</span>
+        </div>
+      </div>
+
+      <div className="ac-stats">
+        <article className="ac-stat-card">
+          <span className="ac-stat-label">Total Events</span>
+          <strong className="ac-stat-value">{typeStats.total}</strong>
+        </article>
+        <article className="ac-stat-card pending">
+          <span className="ac-stat-label">Pending Reviews</span>
+          <strong className="ac-stat-value">{typeStats.pending}</strong>
+        </article>
+        <article className="ac-stat-card review">
+          <span className="ac-stat-label">Review Updates</span>
+          <strong className="ac-stat-value">{typeStats.review}</strong>
+        </article>
+        <article className="ac-stat-card evaluation">
+          <span className="ac-stat-label">Evaluations</span>
+          <strong className="ac-stat-value">{typeStats.evaluation}</strong>
+        </article>
+      </div>
+
+      <div className="ac-controls">
+        <div className="ac-filters" role="tablist" aria-label="Activity type filters">
+          {['All', 'Pending Review', 'Review', 'Evaluation'].map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              className={`ac-filter-chip${activeType === filter ? ' active' : ''}`}
+              onClick={() => setActiveType(filter)}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+
+        <label className="ac-search">
+          <span>Search</span>
+          <input
+            type="search"
+            placeholder="Search by student, status, or activity..."
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
       </div>
 
       {loading ? (
-        <p className="text-gray-500">Loading activities...</p>
-      ) : activities.length === 0 ? (
-        <p className="text-gray-500">No activities found.</p>
+        <LoadingSpinner text="Loading activity feed..." />
+      ) : error ? (
+        <div className="ac-message ac-error">{error}</div>
+      ) : filteredActivities.length === 0 ? (
+        <div className="ac-message ac-empty">
+          <p>No activities match the current filter.</p>
+        </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <ul className="divide-y divide-gray-100">
-            {activities.map((activity) => (
-              <li key={activity.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-semibold text-gray-800">{activity.title}</p>
-                    <p className="text-sm text-gray-600 mt-1">{activity.detail}</p>
+        <section className="ac-feed" aria-live="polite">
+          <ul>
+            {filteredActivities.map((activity) => (
+              <li key={activity.id} className="ac-item">
+                <div className="ac-item-icon" aria-hidden="true">{activity.icon}</div>
+                <div className="ac-item-main">
+                  <div className="ac-item-top">
+                    <h3>{activity.title}</h3>
+                    <span className={`ac-type-badge ${activity.type.toLowerCase().replace(' ', '-')}`}>{activity.type}</span>
                   </div>
-                  <div className="text-right">
-                    <span className="inline-flex px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-700">
-                      {activity.type}
-                    </span>
-                    <p className="text-xs text-gray-500 mt-2">{formatDate(activity.date)}</p>
-                  </div>
+                  <p className="ac-item-detail">{activity.detail}</p>
+                  <p className="ac-item-subtitle">{activity.subtitle}</p>
                 </div>
+                <div className="ac-item-time">{formatDate(activity.date)}</div>
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
     </div>
   );

@@ -36,7 +36,6 @@ function LogList() {
   const submitted = logs.filter((l) => l.status === 'submitted').length;
   const approved  = logs.filter((l) => l.status === 'approved').length;
   const totalHrs  = logs.reduce((s, l) => s + (Number(l.hours_worked) || 0), 0);
-
   return (
     <div className="logs-page">
       {/* Header */}

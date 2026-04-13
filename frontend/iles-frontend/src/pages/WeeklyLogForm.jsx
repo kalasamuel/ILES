@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { logbooksAPI, placementsAPI } from '../services/endpoints';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import './WeeklyLogForm.css';
 
 const WeeklyLogForm = () => {
   const { placementId, weekNumber } = useParams();
@@ -24,6 +26,10 @@ const WeeklyLogForm = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageDescription, setImageDescription] = useState('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+
+  const selectedPlacement = placements.find((item) => String(item.placement_id) === String(selectedPlacementId));
+
+  const activePlacement = placement || selectedPlacement;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -129,17 +135,17 @@ const WeeklyLogForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!placement) return;
+    if (!activePlacement) return;
 
     setSaving(true);
     setError('');
 
     try {
       const logData = {
-        placement: placement.placement_id,
+        placement: activePlacement.placement_id,
         week_number: weekNumber ? parseInt(weekNumber) : 1,
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: new Date().toISOString().split('T')[0],
+        start_date: activePlacement?.start_date || new Date().toISOString().split('T')[0],
+        end_date: activePlacement?.end_date || new Date().toISOString().split('T')[0],
         activities_performed: formData.activities_performed,
         skills_learned: formData.skills_learned,
         challenges: formData.challenges,
@@ -189,159 +195,224 @@ const WeeklyLogForm = () => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner text="Loading log form…" fullscreen />;
   }
 
   if (!placementId) {
-    return (
-      <div className="weekly-log-form">
-        <header className="form-header">
-          <h2>Create Weekly Log</h2>
-          <p>Select a placement to continue</p>
-        </header>
+    const placementCount = placements.length;
 
-        <div className="form-group">
-          <label htmlFor="placement">Placement:</label>
-          <select
-            id="placement"
-            value={selectedPlacementId}
-            onChange={(e) => setSelectedPlacementId(e.target.value)}
-          >
-            <option value="">Select placement</option>
-            {placements.map((item) => (
-              <option key={item.placement_id} value={item.placement_id}>
-                {item.position_title} at {item.organization?.name || 'Organization'}
-              </option>
-            ))}
-          </select>
+    return (
+      <div className="weekly-log-page">
+        <div className="wl-hero">
+          <div>
+            <span className="wl-kicker">Weekly logs</span>
+            <h1>Create Weekly Log</h1>
+            <p>Select the placement you want to document, then continue into the log editor.</p>
+          </div>
+          <div className="wl-hero-pill">
+            {placementCount} available placement{placementCount === 1 ? '' : 's'}
+          </div>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        <div className="wl-shell">
+          <section className="wl-card wl-select-card">
+            <div className="wl-card-header">
+              <div>
+                <h2>Choose a placement</h2>
+                <p>Only approved or completed placements are shown here.</p>
+              </div>
+            </div>
 
-        <div className="form-actions">
-          <button type="button" onClick={handlePlacementContinue} disabled={!selectedPlacementId}>
-            Continue
-          </button>
+            <label className="wl-field">
+              <span>Placement</span>
+              <select
+                id="placement"
+                value={selectedPlacementId}
+                onChange={(e) => setSelectedPlacementId(e.target.value)}
+              >
+                <option value="">Select placement</option>
+                {placements.map((item) => (
+                  <option key={item.placement_id} value={item.placement_id}>
+                    {item.position_title} at {item.organization?.name || 'Organization'}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {error && <div className="wl-message error">{error}</div>}
+
+            <div className="wl-actions">
+              <button type="button" className="wl-btn-primary" onClick={handlePlacementContinue} disabled={!selectedPlacementId}>
+                Continue
+              </button>
+            </div>
+          </section>
         </div>
       </div>
     );
   }
 
   if (!placement) {
-    return <div>Placement not found</div>;
+    return <div className="wl-message error">Placement not found</div>;
   }
 
   return (
-    <div className="weekly-log-form">
-      <header className="form-header">
-        <h2>Weekly Log - Week {weekNumber || 1}</h2>
-        <p>{placement.position_title} at {placement.organization.name}</p>
-      </header>
-
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="activities_performed">Activities Performed:</label>
-          <textarea
-            id="activities_performed"
-            name="activities_performed"
-            value={formData.activities_performed}
-            onChange={handleChange}
-            rows={4}
-            required
-          />
+    <div className="weekly-log-page">
+      <div className="wl-hero">
+        <div>
+          <span className="wl-kicker">Weekly logs</span>
+          <h1>Week {weekNumber || 1}</h1>
+          <p>{placement.position_title} at {placement.organization.name}</p>
         </div>
-
-        <div className="form-group">
-          <label htmlFor="skills_learned">Skills Learned:</label>
-          <textarea
-            id="skills_learned"
-            name="skills_learned"
-            value={formData.skills_learned}
-            onChange={handleChange}
-            rows={3}
-            required
-          />
+        <div className="wl-hero-pill">
+          {existingLog ? 'Draft loaded' : 'New draft'}
         </div>
+      </div>
 
-        <div className="form-group">
-          <label htmlFor="challenges">Challenges Faced:</label>
-          <textarea
-            id="challenges"
-            name="challenges"
-            value={formData.challenges}
-            onChange={handleChange}
-            rows={3}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="solutions">Solutions Implemented:</label>
-          <textarea
-            id="solutions"
-            name="solutions"
-            value={formData.solutions}
-            onChange={handleChange}
-            rows={3}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="hours_worked">Hours Worked:</label>
-          <input
-            type="number"
-            id="hours_worked"
-            name="hours_worked"
-            value={formData.hours_worked}
-            onChange={handleChange}
-            min="0"
-            step="0.5"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="log_image">Optional Image Upload:</label>
-          <input
-            type="file"
-            id="log_image"
-            accept="image/*"
-            onChange={handleImageChange}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="image_description">Image Description (optional):</label>
-          <input
-            type="text"
-            id="image_description"
-            value={imageDescription}
-            onChange={(e) => setImageDescription(e.target.value)}
-            placeholder="Brief description of the uploaded image"
-          />
-        </div>
-
-        {imagePreviewUrl && (
-          <div className="form-group">
-            <label>Image Preview:</label>
+      <div className="wl-shell">
+        <form className="wl-card wl-form-card" onSubmit={handleSubmit}>
+          <div className="wl-card-header">
             <div>
-              <img src={imagePreviewUrl} alt="Selected upload" style={{ maxWidth: '320px', borderRadius: '6px' }} />
+              <h2>Log details</h2>
+              <p>Document the work completed during this week.</p>
             </div>
           </div>
-        )}
 
-        {error && <div className="error-message">{error}</div>}
+          <div className="wl-grid">
+            <label className="wl-field wl-span-2">
+              <span>Activities performed</span>
+              <textarea
+                id="activities_performed"
+                name="activities_performed"
+                value={formData.activities_performed}
+                onChange={handleChange}
+                rows={5}
+                placeholder="Describe what you worked on this week..."
+                required
+              />
+            </label>
 
-        <div className="form-actions">
-          <button type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Draft'}
-          </button>
-          {existingLog && existingLog.status === 'draft' && (
-            <button type="button" onClick={handleSubmitForReview} className="submit-btn">
-              Submit for Review
-            </button>
+            <label className="wl-field">
+              <span>Hours worked</span>
+              <input
+                type="number"
+                id="hours_worked"
+                name="hours_worked"
+                value={formData.hours_worked}
+                onChange={handleChange}
+                min="0"
+                step="0.5"
+                placeholder="40"
+                required
+              />
+            </label>
+
+            <label className="wl-field">
+              <span>Skills learned</span>
+              <textarea
+                id="skills_learned"
+                name="skills_learned"
+                value={formData.skills_learned}
+                onChange={handleChange}
+                rows={4}
+                placeholder="Tools, methods, or concepts you learned..."
+                required
+              />
+            </label>
+
+            <label className="wl-field">
+              <span>Challenges faced</span>
+              <textarea
+                id="challenges"
+                name="challenges"
+                value={formData.challenges}
+                onChange={handleChange}
+                rows={4}
+                placeholder="Any blockers or issues encountered..."
+              />
+            </label>
+
+            <label className="wl-field wl-span-2">
+              <span>Solutions implemented</span>
+              <textarea
+                id="solutions"
+                name="solutions"
+                value={formData.solutions}
+                onChange={handleChange}
+                rows={4}
+                placeholder="How you addressed the challenges..."
+              />
+            </label>
+
+            <label className="wl-field">
+              <span>Optional image upload</span>
+              <input
+                type="file"
+                id="log_image"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+            </label>
+
+            <label className="wl-field">
+              <span>Image description</span>
+              <input
+                type="text"
+                id="image_description"
+                value={imageDescription}
+                onChange={(e) => setImageDescription(e.target.value)}
+                placeholder="Short caption for the upload"
+              />
+            </label>
+          </div>
+
+          {imagePreviewUrl && (
+            <div className="wl-preview">
+              <span>Attachment preview</span>
+              <img src={imagePreviewUrl} alt="Selected upload" />
+            </div>
           )}
-        </div>
-      </form>
+
+          {error && <div className="wl-message error">{error}</div>}
+
+          <div className="wl-actions">
+            <button type="submit" className="wl-btn-primary" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Draft'}
+            </button>
+            {existingLog && existingLog.status === 'draft' && (
+              <button type="button" onClick={handleSubmitForReview} className="wl-btn-secondary">
+                Submit for Review
+              </button>
+            )}
+          </div>
+        </form>
+
+        <aside className="wl-card wl-side-card">
+          <h3>Placement summary</h3>
+          <div className="wl-summary-list">
+            <div>
+              <span>Organization</span>
+              <strong>{placement.organization.name}</strong>
+            </div>
+            <div>
+              <span>Status</span>
+              <strong>{placement.status}</strong>
+            </div>
+            <div>
+              <span>Start date</span>
+              <strong>{placement.start_date || 'N/A'}</strong>
+            </div>
+            <div>
+              <span>End date</span>
+              <strong>{placement.end_date || 'N/A'}</strong>
+            </div>
+          </div>
+
+          <div className="wl-side-note">
+            Save as a draft first, then submit once the week is complete.
+          </div>
+        </aside>
+      </div>
     </div>
   );
 };

@@ -168,10 +168,20 @@ function PlacementCreate() {
     setSub(true);
     setError('');
     try {
-      await placementsAPI.createPlacement(form);
+      const payload = {
+        position_title: form.position_title,
+        organization: form.organization,
+        start_date: form.start_date,
+        end_date: form.end_date,
+      };
+      await placementsAPI.createPlacement(payload);
       navigate('/app/placements');
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Failed to create placement. Please try again.');
+      const apiError = err?.response?.data;
+      const firstFieldError = apiError && typeof apiError === 'object'
+        ? Object.values(apiError).find((val) => Array.isArray(val) && val.length > 0)?.[0]
+        : '';
+      setError(firstFieldError || apiError?.detail || 'Failed to create placement. Please try again.');
     } finally {
       setSub(false);
     }

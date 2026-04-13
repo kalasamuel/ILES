@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { authAPI } from '../../../services/endpoints'; 
 import './ForgotPasswordPage.css';
 
 function ForgotPasswordPage() {
@@ -9,22 +10,22 @@ function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage('');
-    setIsLoading(true);
+  e.preventDefault();
+  setMessage('');
+  setIsLoading(true);
 
-    try {
-      // TODO: Implement forgot password API call
-      console.log('Forgot password for:', email);
-      setMessage('Password reset instructions sent to your email.');
-      setMessageType('success');
-    } catch {
-      setMessage('Failed to send reset instructions. Please try again.');
-      setMessageType('error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    const data = await authAPI.forgotPassword(email);
+    setMessage(data.message || 'Password reset instructions sent to your email.');
+    setMessageType('success');
+  } catch (err) {
+    const msg = err?.response?.data?.error || 'Failed to send reset instructions. Please try again.';
+    setMessage(msg);
+    setMessageType('error');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <>
@@ -82,7 +83,7 @@ function ForgotPasswordPage() {
                     type="email"
                     id="email"
                     name="email"
-                    placeholder="m.student@university.edu"
+                    placeholder="name@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
