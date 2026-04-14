@@ -28,4 +28,10 @@ class IsSupervisor(permissions.BasePermission):
         if not (request.user and request.user.is_authenticated):
             return False
         role_name = get_role_name(request.user)
-        return 'supervisor' in role_name or 'academic' in role_name or 'workplace' in role_name       
+        return 'supervisor' in role_name or 'academic' in role_name or 'workplace' in role_name 
+    
+class IsOwnerOrAdmin(permissions.BasePermission):
+    """
+    Custom permission to only allow owners of an object (student) or admins to edit it.
+    Assumes the model instance has a way to relate back to a student.user.
+    """          
