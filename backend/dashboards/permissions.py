@@ -11,3 +11,12 @@ class IsAdmin(permissions.BasePermission):
         if not (request.user and request.user.is_authenticated):
             return False
         return get_role_name(request.user) == 'admin'
+
+class IsStudent(permissions.BasePermission):
+    """
+    Allows access only to students.
+    """
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        return 'student' in get_role_name(request.user)    
