@@ -52,4 +52,6 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         # Fallback to simple user check if 'user' field exists
         if hasattr(obj, 'user'):
             return obj.user.user_id == user.user_id
+        
+        return False
                   
