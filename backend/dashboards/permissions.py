@@ -19,4 +19,13 @@ class IsStudent(permissions.BasePermission):
     def has_permission(self, request, view):
         if not (request.user and request.user.is_authenticated):
             return False
-        return 'student' in get_role_name(request.user)    
+        return 'student' in get_role_name(request.user) 
+class IsSupervisor(permissions.BasePermission):
+    """
+    Allows access only to supervisors.
+    """
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        role_name = get_role_name(request.user)
+        return 'supervisor' in role_name or 'academic' in role_name or 'workplace' in role_name       
