@@ -34,4 +34,11 @@ class IsOwnerOrAdmin(permissions.BasePermission):
     """
     Custom permission to only allow owners of an object (student) or admins to edit it.
     Assumes the model instance has a way to relate back to a student.user.
-    """          
+    """
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        role_name = get_role_name(user)
+        
+        if role_name == 'admin':
+            return True
+                  
