@@ -48,4 +48,8 @@ class IsOwnerOrAdmin(permissions.BasePermission):
          # Check if object is a Placement
         if hasattr(obj, 'student') and hasattr(obj.student, 'user'):
             return obj.student.user_id == user.user_id
+        
+        # Fallback to simple user check if 'user' field exists
+        if hasattr(obj, 'user'):
+            return obj.user.user_id == user.user_id
                   
