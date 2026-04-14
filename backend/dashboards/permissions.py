@@ -44,4 +44,8 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         # Check if object is a WeeklyLog
         if hasattr(obj, 'placement') and hasattr(obj.placement, 'student'):
             return obj.placement.student.user_id == user.user_id
+        
+         # Check if object is a Placement
+        if hasattr(obj, 'student') and hasattr(obj.student, 'user'):
+            return obj.student.user_id == user.user_id
                   
