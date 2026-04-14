@@ -6,4 +6,8 @@ def get_role_name(user):
 class IsAdmin(permissions.BasePermission):
     """
     Allows access only to admin users.
-    """
+    """ 
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        return get_role_name(request.user) == 'admin'
