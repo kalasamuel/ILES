@@ -178,6 +178,16 @@
   font-weight: 500;
 }
 
+.cf-error {
+  padding: 14px 18px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 @media (max-width: 640px) {
   .contact-page { padding: 24px 16px 40px; }
   .cf-row { grid-template-columns: 1fr; }

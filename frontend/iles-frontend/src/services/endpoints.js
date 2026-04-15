@@ -278,6 +278,15 @@ export const notificationsAPI = {
   },
 };
 
+// Contact
+export const contactAPI = {
+  submitMessage: async (data) => {
+    const contactPath = import.meta.env.VITE_CONTACT_ENDPOINT || '/notifications/contact-messages/';
+    const response = await api.post(contactPath, data);
+    return response.data;
+  },
+};
+
 // Workflow History
 export const workflowAPI = {
   getHistory: async () => {

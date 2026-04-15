@@ -1,21 +1,36 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { contactAPI } from '../services/endpoints';
 import './ContactPage.css';
 
 function ContactPage() {
   const [form, setForm]   = useState({ name: '', email: '', subject: 'General Inquiry', message: '' });
   const [isSubmitting, setIsSub] = useState(false);
   const [success, setSuccess]     = useState(false);
+  const [error, setError]         = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess(false);
     setIsSub(true);
-    // 🚧 Simulate API Call
-    setTimeout(() => {
-      setIsSub(false);
+
+    try {
+      await contactAPI.submitMessage({
+        name: form.name,
+        email: form.email,
+        subject: form.subject,
+        message: form.message,
+      });
+
       setSuccess(true);
       setForm({ name: '', email: '', subject: 'General Inquiry', message: '' });
-    }, 1500);
+    } catch (err) {
+      const backendError = err?.response?.data?.detail || err?.response?.data?.message;
+      setError(backendError || 'Failed to send your message. Please try again in a moment.');
+    } finally {
+      setIsSub(false);
+    }
   };
 
   return (
@@ -76,6 +91,7 @@ function ContactPage() {
             </div>
           ) : (
             <form className="cf-form" onSubmit={handleSubmit}>
+              {error && <div className="cf-error" role="alert">{error}</div>}
               <div className="cf-row">
                 <div className="cf-field">
                   <label htmlFor="name">Full Name *</label>
