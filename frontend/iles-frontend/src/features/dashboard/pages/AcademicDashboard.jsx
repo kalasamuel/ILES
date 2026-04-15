@@ -93,14 +93,14 @@ function AcademicDashboard() {
         <div className="dashboard-card">
           <h3>Pending Evaluations</h3>
           <div className="stat-number">{evaluations.filter(e => !e.total_score).length}</div>
-          <p>Evaluations awaiting completion</p>
+          <p>Evaluations Awaiting Completion</p>
           <Link to="/app/evaluations" className="btn btn-secondary">View Evaluations</Link>
         </div>
 
         <div className="dashboard-card">
           <h3>My Students</h3>
           <div className="stat-number">{placements.length}</div>
-          <p>Students under academic supervision</p>
+          <p>Students Under Academic Supervision</p>
           <Link to="/app/placements" className="btn btn-secondary">View Students</Link>
         </div>
 
