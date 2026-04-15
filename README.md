@@ -153,7 +153,6 @@ The system uses a normalized PostgreSQL database with 19+ core tables including:
 3. Configure API base URL for production
 
 ## Contributing
-
 1. Follow the established code structure
 2. Use TypeScript for frontend components
 3. Implement proper error handling
@@ -161,5 +160,4 @@ The system uses a normalized PostgreSQL database with 19+ core tables including:
 5. Test both API endpoints and UI components
 
 ## License
-
 This project is developed for educational purposes as part of the Software Development Project (SDP) course.
