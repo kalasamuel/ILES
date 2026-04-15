@@ -150,7 +150,7 @@ class UserViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # ── NEW: Forgot Password ───────────────────────────────────────────────────
+    
     @action(detail=False, methods=['post'], permission_classes=[], url_path='forgot-password')
     def forgot_password(self, request):
         email = request.data.get('email', '').strip().lower()
@@ -160,10 +160,8 @@ class UserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
-            # Don't reveal whether the email exists — security best practice
+        
             return Response({'message': 'If that email is registered, a reset link has been sent.'})
-
-        # Generate a secure 64-char token, cache it against the user's ID for 1 hour
         token = get_random_string(64)
         cache_key = f'password_reset_{token}'
         cache.set(cache_key, user.user_id, timeout=3600)
@@ -188,7 +186,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response({'message': 'If that email is registered, a reset link has been sent.'})
 
-    # ── NEW: Reset Password ────────────────────────────────────────────────────
+    
     @action(detail=False, methods=['post'], permission_classes=[], url_path='reset-password')
     def reset_password(self, request):
         token = request.data.get('token', '').strip()
@@ -217,7 +215,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         user.set_password(new_password)
         user.save(update_fields=['password'])
-        cache.delete(cache_key)  # One-time use — invalidate immediately after reset
+        cache.delete(cache_key)  
 
         return Response({'message': 'Password reset successfully. You can now log in.'})
 
