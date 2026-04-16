@@ -168,4 +168,7 @@ This project is developed for educational purposes as part of the Software Devel
 ### Student Intern
 
 1. As an intern, I want to be able to register and log into the system in order to be able to access my internship dashboard
- 
+2. As a student, I want to create and submit weekly internship logs so that my work can be reviewed by supervisors.
+3. As a student, I want to edit my weekly logs while they are still in draft mode so that I can correct mistakes before submission.
+4. As a student, I want to view the status (approved, rejected, or reviewed) of my submitted logs so that I know if further action is needed.
+5. As a student, I want to see my final weighted evaluation score so that I understand my overall internship performance.
