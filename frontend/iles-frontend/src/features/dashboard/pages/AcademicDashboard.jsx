@@ -119,7 +119,7 @@ function AcademicDashboard() {
         <div className="dashboard-card chart-card">
           <h3>Evaluation Status</h3>
           {evaluationStatusData.length === 0 ? (
-            <p>No evaluation data yet.</p>
+            <p>No Evaluation Data yet.</p>
           ) : (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>

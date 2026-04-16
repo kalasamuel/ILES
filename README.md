@@ -161,3 +161,6 @@ The system uses a normalized PostgreSQL database with 19+ core tables including:
 
 ## License
 This project is developed for educational purposes as part of the Software Development Project (SDP) course.
+
+
+# User Stories
