@@ -172,3 +172,5 @@ This project is developed for educational purposes as part of the Software Devel
 3. As a student, I want to edit my weekly logs while they are still in draft mode so that I can correct mistakes before submission.
 4. As a student, I want to view the status (approved, rejected, or reviewed) of my submitted logs so that I know if further action is needed.
 5. As a student, I want to see my final weighted evaluation score so that I understand my overall internship performance.
+
+### Academic Supervisor
