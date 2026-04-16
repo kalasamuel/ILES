@@ -163,4 +163,9 @@ The system uses a normalized PostgreSQL database with 19+ core tables including:
 This project is developed for educational purposes as part of the Software Development Project (SDP) course.
 
 
-# User Stories
+## User Stories
+
+### Student Intern
+
+1. As an intern, I want to be able to register and log into the system in order to be able to access my internship dashboard
+ 
