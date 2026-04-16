@@ -33,14 +33,21 @@ class LogReviewViewSet(viewsets.ModelViewSet):
         role_name = (user.role.role_name if user.role else '').strip().lower()
         return role_name == 'admin'
 
-    def _assert_workplace_reviewer(self):
+    def _assert_supervisor_reviewer(self):
         if self._is_admin(self.request.user):
             return None
 
         supervisor = self._get_supervisor(self.request.user)
-        if not supervisor or supervisor.supervisor_type != 'workplace':
-            raise PermissionDenied('Only workplace supervisors can review logs.')
+        if not supervisor:
+            raise PermissionDenied('Only supervisors can review logs.')
         return supervisor
+
+    def _can_supervisor_review_log(self, supervisor, log):
+        if supervisor.supervisor_type == 'workplace':
+            return log.placement.workplace_supervisor_id == supervisor.supervisor_id
+        if supervisor.supervisor_type == 'academic':
+            return log.placement.academic_supervisor_id == supervisor.supervisor_id
+        return False
 
     def _assert_review_belongs_to_supervisor(self, review, supervisor):
         if review.supervisor_id != supervisor.supervisor_id:
@@ -77,22 +84,23 @@ class LogReviewViewSet(viewsets.ModelViewSet):
         return LogReview.objects.none()
 
     def perform_create(self, serializer):
-        supervisor = self._assert_workplace_reviewer()
+        supervisor = self._assert_supervisor_reviewer()
 
         log = serializer.validated_data.get('log')
-        if not log or log.placement.workplace_supervisor_id != supervisor.supervisor_id:
+        if not log or not self._can_supervisor_review_log(supervisor, log):
             raise PermissionDenied('You can only review logs for interns assigned to you.')
 
         review = serializer.save(supervisor=supervisor)
 
         # Update log status to reviewed
         log = review.log
+        previous_status = log.status
         log.status = 'reviewed'
         log.save()
         WorkflowHistory.objects.create(
             entity_type='log',
             entity_id=log.log_id,
-            previous_status='submitted',
+            previous_status=previous_status,
             new_status='reviewed',
             changed_by=self.request.user
         )
@@ -100,18 +108,20 @@ class LogReviewViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         review = self.get_object()
-        supervisor = self._assert_workplace_reviewer()
-        self._assert_review_belongs_to_supervisor(review, supervisor)
+        supervisor = self._assert_supervisor_reviewer()
+        if supervisor:
+            self._assert_review_belongs_to_supervisor(review, supervisor)
 
         review.status = 'approved'
         review.save()
         log = review.log
+        previous_status = log.status
         log.status = 'approved'
         log.save()
         WorkflowHistory.objects.create(
             entity_type='log',
             entity_id=log.log_id,
-            previous_status='reviewed',
+            previous_status=previous_status,
             new_status='approved',
             changed_by=request.user
         )
@@ -120,18 +130,20 @@ class LogReviewViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         review = self.get_object()
-        supervisor = self._assert_workplace_reviewer()
-        self._assert_review_belongs_to_supervisor(review, supervisor)
+        supervisor = self._assert_supervisor_reviewer()
+        if supervisor:
+            self._assert_review_belongs_to_supervisor(review, supervisor)
 
         review.status = 'rejected'
         review.save()
         log = review.log
+        previous_status = log.status
         log.status = 'rejected'
         log.save()
         WorkflowHistory.objects.create(
             entity_type='log',
             entity_id=log.log_id,
-            previous_status='reviewed',
+            previous_status=previous_status,
             new_status='rejected',
             changed_by=request.user
         )
@@ -140,20 +152,22 @@ class LogReviewViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='request-revision')
     def request_revision(self, request, pk=None):
         review = self.get_object()
-        supervisor = self._assert_workplace_reviewer()
-        self._assert_review_belongs_to_supervisor(review, supervisor)
+        supervisor = self._assert_supervisor_reviewer()
+        if supervisor:
+            self._assert_review_belongs_to_supervisor(review, supervisor)
 
         review.status = 'needs_revision'
         review.save()
 
         log = review.log
+        previous_status = log.status
         log.status = 'reviewed'
         log.save()
 
         WorkflowHistory.objects.create(
             entity_type='log',
             entity_id=log.log_id,
-            previous_status='submitted',
+            previous_status=previous_status,
             new_status='reviewed',
             changed_by=request.user
         )

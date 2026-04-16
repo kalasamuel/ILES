@@ -188,6 +188,18 @@ export const logbooksAPI = {
     const response = await api.post(`/logbooks/logs/${id}/submit/`);
     return response.data;
   },
+  approveLog: async (id, data = {}) => {
+    const response = await api.post(`/logbooks/logs/${id}/approve/`, data);
+    return response.data;
+  },
+  rejectLog: async (id, data = {}) => {
+    const response = await api.post(`/logbooks/logs/${id}/reject/`, data);
+    return response.data;
+  },
+  requestLogRevision: async (id, data = {}) => {
+    const response = await api.post(`/logbooks/logs/${id}/request-revision/`, data);
+    return response.data;
+  },
   getAttachments: async () => {
     const response = await api.get('/logbooks/attachments/');
     return response.data;
