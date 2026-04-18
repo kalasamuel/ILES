@@ -11,6 +11,7 @@ class Notification(models.Model):
         ('evaluation_completed', 'Evaluation Completed'),
         ('placement_approved', 'Placement Approved'),
         ('placement_rejected', 'Placement Rejected'),
+        ('feedback_added', 'Feedback Added'),
     ]
 
     notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -19,6 +20,8 @@ class Notification(models.Model):
     notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
+    # Reference to the log review that triggered this notification
+    log_review = models.ForeignKey('reviews.LogReview', on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"Notification for {self.user}: {self.message[:50]}"
