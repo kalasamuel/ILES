@@ -21,7 +21,12 @@ function Navbar({ user, onMenuClick }) {
         console.error('Failed to fetch notifications', error);
       }
     };
+    
     fetchUnreadNotifications();
+    
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(fetchUnreadNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const initials = [user?.first_name, user?.last_name]
@@ -45,28 +50,6 @@ function Navbar({ user, onMenuClick }) {
   };
 
   const handleNotificationClick = () => {
-    const role = normalizeRole(user?.role?.role_name || user?.role_name);
-
-    if (role === ROLES.ADMIN) {
-      navigate('/app/reports');
-      return;
-    }
-
-    if (role === ROLES.ACADEMIC_SUPERVISOR) {
-      navigate('/app/evaluations');
-      return;
-    }
-
-    if (role === ROLES.WORKPLACE_SUPERVISOR) {
-      navigate('/app/reviews');
-      return;
-    }
-
-    if (role === ROLES.STUDENT) {
-      navigate('/app/logs/create');
-      return;
-    }
-
     navigate('/app/notifications');
   };
 
