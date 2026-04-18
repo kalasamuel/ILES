@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { notificationsAPI } from '../services/endpoints';
 import './NotificationsPage.css';
 
@@ -6,6 +7,7 @@ function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -38,7 +40,19 @@ function NotificationsPage() {
       case 'log_review_pending': return '#4caf50';
       case 'placement_rejected': return '#f44336';
       case 'evaluation_completed': return '#2196f3';
+      case 'feedback_added': return '#9c27b0';
       default: return '#666';
+    }
+  };
+
+  const getTypeIcon = (type) => {
+    switch(type) {
+      case 'submission_deadline': return '📅';
+      case 'log_review_pending': return '👀';
+      case 'placement_rejected': return '❌';
+      case 'evaluation_completed': return '✅';
+      case 'feedback_added': return '💬';
+      default: return '🔔';
     }
   };
 
@@ -72,6 +86,16 @@ function NotificationsPage() {
     }
   };
 
+  const handleNotificationClick = async (notification) => {
+    // Mark as read
+    await markAsRead(notification.notification_id);
+
+    // If it's a feedback notification, navigate to the log
+    if (notification.notification_type === 'feedback_added' && notification.log_review_details?.log_id) {
+      navigate(`/app/logs/${notification.log_review_details.log_id}`);
+    }
+  };
+
   const filteredNotifications = notifications.filter((notif) => {
     if (filter === 'unread') return !notif.is_read;
     if (filter === 'read') return notif.is_read;
@@ -81,7 +105,7 @@ function NotificationsPage() {
   const unreadCount = notifications.filter((item) => !item.is_read).length;
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h2 style={{ margin: 0 }}>Notifications</h2>
@@ -131,17 +155,20 @@ function NotificationsPage() {
                 border: `2px solid ${notification.is_read ? '#e0e0e0' : getTypeColor(notification.notification_type)}`,
                 borderRadius: '8px',
                 transition: 'all 0.2s',
-                cursor: 'pointer',
+                cursor: notification.notification_type === 'feedback_added' ? 'pointer' : 'default',
                 position: 'relative',
+                opacity: notification.is_read ? 0.85 : 1,
               }}
-              onClick={() => markAsRead(notification.notification_id)}
+              onClick={() => handleNotificationClick(notification)}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                <div style={{ fontSize: '2rem' }}>🔔</div>
+                <div style={{ fontSize: '2rem' }}>
+                  {getTypeIcon(notification.notification_type)}
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                     <h3 style={{ margin: 0, fontSize: '1rem', color: '#333' }}>
-                      {notification.notification_type?.replace(/_/g, ' ')}
+                      {notification.notification_type?.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                       {!notification.is_read && (
                         <span style={{ marginLeft: '0.5rem', padding: '0.125rem 0.375rem', backgroundColor: '#1a73e8', color: 'white', fontSize: '0.75rem', borderRadius: '12px' }}>
                           New
@@ -151,7 +178,30 @@ function NotificationsPage() {
                     <span style={{ fontSize: '0.75rem', color: '#999' }}>{getRelativeTime(notification.created_at)}</span>
                   </div>
                   <p style={{ margin: '0 0 0.5rem 0', color: '#666', lineHeight: '1.4' }}>{notification.message}</p>
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                  
+                  {/* Show feedback details if available */}
+                  {notification.log_review_details && (
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'rgba(0,0,0,0.03)', borderLeft: `3px solid ${getTypeColor(notification.notification_type)}`, borderRadius: '4px' }}>
+                      <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#555', fontWeight: '500' }}>
+                        Week {notification.log_review_details.week_number} Feedback from {notification.log_review_details.supervisor_name}
+                      </p>
+                      <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#666' }}>
+                        Status: <span style={{ fontWeight: 'bold', color: getTypeColor(notification.log_review_details.status) }}>
+                          {notification.log_review_details.status.charAt(0).toUpperCase() + notification.log_review_details.status.slice(1)}
+                        </span>
+                      </p>
+                      {notification.log_review_details.rating && (
+                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: '#666' }}>
+                          Rating: {'⭐'.repeat(Math.round(notification.log_review_details.rating))} ({notification.log_review_details.rating}/5)
+                        </p>
+                      )}
+                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: '#555', fontStyle: 'italic' }}>
+                        Click to view feedback →
+                      </p>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem' }}>
                     {!notification.is_read && (
                       <button
                         onClick={(e) => {
@@ -161,6 +211,17 @@ function NotificationsPage() {
                         style={{ padding: '0.25rem 0.75rem', backgroundColor: 'transparent', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                       >
                         Mark as read
+                      </button>
+                    )}
+                    {notification.notification_type === 'feedback_added' && notification.log_review_details && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/app/logs/${notification.log_review_details.log_id}`);
+                        }}
+                        style={{ padding: '0.25rem 0.75rem', backgroundColor: '#9c27b0', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                      >
+                        View Feedback
                       </button>
                     )}
                     <button
@@ -181,7 +242,7 @@ function NotificationsPage() {
       )}
 
       <div style={{ marginTop: '2rem', padding: '1rem', textAlign: 'center', borderTop: '1px solid #e0e0e0', color: '#999', fontSize: '0.875rem' }}>
-        <p>Stay updated with your internship progress and deadlines</p>
+        <p>Stay updated with your internship progress and feedback from supervisors</p>
       </div>
     </div>
   );
