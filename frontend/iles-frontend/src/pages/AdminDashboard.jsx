@@ -310,15 +310,6 @@ function AdminDashboard() {
 
       <div className="dashboard-grid admin-grid">
         <div className="dashboard-card stat-panel">
-          <h3>User Management</h3>
-          <p>Manage users, roles and permissions</p>
-          <div className="panel-actions">
-            <Link to="/app/users" className="btn btn-primary">Manage Users</Link>
-            <Link to="/app/users" className="btn btn-secondary">View All Users</Link>
-          </div>
-        </div>
-
-        <div className="dashboard-card stat-panel">
           <h3>Reports</h3>
           <p>Generate logs and activity reports</p>
           <div className="panel-actions">
@@ -359,6 +350,15 @@ function AdminDashboard() {
                 <strong>{item.value}</strong>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="dashboard-card stat-panel chart-wide">
+          <h3>User Management</h3>
+          <p>Manage users, roles and permissions</p>
+          <div className="panel-actions">
+            <Link to="/app/users" className="btn btn-primary">Manage Users</Link>
+            <Link to="/app/users" className="btn btn-secondary">View All Users</Link>
           </div>
         </div>
 
