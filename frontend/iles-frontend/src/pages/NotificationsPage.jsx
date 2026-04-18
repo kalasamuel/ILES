@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { notificationsAPI } from '../services/endpoints';
+import { useAuth } from '../hooks/AuthContext';
 import './NotificationsPage.css';
 
 function NotificationsPage() {
@@ -8,10 +9,21 @@ function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
+  const { notificationId } = useParams();
+  const { user } = useAuth();
+
+  const normalizedRole = String(user?.role?.role_name || user?.role_name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  const isAdmin = normalizedRole === 'admin';
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
+        if (isAdmin) {
+          await notificationsAPI.syncAdminSystemSnapshot();
+        }
         const data = await notificationsAPI.getNotifications();
         setNotifications(data.results || data || []);
       } catch (error) {
@@ -22,7 +34,7 @@ function NotificationsPage() {
     };
 
     fetchNotifications();
-  }, []);
+  }, [isAdmin]);
 
   const getRelativeTime = (dateString) => {
     if (!dateString) return 'Unknown time';
@@ -42,6 +54,11 @@ function NotificationsPage() {
       case 'evaluation_completed': return '#2196f3';
       case 'feedback_added': return '#9c27b0';
       case 'log_submitted': return '#1976d2';
+      case 'system_health_update': return '#0ea5e9';
+      case 'server_status_update': return '#16a34a';
+      case 'pending_updates': return '#f59e0b';
+      case 'system_alert': return '#dc2626';
+      case 'new_company_added': return '#4f46e5';
       default: return '#666';
     }
   };
@@ -54,8 +71,23 @@ function NotificationsPage() {
       case 'evaluation_completed': return '✅';
       case 'feedback_added': return '💬';
       case 'log_submitted': return '📝';
+      case 'system_health_update': return '❤️';
+      case 'server_status_update': return '🖥️';
+      case 'pending_updates': return '⏳';
+      case 'system_alert': return '🚨';
+      case 'new_company_added': return '🏢';
       default: return '🔔';
     }
+  };
+
+  const isAdminSystemType = (type) => {
+    return [
+      'system_health_update',
+      'server_status_update',
+      'pending_updates',
+      'system_alert',
+      'new_company_added',
+    ].includes(type);
   };
 
   const markAsRead = async (id) => {
@@ -92,6 +124,11 @@ function NotificationsPage() {
     // Mark as read
     await markAsRead(notification.notification_id);
 
+    if (isAdmin && isAdminSystemType(notification.notification_type)) {
+      navigate(`/app/notifications/${notification.notification_id}`);
+      return;
+    }
+
     // If it's a feedback notification, navigate to the log
     if (notification.notification_type === 'feedback_added' && notification.log_review_details?.log_id) {
       navigate(`/app/logs/${notification.log_review_details.log_id}`);
@@ -102,6 +139,13 @@ function NotificationsPage() {
     }
   };
 
+  const selectedNotification = useMemo(() => {
+    if (!notificationId) {
+      return null;
+    }
+    return notifications.find((item) => String(item.notification_id) === String(notificationId)) || null;
+  }, [notificationId, notifications]);
+
   const filteredNotifications = notifications.filter((notif) => {
     if (filter === 'unread') return !notif.is_read;
     if (filter === 'read') return notif.is_read;
@@ -111,7 +155,7 @@ function NotificationsPage() {
   const unreadCount = notifications.filter((item) => !item.is_read).length;
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem', maxWidth: '980px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h2 style={{ margin: 0 }}>Notifications</h2>
@@ -145,6 +189,34 @@ function NotificationsPage() {
         </button>
       </div>
 
+      {selectedNotification && isAdmin && isAdminSystemType(selectedNotification.notification_type) && (
+        <div style={{ marginBottom: '1.25rem', padding: '1rem', border: `2px solid ${getTypeColor(selectedNotification.notification_type)}`, borderRadius: '8px', backgroundColor: '#ffffff' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+            <h3 style={{ margin: 0, color: '#1f2937' }}>Notification Details</h3>
+            <button
+              onClick={() => navigate('/app/notifications')}
+              style={{ padding: '0.3rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: '#fff', cursor: 'pointer' }}
+            >
+              Close
+            </button>
+          </div>
+          <p style={{ margin: '0 0 0.5rem 0', color: '#374151' }}>{selectedNotification.message}</p>
+          <div style={{ margin: 0, color: '#6b7280', fontSize: '0.85rem' }}>
+            {selectedNotification.created_at ? new Date(selectedNotification.created_at).toLocaleString() : 'Date unavailable'}
+          </div>
+          {selectedNotification.admin_details && (
+            <div style={{ marginTop: '0.8rem', padding: '0.75rem', borderRadius: '6px', backgroundColor: '#f8fafc', border: '1px solid #e5e7eb' }}>
+              {Object.entries(selectedNotification.admin_details).map(([key, value]) => (
+                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', borderBottom: '1px dashed #e5e7eb', padding: '0.25rem 0' }}>
+                  <span style={{ fontWeight: 600, color: '#374151', textTransform: 'capitalize' }}>{key.replace(/_/g, ' ')}</span>
+                  <span style={{ color: '#111827' }}>{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {filteredNotifications.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#f9f9f9', borderRadius: '8px', color: '#666' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔔</div>
@@ -161,9 +233,16 @@ function NotificationsPage() {
                 border: `2px solid ${notification.is_read ? '#e0e0e0' : getTypeColor(notification.notification_type)}`,
                 borderRadius: '8px',
                 transition: 'all 0.2s',
-                cursor: (notification.notification_type === 'feedback_added' || notification.notification_type === 'log_submitted') ? 'pointer' : 'default',
+                cursor: (
+                  notification.notification_type === 'feedback_added'
+                  || notification.notification_type === 'log_submitted'
+                  || (isAdmin && isAdminSystemType(notification.notification_type))
+                ) ? 'pointer' : 'default',
                 position: 'relative',
                 opacity: notification.is_read ? 0.85 : 1,
+                boxShadow: notificationId && String(notification.notification_id) === String(notificationId)
+                  ? `0 0 0 2px ${getTypeColor(notification.notification_type)}33`
+                  : 'none',
               }}
               onClick={() => handleNotificationClick(notification)}
             >
@@ -245,6 +324,14 @@ function NotificationsPage() {
                     </div>
                   )}
 
+                  {isAdminSystemType(notification.notification_type) && notification.admin_details && (
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'rgba(2, 6, 23, 0.03)', borderLeft: `3px solid ${getTypeColor(notification.notification_type)}`, borderRadius: '4px' }}>
+                      <p style={{ margin: 0, color: '#475569', fontSize: '0.86rem' }}>
+                        Tap to open full notification details.
+                      </p>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem' }}>
                     {!notification.is_read && (
                       <button
@@ -277,6 +364,17 @@ function NotificationsPage() {
                         style={{ padding: '0.25rem 0.75rem', backgroundColor: '#1976d2', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                       >
                         Review Log
+                      </button>
+                    )}
+                    {isAdmin && isAdminSystemType(notification.notification_type) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/app/notifications/${notification.notification_id}`);
+                        }}
+                        style={{ padding: '0.25rem 0.75rem', backgroundColor: getTypeColor(notification.notification_type), color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                      >
+                        View Details
                       </button>
                     )}
                     <button

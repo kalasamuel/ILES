@@ -264,6 +264,10 @@ export const notificationsAPI = {
     const response = await api.get('/notifications/notifications/');
     return response.data;
   },
+  syncAdminSystemSnapshot: async () => {
+    const response = await api.post('/notifications/notifications/admin_system_snapshot/');
+    return response.data;
+  },
   markAsRead: async (id) => {
     const response = await api.patch(`/notifications/notifications/${id}/`, { is_read: true });
     return response.data;

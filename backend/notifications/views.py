@@ -4,6 +4,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Notification, Deadline
 from .serializers import NotificationSerializer, DeadlineSerializer
+from accounts.models import User
+from logbooks.models import WeeklyLog
+from placements.models import InternshipPlacement
+from reviews.models import LogReview
+from django.utils import timezone
+from datetime import timedelta
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
@@ -25,6 +31,109 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """Mark all unread notifications as read for the current user"""
         updated = self.get_queryset().filter(is_read=False).update(is_read=True)
         return Response({'marked_as_read': updated})
+
+    def _is_admin(self, user):
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+        return user.is_superuser or role_name == 'admin'
+
+    def _upsert_admin_notification(self, user, notification_type, message, details):
+        now = timezone.now()
+        recent = Notification.objects.filter(
+            user=user,
+            notification_type=notification_type,
+            created_at__gte=now - timedelta(hours=6),
+        ).order_by('-created_at').first()
+
+        if recent:
+            recent.message = message
+            recent.details = details
+            recent.is_read = False
+            recent.save(update_fields=['message', 'details', 'is_read'])
+            return recent
+
+        return Notification.objects.create(
+            user=user,
+            message=message,
+            notification_type=notification_type,
+            is_read=False,
+            details=details,
+        )
+
+    @action(detail=False, methods=['post'])
+    def admin_system_snapshot(self, request):
+        """Generate/update admin notifications for current system status."""
+        if not self._is_admin(request.user):
+            return Response({'detail': 'Only admins can trigger this action.'}, status=status.HTTP_403_FORBIDDEN)
+
+        pending_log_reviews = WeeklyLog.objects.filter(status='submitted').count()
+        pending_placements = InternshipPlacement.objects.filter(status='pending').count()
+        pending_revision_reviews = LogReview.objects.filter(status='needs_revision').count()
+        rejected_reviews = LogReview.objects.filter(status='rejected').count()
+
+        pending_updates_total = pending_log_reviews + pending_placements + pending_revision_reviews
+        alerts_total = rejected_reviews + pending_revision_reviews
+        health_score = max(55, 100 - (pending_updates_total + alerts_total) * 4)
+
+        admins = User.objects.filter(is_active=True).filter(role__role_name__iexact='admin')
+        if not admins.filter(user_id=request.user.user_id).exists():
+            admins = admins | User.objects.filter(user_id=request.user.user_id)
+
+        created_or_updated = 0
+        for admin in admins.distinct():
+            self._upsert_admin_notification(
+                admin,
+                'server_status_update',
+                'Server status: Operational',
+                {
+                    'status': 'operational',
+                    'updated_at': timezone.now().isoformat(),
+                },
+            )
+            created_or_updated += 1
+
+            self._upsert_admin_notification(
+                admin,
+                'system_health_update',
+                f'System health score is {health_score}%',
+                {
+                    'health_score': health_score,
+                    'pending_updates': pending_updates_total,
+                    'alerts': alerts_total,
+                },
+            )
+            created_or_updated += 1
+
+            self._upsert_admin_notification(
+                admin,
+                'pending_updates',
+                f'Pending updates: {pending_updates_total}',
+                {
+                    'pending_log_reviews': pending_log_reviews,
+                    'pending_placements': pending_placements,
+                    'reviews_needing_revision': pending_revision_reviews,
+                    'total_pending_updates': pending_updates_total,
+                },
+            )
+            created_or_updated += 1
+
+            self._upsert_admin_notification(
+                admin,
+                'system_alert',
+                (
+                    'Security/system alerts detected.'
+                    if alerts_total > 0
+                    else 'No critical security or system alerts detected.'
+                ),
+                {
+                    'alerts_total': alerts_total,
+                    'rejected_reviews': rejected_reviews,
+                    'reviews_needing_revision': pending_revision_reviews,
+                    'severity': 'high' if alerts_total >= 5 else 'low',
+                },
+            )
+            created_or_updated += 1
+
+        return Response({'notifications_created_or_updated': created_or_updated})
 
 
 class DeadlineViewSet(viewsets.ModelViewSet):

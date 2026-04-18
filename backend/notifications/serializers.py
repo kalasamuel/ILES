@@ -5,6 +5,7 @@ from .models import Notification, Deadline
 class NotificationSerializer(serializers.ModelSerializer):
     log_review_details = serializers.SerializerMethodField(read_only=True)
     log_details = serializers.SerializerMethodField(read_only=True)
+    admin_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Notification
@@ -41,6 +42,17 @@ class NotificationSerializer(serializers.ModelSerializer):
                 'student_registration_number': student.registration_number,
                 'organization_name': obj.log.placement.organization.name if obj.log.placement.organization else 'N/A',
             }
+        return None
+
+    def get_admin_details(self, obj):
+        if obj.notification_type in {
+            'system_health_update',
+            'server_status_update',
+            'pending_updates',
+            'system_alert',
+            'new_company_added',
+        }:
+            return obj.details or {}
         return None
 
 
