@@ -35,7 +35,6 @@ ILES/
 - **Routing**: React Router
 - **Charts**: Recharts for data visualization
 - **HTTP Client**: Axios
-- **Styling**: CSS with responsive design
 
 ## Quick Start
 
