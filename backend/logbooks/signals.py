@@ -11,8 +11,8 @@ def create_log_submission_notification(sender, instance, created, **kwargs):
     This notifies the assigned supervisors (workplace and/or academic) 
     that a student has submitted a new log for review.
     """
-    # Only notify on submission (when status changes to 'submitted')
-    # Check if this is a status update to 'submitted'
+    # Only notify on submission (when status is 'submitted' and submitted_at is set)
+    # This fires on each save, so we check if status is submitted
     if instance.status == 'submitted' and instance.submitted_at:
         placement = instance.placement
         student_name = f"{placement.student.user.first_name} {placement.student.user.last_name}"
@@ -21,19 +21,28 @@ def create_log_submission_notification(sender, instance, created, **kwargs):
         # Notify workplace supervisor if assigned
         if placement.workplace_supervisor:
             supervisor_user = placement.workplace_supervisor.user
-            Notification.objects.create(
+            # Only create if not already created (avoid duplicates)
+            Notification.objects.get_or_create(
                 user=supervisor_user,
-                message=message,
-                notification_type='log_submitted',
                 log=instance,
+                notification_type='log_submitted',
+                defaults={
+                    'message': message,
+                    'is_read': False,
+                }
             )
 
         # Notify academic supervisor if assigned
         if placement.academic_supervisor:
             supervisor_user = placement.academic_supervisor.user
-            Notification.objects.create(
+            # Only create if not already created (avoid duplicates)
+            Notification.objects.get_or_create(
                 user=supervisor_user,
-                message=message,
-                notification_type='log_submitted',
                 log=instance,
+                notification_type='log_submitted',
+                defaults={
+                    'message': message,
+                    'is_read': False,
+                }
             )
+
