@@ -41,6 +41,7 @@ function NotificationsPage() {
       case 'placement_rejected': return '#f44336';
       case 'evaluation_completed': return '#2196f3';
       case 'feedback_added': return '#9c27b0';
+      case 'log_submitted': return '#1976d2';
       default: return '#666';
     }
   };
@@ -52,6 +53,7 @@ function NotificationsPage() {
       case 'placement_rejected': return '❌';
       case 'evaluation_completed': return '✅';
       case 'feedback_added': return '💬';
+      case 'log_submitted': return '📝';
       default: return '🔔';
     }
   };
@@ -93,6 +95,10 @@ function NotificationsPage() {
     // If it's a feedback notification, navigate to the log
     if (notification.notification_type === 'feedback_added' && notification.log_review_details?.log_id) {
       navigate(`/app/logs/${notification.log_review_details.log_id}`);
+    }
+    // If it's a log submission notification, navigate to the log
+    else if (notification.notification_type === 'log_submitted' && notification.log_details?.log_id) {
+      navigate(`/app/logs/${notification.log_details.log_id}`);
     }
   };
 
@@ -155,7 +161,7 @@ function NotificationsPage() {
                 border: `2px solid ${notification.is_read ? '#e0e0e0' : getTypeColor(notification.notification_type)}`,
                 borderRadius: '8px',
                 transition: 'all 0.2s',
-                cursor: notification.notification_type === 'feedback_added' ? 'pointer' : 'default',
+                cursor: (notification.notification_type === 'feedback_added' || notification.notification_type === 'log_submitted') ? 'pointer' : 'default',
                 position: 'relative',
                 opacity: notification.is_read ? 0.85 : 1,
               }}
@@ -201,6 +207,44 @@ function NotificationsPage() {
                     </div>
                   )}
 
+                  {/* Show log submission details if available */}
+                  {notification.log_details && (
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'rgba(25, 118, 210, 0.04)', borderLeft: `3px solid ${getTypeColor(notification.notification_type)}`, borderRadius: '4px' }}>
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#555', fontWeight: '600' }}>
+                          📚 {notification.log_details.student_name}
+                        </p>
+                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.8rem', color: '#777' }}>
+                          {notification.log_details.student_email}
+                        </p>
+                        {notification.log_details.student_registration_number && (
+                          <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.8rem', color: '#777' }}>
+                            Reg: {notification.log_details.student_registration_number}
+                          </p>
+                        )}
+                      </div>
+                      <hr style={{ margin: '0.5rem 0', border: 'none', borderTop: '1px solid #ddd' }} />
+                      <div>
+                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#555', fontWeight: '500' }}>
+                          Week {notification.log_details.week_number} - {notification.log_details.hours_worked} hours
+                        </p>
+                        {notification.log_details.organization_name && (
+                          <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.8rem', color: '#777' }}>
+                            @ {notification.log_details.organization_name}
+                          </p>
+                        )}
+                        {notification.log_details.activities_summary && (
+                          <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
+                            "{notification.log_details.activities_summary}..."
+                          </p>
+                        )}
+                      </div>
+                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: '#555', fontStyle: 'italic' }}>
+                        Click to review log →
+                      </p>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem' }}>
                     {!notification.is_read && (
                       <button
@@ -224,6 +268,17 @@ function NotificationsPage() {
                         View Feedback
                       </button>
                     )}
+                    {notification.notification_type === 'log_submitted' && notification.log_details && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/app/logs/${notification.log_details.log_id}`);
+                        }}
+                        style={{ padding: '0.25rem 0.75rem', backgroundColor: '#1976d2', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                      >
+                        Review Log
+                      </button>
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -242,7 +297,7 @@ function NotificationsPage() {
       )}
 
       <div style={{ marginTop: '2rem', padding: '1rem', textAlign: 'center', borderTop: '1px solid #e0e0e0', color: '#999', fontSize: '0.875rem' }}>
-        <p>Stay updated with your internship progress and feedback from supervisors</p>
+        <p>Stay updated with log submissions, feedback, and internship progress</p>
       </div>
     </div>
   );
