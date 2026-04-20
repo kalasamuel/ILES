@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { dashboardsAPI } from '../../../services/endpoints';
+import landingPageImage from '../../../assets/landingpage.png';
 import './LandingPage.css';
 
 function LandingPage() {
@@ -97,7 +98,7 @@ function LandingPage() {
 
         <div className="hero-image-wrapper">
           <div className="hero-image-card">
-            <div className="hero-image-placeholder">Dashboard Preview</div>
+            <img src={landingPageImage} alt="ILES landing page preview" />
           </div>
         </div>
       </div>
