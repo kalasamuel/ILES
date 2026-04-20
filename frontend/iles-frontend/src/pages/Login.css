@@ -154,15 +154,6 @@ body {
   animation: riseUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
 
-/* top accent bar */
-.login-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--orange) 0%, #F5A95A 60%, transparent 100%);
-}
-
 /* decorative orb */
 .login-card::after {
   content: '';

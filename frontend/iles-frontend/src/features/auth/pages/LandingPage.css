@@ -296,7 +296,7 @@ body {
   border-radius: var(--radius-lg);
   padding: 24px;
   width: 100%;
-  max-width: 420px;
+  max-width: 1000px;
   box-shadow: var(--shadow-card);
 }
 
