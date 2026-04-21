@@ -134,6 +134,18 @@
   font-size: 1.2rem;
 }
 
+.stat-icon-image {
+  padding: 6px;
+  overflow: hidden;
+}
+
+.stat-icon-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .stat-info h3 {
   margin: 0;
   font-size: 1.9rem;

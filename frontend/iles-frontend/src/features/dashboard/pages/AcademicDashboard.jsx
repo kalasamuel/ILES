@@ -17,6 +17,32 @@ import { useAuth } from '../../../hooks/AuthContext';
 import { evaluationsAPI, placementsAPI } from '../../../services/endpoints';
 import './AcademicDashboard.css';
 
+const totalEvaluationsLogo = `data:image/svg+xml;utf8,${encodeURIComponent(`
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <defs>
+    <linearGradient id="bars" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9ddbe8"/>
+      <stop offset="100%" stop-color="#63c7d4"/>
+    </linearGradient>
+    <linearGradient id="line" x1="10" y1="50" x2="70" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2f6de1"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="10" width="64" height="54" rx="6" fill="#ffffff" stroke="#d9e2f2" stroke-width="2"/>
+  <path d="M14 56H66" stroke="#d9e2f2" stroke-width="2" stroke-linecap="round"/>
+  <rect x="17" y="43" width="7" height="13" rx="2" fill="url(#bars)"/>
+  <rect x="29" y="36" width="7" height="20" rx="2" fill="url(#bars)"/>
+  <rect x="41" y="28" width="7" height="28" rx="2" fill="url(#bars)"/>
+  <rect x="53" y="20" width="7" height="36" rx="2" fill="url(#bars)"/>
+  <path d="M17 41L32 35L44 25L57 21" stroke="url(#line)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="17" cy="41" r="2.5" fill="#1e3a8a"/>
+  <circle cx="32" cy="35" r="2.5" fill="#1e3a8a"/>
+  <circle cx="44" cy="25" r="2.5" fill="#1e3a8a"/>
+  <circle cx="57" cy="21" r="2.5" fill="#1e3a8a"/>
+</svg>
+`)}`;
+
 function toDate(value) {
   if (!value) return null;
   const date = new Date(value);
@@ -228,7 +254,9 @@ function AcademicDashboard() {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon">📊</div>
+          <div className="stat-icon stat-icon-image">
+            <img src={totalEvaluationsLogo} alt="Evaluation chart logo" />
+          </div>
           <div className="stat-info">
             <h3>{dashboardStats.total}</h3>
             <p>Total Evaluations</p>
