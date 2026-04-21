@@ -179,7 +179,6 @@ This project is developed for educational purposes as part of the Software Devel
 3. As an academic supervisor, I want to submit final evaluation scores and automatically compute the total weighted score so that I save time.
 
 ### Internship Administrator (3 stories)
-
 1. As an administrator, I want to assign workplace and academic supervisors to each student so that every student is properly monitored.
 2. As an administrator, I want to define and modify evaluation criteria and weightings so that grading remains flexible across semesters.
 3. As an administrator, I want to generate a summary report of all students, placements, and final scores so that I can track program outcomes.
