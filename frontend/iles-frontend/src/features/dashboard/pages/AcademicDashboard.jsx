@@ -1,8 +1,84 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  Cell,
+  CartesianGrid,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { useAuth } from '../../../hooks/AuthContext';
 import { evaluationsAPI, placementsAPI } from '../../../services/endpoints';
+import './AcademicDashboard.css';
+
+const totalEvaluationsLogo = `data:image/svg+xml;utf8,${encodeURIComponent(`
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <defs>
+    <linearGradient id="bars" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9ddbe8"/>
+      <stop offset="100%" stop-color="#63c7d4"/>
+    </linearGradient>
+    <linearGradient id="line" x1="10" y1="50" x2="70" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2f6de1"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="10" width="64" height="54" rx="6" fill="#ffffff" stroke="#d9e2f2" stroke-width="2"/>
+  <path d="M14 56H66" stroke="#d9e2f2" stroke-width="2" stroke-linecap="round"/>
+  <rect x="17" y="43" width="7" height="13" rx="2" fill="url(#bars)"/>
+  <rect x="29" y="36" width="7" height="20" rx="2" fill="url(#bars)"/>
+  <rect x="41" y="28" width="7" height="28" rx="2" fill="url(#bars)"/>
+  <rect x="53" y="20" width="7" height="36" rx="2" fill="url(#bars)"/>
+  <path d="M17 41L32 35L44 25L57 21" stroke="url(#line)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="17" cy="41" r="2.5" fill="#1e3a8a"/>
+  <circle cx="32" cy="35" r="2.5" fill="#1e3a8a"/>
+  <circle cx="44" cy="25" r="2.5" fill="#1e3a8a"/>
+  <circle cx="57" cy="21" r="2.5" fill="#1e3a8a"/>
+</svg>
+`)}`;
+
+function toDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDate(value) {
+  const date = toDate(value);
+  return date ? date.toLocaleDateString() : 'Date unavailable';
+}
+
+function sortByDateDesc(leftValue, rightValue) {
+  return (toDate(rightValue)?.getTime() || 0) - (toDate(leftValue)?.getTime() || 0);
+}
+
+function getPlacementKey(placement) {
+  return String(placement?.placement_id ?? placement?.id ?? '');
+}
+
+function getStudentLabel(placement) {
+  const user = placement?.student_details?.user_details || placement?.student?.user_details || placement?.student?.user || null;
+  const firstName = user?.first_name || placement?.student_details?.first_name || placement?.student?.first_name || '';
+  const lastName = user?.last_name || placement?.student_details?.last_name || placement?.student?.last_name || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName) return fullName;
+  return placement?.student_details?.registration_number || placement?.student?.registration_number || 'Unnamed student';
+}
+
+function getPlacementLabel(placement) {
+  return placement?.position_title || placement?.title || placement?.organization?.name || 'Placement';
+}
+
+function getEvaluationDate(evaluation) {
+  return evaluation?.evaluation_date || evaluation?.submitted_at || evaluation?.created_at || null;
+}
 
 function AcademicDashboard() {
   const { user } = useAuth();
@@ -14,15 +90,17 @@ function AcademicDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(null);
+
         const [evaluationsRes, placementsRes] = await Promise.all([
           evaluationsAPI.getEvaluations(),
           placementsAPI.getPlacements(),
         ]);
 
-        setEvaluations(evaluationsRes?.results ?? []);
-        setPlacements(placementsRes?.results ?? []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        setEvaluations(evaluationsRes?.results ?? evaluationsRes ?? []);
+        setPlacements(placementsRes?.results ?? placementsRes ?? []);
+      } catch (fetchError) {
+        console.error('Error fetching dashboard data:', fetchError);
         setError('Failed to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
@@ -32,138 +110,330 @@ function AcademicDashboard() {
     fetchData();
   }, []);
 
-  // ── Derived chart data from real backend data ──────────────────────────────
+  const placementsById = useMemo(
+    () => new Map(placements.map((placement) => [getPlacementKey(placement), placement])),
+    [placements]
+  );
 
-  // Pie chart: count completed, pending, overdue from actual evaluations
-  const evaluationStatusData = useMemo(() => {
-    const completed = evaluations.filter(e => e.total_score != null).length;
-    const pending   = evaluations.filter(e => e.total_score == null && !e.is_overdue).length;
-    const overdue   = evaluations.filter(e => e.is_overdue).length;
+  const dashboardStats = useMemo(() => {
+    const completed = evaluations.filter((evaluation) => evaluation.total_score != null || evaluation.grade != null).length;
+    const pending = evaluations.filter((evaluation) => evaluation.total_score == null && !evaluation.is_overdue).length;
+    const overdue = evaluations.filter((evaluation) => evaluation.is_overdue).length;
+    const scoredEvaluations = evaluations.filter((evaluation) => Number.isFinite(Number(evaluation.total_score)));
+    const averageScore = scoredEvaluations.length > 0
+      ? (scoredEvaluations.reduce((sum, evaluation) => sum + Number(evaluation.total_score), 0) / scoredEvaluations.length).toFixed(1)
+      : 'N/A';
 
-    return [
-      { name: 'Completed', value: completed, color: '#00C49F' },
-      { name: 'Pending',   value: pending,   color: '#FFBB28' },
-      { name: 'Overdue',   value: overdue,   color: '#FF8042' },
-    ].filter(entry => entry.value > 0); // hide slices with 0 so the chart stays clean
+    return {
+      total: evaluations.length,
+      completed,
+      pending,
+      overdue,
+      averageScore,
+      completionRate: evaluations.length > 0 ? Math.round((completed / evaluations.length) * 100) : 0,
+    };
   }, [evaluations]);
 
-  // Bar chart: group evaluations by the month they were created/submitted
-  const evaluationTrend = useMemo(() => {
-    const monthMap = {};
+  const assignedStudents = useMemo(() => {
+    const uniqueStudents = new Map();
 
-    evaluations.forEach(e => {
-      // Use whichever date field your API returns; adjust the key name as needed.
-      const rawDate = e.created_at || e.submitted_at || e.date;
-      if (!rawDate) return;
+    placements.forEach((placement) => {
+      const studentId = placement?.student_details?.student_id || placement?.student?.student_id || placement?.student || placement?.student_details?.user_details?.user_id;
+      const key = String(studentId || getPlacementKey(placement));
 
-      const date  = new Date(rawDate);
-      const label = date.toLocaleString('default', { month: 'short', year: '2-digit' }); // e.g. "Jan 25"
-
-      monthMap[label] = (monthMap[label] ?? 0) + 1;
+      if (!uniqueStudents.has(key)) {
+        uniqueStudents.set(key, placement);
+      }
     });
 
-    // Sort chronologically and shape into the array recharts expects
-    return Object.entries(monthMap)
-      .map(([month, count]) => ({ month, evaluations: count }))
-      .sort((a, b) => {
-        // Parse back to dates for reliable chronological sort
-        const toDate = str => new Date(`01 ${str}`);
-        return toDate(a.month) - toDate(b.month);
-      });
+    return Array.from(uniqueStudents.values());
+  }, [placements]);
+
+  const statusChartData = useMemo(() => {
+    return [
+      { name: 'Completed', value: dashboardStats.completed, color: '#10b981' },
+      { name: 'Pending', value: dashboardStats.pending, color: '#f97316' },
+      { name: 'Overdue', value: dashboardStats.overdue, color: '#ef4444' },
+    ].filter((entry) => entry.value > 0);
+  }, [dashboardStats]);
+
+  const monthlyTrend = useMemo(() => {
+    const monthMap = new Map();
+
+    evaluations.forEach((evaluation) => {
+      const date = toDate(getEvaluationDate(evaluation));
+      if (!date) return;
+
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthMap.has(key)) {
+        monthMap.set(key, {
+          month: date.toLocaleString('default', { month: 'short', year: '2-digit' }),
+          order: date.getTime(),
+          count: 0,
+        });
+      }
+
+      monthMap.get(key).count += 1;
+    });
+
+    return Array.from(monthMap.values())
+      .sort((left, right) => left.order - right.order)
+      .map(({ month, count }) => ({ month, count }));
   }, [evaluations]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const pendingEvaluations = useMemo(() => {
+    return [...evaluations]
+      .filter((evaluation) => evaluation.total_score == null && !evaluation.is_overdue)
+      .sort((left, right) => sortByDateDesc(getEvaluationDate(left), getEvaluationDate(right)))
+      .slice(0, 5)
+      .map((evaluation) => {
+        const placement = placementsById.get(String(evaluation?.placement?.placement_id || evaluation?.placement || '')) || evaluation?.placement;
+
+        return {
+          id: evaluation?.evaluation_id || evaluation?.id,
+          student: getStudentLabel(placement),
+          placement: getPlacementLabel(placement),
+          date: getEvaluationDate(evaluation),
+        };
+      });
+  }, [evaluations, placementsById]);
+
+  const recentActivity = useMemo(() => {
+    return [...evaluations]
+      .sort((left, right) => sortByDateDesc(getEvaluationDate(left), getEvaluationDate(right)))
+      .slice(0, 5)
+      .map((evaluation) => {
+        const placement = placementsById.get(String(evaluation?.placement?.placement_id || evaluation?.placement || '')) || evaluation?.placement;
+
+        return {
+          id: evaluation?.evaluation_id || evaluation?.id,
+          student: getStudentLabel(placement),
+          detail: getPlacementLabel(placement),
+          date: getEvaluationDate(evaluation),
+          status: evaluation?.total_score != null ? 'completed' : evaluation?.is_overdue ? 'overdue' : 'pending',
+        };
+      });
+  }, [evaluations, placementsById]);
 
   if (loading) {
-    return <div>Loading dashboard...</div>;
+    return <div className="academic-dashboard"><div className="loading-container">Loading dashboard...</div></div>;
   }
 
   if (error) {
-    return <div className="error-message">{error}</div>;
+    return (
+      <div className="academic-dashboard">
+        <div className="error-container">
+          <h2>⚠️ Error Loading Dashboard</h2>
+          <p>{error}</p>
+          <button type="button" onClick={() => window.location.reload()} className="btn btn-primary">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="academic-dashboard">
-      <header className="dashboard-header">
-        <h1>Academic Dashboard</h1>
-        <p>Welcome, {user?.first_name} {user?.last_name}</p>
-      </header>
+      <div className="welcome-header">
+        <div className="welcome-content">
+          <h1>
+            Welcome back, <span className="highlight">{user?.first_name || 'Academic Supervisor'}</span>
+          </h1>
+          <p>Review evaluations, track completion, and keep your placement records current.</p>
+        </div>
+        <div className="date-badge">
+          {new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
+        </div>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon stat-icon-image">
+            <img src={totalEvaluationsLogo} alt="Evaluation chart logo" />
+          </div>
+          <div className="stat-info">
+            <h3>{dashboardStats.total}</h3>
+            <p>Total Evaluations</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">✓</div>
+          <div className="stat-info">
+            <h3>{dashboardStats.completed}</h3>
+            <p>Completed</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">⏳</div>
+          <div className="stat-info">
+            <h3>{dashboardStats.pending}</h3>
+            <p>Pending</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">⭐</div>
+          <div className="stat-info">
+            <h3>{dashboardStats.averageScore}</h3>
+            <p>Avg Score</p>
+          </div>
+        </div>
+      </div>
 
       <div className="dashboard-grid">
-        <div className="dashboard-card">
-          <h3>Pending Evaluations</h3>
-          <div className="stat-number">{evaluations.filter(e => !e.total_score).length}</div>
-          <p>Evaluations Awaiting Completion</p>
-          <Link to="/app/evaluations" className="btn btn-secondary">View Evaluations</Link>
+        <div className="dashboard-card chart-card full-width">
+          <div className="card-header">
+            <div className="card-icon">📈</div>
+            <h3>Evaluation Status Overview</h3>
+          </div>
+          <div className="chart-container">
+            {statusChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusChartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={104}
+                    dataKey="value"
+                  >
+                    {statusChartData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="no-data">No evaluation data available yet.</p>
+            )}
+          </div>
+
+          <div className="evaluation-overview">
+            <div className="overview-pill">
+              <span>Students in scope</span>
+              <strong>{assignedStudents.length}</strong>
+            </div>
+            <div className="overview-pill">
+              <span>Completion rate</span>
+              <strong>{dashboardStats.completionRate}%</strong>
+            </div>
+            <div className="overview-pill">
+              <span>Overdue</span>
+              <strong>{dashboardStats.overdue}</strong>
+            </div>
+          </div>
         </div>
 
-        <div className="dashboard-card">
-          <h3>My Students</h3>
-          <div className="stat-number">{placements.length}</div>
-          <p>Students Under Academic Supervision</p>
-          <Link to="/app/placements" className="btn btn-secondary">View Students</Link>
+        <div className="dashboard-card half-width">
+          <div className="card-header">
+            <div className="card-icon">📝</div>
+            <h3>Pending Evaluations</h3>
+          </div>
+          <div className="card-content">
+            {pendingEvaluations.length > 0 ? (
+              <ul className="activity-list compact-list">
+                {pendingEvaluations.map((evaluation) => (
+                  <li key={evaluation.id}>
+                    <div className="activity-details">
+                      <strong>{evaluation.student}</strong>
+                      <span>{evaluation.placement}</span>
+                      <span>{formatDate(evaluation.date)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="no-data">No pending evaluations right now.</p>
+            )}
+          </div>
+          <div className="card-footer">
+            <Link to="/app/evaluations" className="btn-link">
+              Review Evaluations →
+            </Link>
+          </div>
         </div>
 
-        <div className="dashboard-card">
-          <h3>Recent Evaluations</h3>
-          <ul>
-            {evaluations.slice(0, 3).map((evaluation) => (
-              <li key={evaluation.evaluation_id}>
-                Evaluated {evaluation.placement?.student?.user?.first_name} — Score:{' '}
-                {evaluation.total_score ?? 'Pending'}
-              </li>
-            ))}
-          </ul>
+        <div className="dashboard-card half-width">
+          <div className="card-header">
+            <div className="card-icon">🕒</div>
+            <h3>Recent Evaluation Activity</h3>
+          </div>
+          <div className="card-content">
+            {recentActivity.length > 0 ? (
+              <ul className="activity-list">
+                {recentActivity.map((item) => (
+                  <li key={item.id}>
+                    <div className="activity-details">
+                      <strong>{item.student}</strong>
+                      <span>{item.detail}</span>
+                      <span>{formatDate(item.date)}</span>
+                    </div>
+                    <span className={`status-badge status-${item.status}`}>
+                      {item.status === 'completed' ? 'Completed' : item.status === 'overdue' ? 'Overdue' : 'Pending'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="no-data">No recent activity to display.</p>
+            )}
+          </div>
+          <div className="card-footer">
+            <Link to="/app/activities" className="btn-link">
+              View Activity Log →
+            </Link>
+          </div>
         </div>
 
-        <div className="dashboard-card chart-card">
-          <h3>Evaluation Status</h3>
-          {evaluationStatusData.length === 0 ? (
-            <p>No Evaluation Data yet.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={evaluationStatusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  dataKey="value"
-                >
-                  {evaluationStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
+        <div className="dashboard-card chart-card half-width">
+          <div className="card-header">
+            <div className="card-icon">📅</div>
+            <h3>Monthly Evaluation Throughput</h3>
+          </div>
+          <div className="chart-container">
+            {monthlyTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={monthlyTrend} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#f97316" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="no-data">No monthly trend data available.</p>
+            )}
+          </div>
         </div>
 
-        <div className="dashboard-card chart-card">
-          <h3>Monthly Evaluations</h3>
-          {evaluationTrend.length === 0 ? (
-            <p>No trend data available.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={evaluationTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="evaluations" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        <div className="dashboard-card">
-          <h3>Quick Actions</h3>
-          <Link to="/app/evaluations" className="btn btn-primary">Complete Pending Evaluations</Link>
-          <Link to="/app/reports" className="btn btn-secondary">View Performance Reports</Link>
-          <Link to="/app/placements" className="btn btn-secondary">Monitor Student Progress</Link>
+        <div className="dashboard-card half-width">
+          <div className="card-header">
+            <div className="card-icon">⚡</div>
+            <h3>Quick Actions</h3>
+          </div>
+          <div className="card-content">
+            <div className="quick-actions">
+              <Link to="/app/evaluations" className="btn btn-primary">
+                Open Evaluations
+              </Link>
+              <Link to="/app/reports" className="btn btn-secondary">
+                View Reports
+              </Link>
+              <Link to="/app/placements" className="btn btn-secondary">
+                Review Placements
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
