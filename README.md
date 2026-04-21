@@ -174,12 +174,12 @@ This project is developed for educational purposes as part of the Software Devel
 5. As a student, I want to see my final weighted evaluation score so that I understand my overall internship performance.
 
 ### Academic Supervisor
-9. As an academic supervisor, I want to evaluate students using weighted criteria so that grading is standardized.
-10. As an academic supervisor, I want to view all logs approved by the workplace supervisor before final evaluation so that I have complete information.
-11. As an academic supervisor, I want to submit final evaluation scores and automatically compute the total weighted score so that I save time.
+1. As an academic supervisor, I want to evaluate students using weighted criteria so that grading is standardized.
+2. As an academic supervisor, I want to view all logs approved by the workplace supervisor before final evaluation so that I have complete information.
+3. As an academic supervisor, I want to submit final evaluation scores and automatically compute the total weighted score so that I save time.
 
 ### Internship Administrator (3 stories)
 
-12. As an administrator, I want to assign workplace and academic supervisors to each student so that every student is properly monitored.
-13. As an administrator, I want to define and modify evaluation criteria and weightings so that grading remains flexible across semesters.
-14. As an administrator, I want to generate a summary report of all students, placements, and final scores so that I can track program outcomes.
+1. As an administrator, I want to assign workplace and academic supervisors to each student so that every student is properly monitored.
+2. As an administrator, I want to define and modify evaluation criteria and weightings so that grading remains flexible across semesters.
+3. As an administrator, I want to generate a summary report of all students, placements, and final scores so that I can track program outcomes.
