@@ -1,8 +1,58 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  Cell,
+  CartesianGrid,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { useAuth } from '../../../hooks/AuthContext';
 import { evaluationsAPI, placementsAPI } from '../../../services/endpoints';
+import './AcademicDashboard.css';
+
+function toDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDate(value) {
+  const date = toDate(value);
+  return date ? date.toLocaleDateString() : 'Date unavailable';
+}
+
+function sortByDateDesc(leftValue, rightValue) {
+  return (toDate(rightValue)?.getTime() || 0) - (toDate(leftValue)?.getTime() || 0);
+}
+
+function getPlacementKey(placement) {
+  return String(placement?.placement_id ?? placement?.id ?? '');
+}
+
+function getStudentLabel(placement) {
+  const user = placement?.student_details?.user_details || placement?.student?.user_details || placement?.student?.user || null;
+  const firstName = user?.first_name || placement?.student_details?.first_name || placement?.student?.first_name || '';
+  const lastName = user?.last_name || placement?.student_details?.last_name || placement?.student?.last_name || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName) return fullName;
+  return placement?.student_details?.registration_number || placement?.student?.registration_number || 'Unnamed student';
+}
+
+function getPlacementLabel(placement) {
+  return placement?.position_title || placement?.title || placement?.organization?.name || 'Placement';
+}
+
+function getEvaluationDate(evaluation) {
+  return evaluation?.evaluation_date || evaluation?.submitted_at || evaluation?.created_at || null;
+}
 
 function AcademicDashboard() {
   const { user } = useAuth();
@@ -14,15 +64,17 @@ function AcademicDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(null);
+
         const [evaluationsRes, placementsRes] = await Promise.all([
           evaluationsAPI.getEvaluations(),
           placementsAPI.getPlacements(),
         ]);
 
-        setEvaluations(evaluationsRes?.results ?? []);
-        setPlacements(placementsRes?.results ?? []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        setEvaluations(evaluationsRes?.results ?? evaluationsRes ?? []);
+        setPlacements(placementsRes?.results ?? placementsRes ?? []);
+      } catch (fetchError) {
+        console.error('Error fetching dashboard data:', fetchError);
         setError('Failed to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
@@ -32,200 +84,330 @@ function AcademicDashboard() {
     fetchData();
   }, []);
 
-  // KPI Calculations
-  const kpiStats = useMemo(() => {
-    const completed = evaluations.filter(e => e.total_score != null).length;
-    const pending = evaluations.filter(e => e.total_score == null && !e.is_overdue).length;
-    const overdue = evaluations.filter(e => e.is_overdue).length;
-    const scored = evaluations.filter(e => typeof e.total_score === 'number');
-    const avgScore = scored.length > 0 ? (scored.reduce((sum, e) => sum + e.total_score, 0) / scored.length).toFixed(1) : 'N/A';
+  const placementsById = useMemo(
+    () => new Map(placements.map((placement) => [getPlacementKey(placement), placement])),
+    [placements]
+  );
+
+  const dashboardStats = useMemo(() => {
+    const completed = evaluations.filter((evaluation) => evaluation.total_score != null || evaluation.grade != null).length;
+    const pending = evaluations.filter((evaluation) => evaluation.total_score == null && !evaluation.is_overdue).length;
+    const overdue = evaluations.filter((evaluation) => evaluation.is_overdue).length;
+    const scoredEvaluations = evaluations.filter((evaluation) => Number.isFinite(Number(evaluation.total_score)));
+    const averageScore = scoredEvaluations.length > 0
+      ? (scoredEvaluations.reduce((sum, evaluation) => sum + Number(evaluation.total_score), 0) / scoredEvaluations.length).toFixed(1)
+      : 'N/A';
 
     return {
       total: evaluations.length,
       completed,
       pending,
       overdue,
-      avgScore,
+      averageScore,
+      completionRate: evaluations.length > 0 ? Math.round((completed / evaluations.length) * 100) : 0,
     };
   }, [evaluations]);
 
-  // Evaluation Status Chart
-  const evaluationStatusData = useMemo(() => {
-    return [
-      { name: 'Completed', value: kpiStats.completed, color: '#10b981' },
-      { name: 'Pending', value: kpiStats.pending, color: '#f8771c' },
-      { name: 'Overdue', value: kpiStats.overdue, color: '#ef4444' },
-    ].filter(entry => entry.value > 0);
-  }, [kpiStats]);
+  const assignedStudents = useMemo(() => {
+    const uniqueStudents = new Map();
 
-  // Monthly Trend
-  const evaluationTrend = useMemo(() => {
-    const monthMap = {};
-    evaluations.forEach(e => {
-      const rawDate = e.created_at || e.submitted_at || e.date;
-      if (!rawDate) return;
-      const date = new Date(rawDate);
-      const label = date.toLocaleString('default', { month: 'short', year: '2-digit' });
-      monthMap[label] = (monthMap[label] ?? 0) + 1;
+    placements.forEach((placement) => {
+      const studentId = placement?.student_details?.student_id || placement?.student?.student_id || placement?.student || placement?.student_details?.user_details?.user_id;
+      const key = String(studentId || getPlacementKey(placement));
+
+      if (!uniqueStudents.has(key)) {
+        uniqueStudents.set(key, placement);
+      }
     });
 
-    return Object.entries(monthMap)
-      .map(([month, count]) => ({ month, count }))
-      .sort((a, b) => new Date(`01 ${a.month}`) - new Date(`01 ${b.month}`));
+    return Array.from(uniqueStudents.values());
+  }, [placements]);
+
+  const statusChartData = useMemo(() => {
+    return [
+      { name: 'Completed', value: dashboardStats.completed, color: '#10b981' },
+      { name: 'Pending', value: dashboardStats.pending, color: '#f97316' },
+      { name: 'Overdue', value: dashboardStats.overdue, color: '#ef4444' },
+    ].filter((entry) => entry.value > 0);
+  }, [dashboardStats]);
+
+  const monthlyTrend = useMemo(() => {
+    const monthMap = new Map();
+
+    evaluations.forEach((evaluation) => {
+      const date = toDate(getEvaluationDate(evaluation));
+      if (!date) return;
+
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthMap.has(key)) {
+        monthMap.set(key, {
+          month: date.toLocaleString('default', { month: 'short', year: '2-digit' }),
+          order: date.getTime(),
+          count: 0,
+        });
+      }
+
+      monthMap.get(key).count += 1;
+    });
+
+    return Array.from(monthMap.values())
+      .sort((left, right) => left.order - right.order)
+      .map(({ month, count }) => ({ month, count }));
   }, [evaluations]);
 
-  // Pending tasks (students needing review)
-  const pendingTasks = useMemo(() => {
-    const pending = evaluations
-      .filter(e => e.total_score == null && !e.is_overdue)
+  const pendingEvaluations = useMemo(() => {
+    return [...evaluations]
+      .filter((evaluation) => evaluation.total_score == null && !evaluation.is_overdue)
+      .sort((left, right) => sortByDateDesc(getEvaluationDate(left), getEvaluationDate(right)))
       .slice(0, 5)
-      .map(e => ({
-        id: e.evaluation_id,
-        studentName: `${e.placement?.student?.user?.first_name || ''} ${e.placement?.student?.user?.last_name || ''}`.trim() || 'Unnamed',
-        status: 'Pending Review',
-      }));
-    return pending;
-  }, [evaluations]);
+      .map((evaluation) => {
+        const placement = placementsById.get(String(evaluation?.placement?.placement_id || evaluation?.placement || '')) || evaluation?.placement;
+
+        return {
+          id: evaluation?.evaluation_id || evaluation?.id,
+          student: getStudentLabel(placement),
+          placement: getPlacementLabel(placement),
+          date: getEvaluationDate(evaluation),
+        };
+      });
+  }, [evaluations, placementsById]);
+
+  const recentActivity = useMemo(() => {
+    return [...evaluations]
+      .sort((left, right) => sortByDateDesc(getEvaluationDate(left), getEvaluationDate(right)))
+      .slice(0, 5)
+      .map((evaluation) => {
+        const placement = placementsById.get(String(evaluation?.placement?.placement_id || evaluation?.placement || '')) || evaluation?.placement;
+
+        return {
+          id: evaluation?.evaluation_id || evaluation?.id,
+          student: getStudentLabel(placement),
+          detail: getPlacementLabel(placement),
+          date: getEvaluationDate(evaluation),
+          status: evaluation?.total_score != null ? 'completed' : evaluation?.is_overdue ? 'overdue' : 'pending',
+        };
+      });
+  }, [evaluations, placementsById]);
 
   if (loading) {
-    return <div className="academic-dashboard"><div className="loading-state">Loading dashboard...</div></div>;
+    return <div className="academic-dashboard"><div className="loading-container">Loading dashboard...</div></div>;
   }
 
   if (error) {
-    return <div className="academic-dashboard"><div className="error-state">{error}</div></div>;
+    return (
+      <div className="academic-dashboard">
+        <div className="error-container">
+          <h2>⚠️ Error Loading Dashboard</h2>
+          <p>{error}</p>
+          <button type="button" onClick={() => window.location.reload()} className="btn btn-primary">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="academic-dashboard">
-      {/* Top Bar: Greeting + Actions */}
-      <div className="top-bar">
-        <div className="top-bar-left">
-          <h2>Welcome back, {user?.first_name} {user?.last_name}</h2>
-          <p>Here's your evaluation workspace for today</p>
+      <div className="welcome-header">
+        <div className="welcome-content">
+          <h1>
+            Welcome back, <span className="highlight">{user?.first_name || 'Academic Supervisor'}</span>
+          </h1>
+          <p>Review evaluations, track completion, and keep your placement records current.</p>
         </div>
-        <div className="top-bar-actions">
-          <Link to="/app/evaluations" className="btn btn-primary">Review Pending</Link>
-          <Link to="/app/reports" className="btn btn-secondary">Reports</Link>
+        <div className="date-badge">
+          {new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
         </div>
       </div>
 
-      {/* Row 1: KPI Cards (5-column Bento grid) */}
-      <section className="kpi-row">
-        <div className="kpi-card">
-          <p className="kpi-label">Total Evaluations</p>
-          <p className="kpi-value">{kpiStats.total}</p>
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon">📊</div>
+          <div className="stat-info">
+            <h3>{dashboardStats.total}</h3>
+            <p>Total Evaluations</p>
+          </div>
         </div>
-        <div className="kpi-card kpi-card-accent">
-          <p className="kpi-label">Pending</p>
-          <p className="kpi-value">{kpiStats.pending}</p>
-          <span className="kpi-tag">Needs attention</span>
+        <div className="stat-card">
+          <div className="stat-icon">✓</div>
+          <div className="stat-info">
+            <h3>{dashboardStats.completed}</h3>
+            <p>Completed</p>
+          </div>
         </div>
-        <div className="kpi-card">
-          <p className="kpi-label">Completed</p>
-          <p className="kpi-value">{kpiStats.completed}</p>
+        <div className="stat-card">
+          <div className="stat-icon">⏳</div>
+          <div className="stat-info">
+            <h3>{dashboardStats.pending}</h3>
+            <p>Pending</p>
+          </div>
         </div>
-        <div className="kpi-card">
-          <p className="kpi-label">Students</p>
-          <p className="kpi-value">{placements.length}</p>
+        <div className="stat-card">
+          <div className="stat-icon">⭐</div>
+          <div className="stat-info">
+            <h3>{dashboardStats.averageScore}</h3>
+            <p>Avg Score</p>
+          </div>
         </div>
-        <div className="kpi-card">
-          <p className="kpi-label">Avg Score</p>
-          <p className="kpi-value">{kpiStats.avgScore}</p>
-          <p className="kpi-subtitle">Out of 100</p>
-        </div>
-      </section>
+      </div>
 
-      {/* Row 2: Charts (60% + 40%) */}
-      <section className="charts-row">
-        {/* Evaluation Status Breakdown (Left: ~65%) */}
-        <div className="dashboard-card chart-card chart-card-lg">
-          <h3>Evaluation Status Breakdown</h3>
-          {evaluationStatusData.length === 0 ? (
-            <p className="no-data">No evaluation data yet</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={evaluationStatusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  dataKey="value"
-                >
-                  {evaluationStatusData.map((entry, index) => (
-                    <Cell key={`status-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+      <div className="dashboard-grid">
+        <div className="dashboard-card chart-card full-width">
+          <div className="card-header">
+            <div className="card-icon">📈</div>
+            <h3>Evaluation Status Overview</h3>
+          </div>
+          <div className="chart-container">
+            {statusChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusChartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={104}
+                    dataKey="value"
+                  >
+                    {statusChartData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="no-data">No evaluation data available yet.</p>
+            )}
+          </div>
 
-        {/* Action Center (Right: ~35%) */}
-        <div className="dashboard-card action-center">
-          <h3>Pending Reviews</h3>
-          {pendingTasks.length === 0 ? (
-            <p className="no-data">All caught up! No pending reviews.</p>
-          ) : (
-            <ul className="task-list">
-              {pendingTasks.map(task => (
-                <li key={task.id} className="task-item">
-                  <span className="task-name">{task.studentName}</span>
-                  <span className="task-badge">{task.status}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <Link to="/app/evaluations" className="btn btn-primary btn-block mt-3">
-            Review All
-          </Link>
-        </div>
-      </section>
-
-      {/* Row 3: Trends (50% + 50%) */}
-      <section className="trends-row">
-        {/* Monthly Throughput */}
-        <div className="dashboard-card chart-card">
-          <h3>Monthly Evaluation Throughput</h3>
-          {evaluationTrend.length === 0 ? (
-            <p className="no-data">No monthly trend data available</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={evaluationTrend} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="month" style={{ fontSize: '12px' }} />
-                <YAxis allowDecimals={false} style={{ fontSize: '12px' }} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#f8771c" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          <div className="evaluation-overview">
+            <div className="overview-pill">
+              <span>Students in scope</span>
+              <strong>{assignedStudents.length}</strong>
+            </div>
+            <div className="overview-pill">
+              <span>Completion rate</span>
+              <strong>{dashboardStats.completionRate}%</strong>
+            </div>
+            <div className="overview-pill">
+              <span>Overdue</span>
+              <strong>{dashboardStats.overdue}</strong>
+            </div>
+          </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="dashboard-card">
-          <h3>Recent Evaluation Activity</h3>
-          {evaluations.length === 0 ? (
-            <p className="no-data">No recent activity</p>
-          ) : (
-            <ul className="activity-list">
-              {evaluations.slice(0, 6).map((evaluation, idx) => (
-                <li key={evaluation.evaluation_id || idx} className="activity-item">
-                  <span className="activity-name">
-                    {`${evaluation.placement?.student?.user?.first_name || ''} ${evaluation.placement?.student?.user?.last_name || ''}`.trim() || 'Student'}
-                  </span>
-                  <span className={`activity-status ${evaluation.total_score != null ? 'completed' : evaluation.is_overdue ? 'overdue' : 'pending'}`}>
-                    {evaluation.total_score != null ? 'Completed' : evaluation.is_overdue ? 'Overdue' : 'Pending'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="dashboard-card half-width">
+          <div className="card-header">
+            <div className="card-icon">📝</div>
+            <h3>Pending Evaluations</h3>
+          </div>
+          <div className="card-content">
+            {pendingEvaluations.length > 0 ? (
+              <ul className="activity-list compact-list">
+                {pendingEvaluations.map((evaluation) => (
+                  <li key={evaluation.id}>
+                    <div className="activity-details">
+                      <strong>{evaluation.student}</strong>
+                      <span>{evaluation.placement}</span>
+                      <span>{formatDate(evaluation.date)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="no-data">No pending evaluations right now.</p>
+            )}
+          </div>
+          <div className="card-footer">
+            <Link to="/app/evaluations" className="btn-link">
+              Review Evaluations →
+            </Link>
+          </div>
         </div>
-      </section>
+
+        <div className="dashboard-card half-width">
+          <div className="card-header">
+            <div className="card-icon">🕒</div>
+            <h3>Recent Evaluation Activity</h3>
+          </div>
+          <div className="card-content">
+            {recentActivity.length > 0 ? (
+              <ul className="activity-list">
+                {recentActivity.map((item) => (
+                  <li key={item.id}>
+                    <div className="activity-details">
+                      <strong>{item.student}</strong>
+                      <span>{item.detail}</span>
+                      <span>{formatDate(item.date)}</span>
+                    </div>
+                    <span className={`status-badge status-${item.status}`}>
+                      {item.status === 'completed' ? 'Completed' : item.status === 'overdue' ? 'Overdue' : 'Pending'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="no-data">No recent activity to display.</p>
+            )}
+          </div>
+          <div className="card-footer">
+            <Link to="/app/activities" className="btn-link">
+              View Activity Log →
+            </Link>
+          </div>
+        </div>
+
+        <div className="dashboard-card chart-card half-width">
+          <div className="card-header">
+            <div className="card-icon">📅</div>
+            <h3>Monthly Evaluation Throughput</h3>
+          </div>
+          <div className="chart-container">
+            {monthlyTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={monthlyTrend} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#f97316" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="no-data">No monthly trend data available.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="dashboard-card half-width">
+          <div className="card-header">
+            <div className="card-icon">⚡</div>
+            <h3>Quick Actions</h3>
+          </div>
+          <div className="card-content">
+            <div className="quick-actions">
+              <Link to="/app/evaluations" className="btn btn-primary">
+                Open Evaluations
+              </Link>
+              <Link to="/app/reports" className="btn btn-secondary">
+                View Reports
+              </Link>
+              <Link to="/app/placements" className="btn btn-secondary">
+                Review Placements
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
