@@ -47,6 +47,10 @@ function getLogDate(log) {
   return log?.submitted_at || log?.updated_at || log?.created_at || null;
 }
 
+function formatStatusLabel(value) {
+  return String(value || 'pending').replace(/_/g, ' ');
+}
+
 const StudentDashboard = () => {
   const { user } = useAuth();
 
@@ -255,41 +259,54 @@ const StudentDashboard = () => {
     [approvedLogs, pendingLogs, logs]
   );
 
+  const unreadNotifications = useMemo(
+    () => notifications.filter((notification) => !notification.is_read).length,
+    [notifications]
+  );
+
+  const completionRate = useMemo(() => {
+    if (!logs.length) return 0;
+    return Math.round((approvedLogs / logs.length) * 100);
+  }, [logs, approvedLogs]);
+
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner" />
-        <p>Loading your dashboard...</p>
+      <div className="student-dashboard loading-shell">
+        <div className="loading-container">
+          <div className="loading-spinner" />
+          <p>Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="error-container" style={{ padding: '20px', margin: '20px', backgroundColor: '#ffebee', border: '1px solid #f44336', borderRadius: '4px', color: '#c62828' }}>
-        <h2>⚠️ Error Loading Dashboard</h2>
-        <p><strong>Error:</strong> {error}</p>
-        <p style={{ fontSize: '12px', marginTop: '10px' }}>Check browser console (F12) for more details.</p>
-        <button
-          onClick={() => window.location.reload()}
-          style={{ padding: '8px 16px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '10px' }}
-        >
-          Retry
-        </button>
+      <div className="student-dashboard loading-shell">
+        <div className="error-container">
+          <h2>Unable to Load Dashboard</h2>
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()} className="retry-button">
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="student-dashboard">
-      <div className="welcome-header">
-        <div className="welcome-content">
+      <section className="studio-hero">
+        <div className="hero-copy">
+          <p className="hero-kicker">Student Workbench</p>
           <h1>
-            Welcome back, <span className="highlight">{user?.first_name || 'Student'}!</span>
+            {user?.first_name || 'Student'}, keep your internship story moving.
           </h1>
-          <p>Here's what's happening with your internship journey today.</p>
+          <p>
+            One place for your weekly logs, supervisor feedback, and progress trail.
+          </p>
         </div>
-        <div className="date-badge">
+        <div className="hero-date-chip">
           {new Date().toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -297,216 +314,200 @@ const StudentDashboard = () => {
             day: 'numeric',
           })}
         </div>
-      </div>
+      </section>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">📊</div>
-          <div className="stat-info">
-            <h3>{activePlacements}</h3>
-            <p>Active Placements</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📝</div>
-          <div className="stat-info">
-            <h3>{logs.length}</h3>
-            <p>Total Logs</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">✓</div>
-          <div className="stat-info">
-            <h3>{approvedLogs}</h3>
-            <p>Approved Logs</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">⏱️</div>
-          <div className="stat-info">
-            <h3>{totalHours}</h3>
-            <p>Total Hours</p>
-          </div>
-        </div>
-      </div>
+      <section className="kpi-strip">
+        <article className="kpi-card">
+          <p className="kpi-label">Active Placement</p>
+          <p className="kpi-value">{activePlacements}</p>
+          <p className="kpi-footnote">Current internship assignment</p>
+        </article>
+        <article className="kpi-card">
+          <p className="kpi-label">Total Logs</p>
+          <p className="kpi-value">{logs.length}</p>
+          <p className="kpi-footnote">All submitted weekly entries</p>
+        </article>
+        <article className="kpi-card kpi-card-accent">
+          <p className="kpi-label">Approval Rate</p>
+          <p className="kpi-value">{completionRate}%</p>
+          <p className="kpi-footnote">Approved out of total logs</p>
+        </article>
+        <article className="kpi-card">
+          <p className="kpi-label">Unread Alerts</p>
+          <p className="kpi-value">{unreadNotifications}</p>
+          <p className="kpi-footnote">Notifications waiting for review</p>
+        </article>
+        <article className="kpi-card">
+          <p className="kpi-label">Hours Logged</p>
+          <p className="kpi-value">{totalHours}</p>
+          <p className="kpi-footnote">Cumulative internship hours</p>
+        </article>
+      </section>
 
-      <div className="dashboard-grid">
-        <div className="dashboard-card submit-logs-card">
-          <div className="card-header">
-            <div className="card-icon">📝</div>
-            <h3>Submit Logs</h3>
-          </div>
-          <div className="card-content">
+      <section className="studio-grid">
+        <article className="panel panel-primary">
+          <header className="panel-header">
+            <h2>Logbook Command Center</h2>
+            {selectedPlacement ? <span className="pill">Week {nextWeekNumber} next</span> : <span className="pill">No active placement</span>}
+          </header>
+          <div className="panel-body">
             {selectedPlacement ? (
-              <>
-                <p className="results-message">
-                  Continue your internship reporting for <strong>{selectedPlacement.position_title}</strong> at <strong>{selectedPlacement.organization?.name}</strong>.
-                </p>
-                <div className="submit-summary">
-                  <span className="week-badge">Next: Week {nextWeekNumber}</span>
-                  <span className={`status-badge ${selectedPlacement.status}`}>{selectedPlacement.status}</span>
-                </div>
-              </>
+              <p className="panel-copy">
+                Continue your weekly report for <strong>{selectedPlacement.position_title || 'your placement'}</strong>
+                {selectedPlacement.organization?.name ? ` at ${selectedPlacement.organization.name}` : ''}.
+              </p>
             ) : (
-              <p className="empty-state">No active placement is available yet. Once approved, you can submit your weekly log here.</p>
+              <p className="panel-copy">No active placement is available yet. Once approved, your weekly log workflow will appear here.</p>
             )}
+            <div className="cta-row">
+              <Link to={newLogPath} className="button button-strong">
+                Submit This Week's Log
+              </Link>
+              <Link to="/app/logs" className="button button-muted">
+                Open All Logs
+              </Link>
+            </div>
           </div>
-          <div className="card-footer">
-            <Link to={newLogPath} className="btn-primary-small">
-              <span>Submit Logs</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        </div>
+        </article>
 
-        <div className="dashboard-card logs-card">
-          <div className="card-header">
-            <div className="card-icon">📋</div>
-            <h3>View Submissions</h3>
-          </div>
-          <div className="card-content">
+        <article className="panel">
+          <header className="panel-header">
+            <h2>Recent Submissions</h2>
+            <Link to="/app/logs" className="panel-link">See all</Link>
+          </header>
+          <div className="panel-body">
             {recentLogs.length > 0 ? (
-              <ul className="logs-list">
+              <ul className="entry-list compact">
                 {recentLogs.map((log) => (
-                  <li key={log.log_id} className="log-item">
-                    <Link to={`/app/logs/${log.log_id}`} className="submission-link">
-                      <span className="week-badge">Week {log.week_number}</span>
-                      <span className={`status-badge ${log.status || 'draft'}`}>{log.status || 'draft'}</span>
+                  <li key={log.log_id}>
+                    <Link to={`/app/logs/${log.log_id}`} className="entry-line">
+                      <span className="entry-main">Week {log.week_number}</span>
+                      <span className={`entry-status ${log.status || 'draft'}`}>{formatStatusLabel(log.status || 'draft')}</span>
                     </Link>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="empty-state">No submissions yet. Your saved drafts will appear here.</p>
+              <p className="empty-state">No submissions yet.</p>
             )}
           </div>
-          <div className="card-footer">
-            <Link to="/app/logs" className="btn-view-all">
-              <span>View Submissions</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        </div>
+        </article>
 
-        <div className="dashboard-card notifications-card">
-          <div className="card-header">
-            <div className="card-icon">💬</div>
-            <h3>See Feedback</h3>
-            {feedbackItems.length > 0 && <span className="badge">{feedbackItems.length}</span>}
+        <article className="panel panel-tall">
+          <header className="panel-header">
+            <h2>Activity Feed</h2>
+            <Link to="/app/activities" className="panel-link">Open timeline</Link>
+          </header>
+          <div className="panel-body">
+            {activityItems.length > 0 ? (
+              <ul className="timeline-list">
+                {activityItems.map((activity) => (
+                  <li key={activity.id}>
+                    <div className="timeline-dot" />
+                    <div className="timeline-copy">
+                      <strong>{activity.title}</strong>
+                      <p>{activity.detail}</p>
+                      <span>{formatDate(activity.date)}</span>
+                    </div>
+                    <span className="timeline-type">{activity.type}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-state">No recent activity yet.</p>
+            )}
           </div>
-          <div className="card-content">
+        </article>
+
+        <article className="panel">
+          <header className="panel-header">
+            <h2>Supervisor Feedback</h2>
+            <Link to="/app/evaluations" className="panel-link">Open results</Link>
+          </header>
+          <div className="panel-body">
             {feedbackItems.length > 0 ? (
-              <ul className="feedback-list">
+              <ul className="entry-list">
                 {feedbackItems.map((review) => {
                   const relatedLog = logsById.get(String(review.log));
                   return (
-                    <li key={review.review_id} className="feedback-item">
-                      <div className="feedback-item-top">
+                    <li key={review.review_id}>
+                      <div className="feedback-head">
                         <strong>{relatedLog ? `Week ${relatedLog.week_number}` : 'Log feedback'}</strong>
-                        <span className={`status-badge ${review.status || 'approved'}`}>{String(review.status || 'feedback').replace(/_/g, ' ')}</span>
+                        <span className={`entry-status ${review.status || 'approved'}`}>{formatStatusLabel(review.status || 'approved')}</span>
                       </div>
                       <p>{truncate(review.comments, 120)}</p>
-                      <span className="feedback-meta">
-                        From {review.supervisor_details?.first_name || 'Supervisor'} {review.supervisor_details?.last_name || ''}
-                      </span>
                     </li>
                   );
                 })}
               </ul>
             ) : (
-              <p className="empty-state">No supervisor feedback yet. Submitted logs and comments will appear here.</p>
+              <p className="empty-state">No feedback received yet.</p>
             )}
           </div>
-          <div className="card-footer">
-            <Link to="/app/evaluations" className="btn-view-all">
-              <span>Open Feedback & Results</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        </div>
+        </article>
 
-        <div className="dashboard-card results-card">
-          <div className="card-header">
-            <div className="card-icon">🕒</div>
-            <h3>Recent Activities</h3>
+        <article className="panel panel-chart panel-wide">
+          <header className="panel-header">
+            <h2>Weekly Progress Curve</h2>
+          </header>
+          <div className="panel-body chart-panel-body">
+            <ResponsiveContainer width="100%" height={285}>
+              <LineChart data={progressData}>
+                <CartesianGrid strokeDasharray="2 6" stroke="#d8dbe6" />
+                <XAxis dataKey="week" stroke="#5f6474" />
+                <YAxis stroke="#5f6474" />
+                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #d8dbe6' }} />
+                <Legend />
+                <Line type="monotone" dataKey="hours" stroke="#1d4ed8" name="Total Hours" strokeWidth={3} dot={{ fill: '#1d4ed8', r: 3 }} />
+                <Line type="monotone" dataKey="approved" stroke="#0f766e" name="Approved Hours" strokeWidth={3} dot={{ fill: '#0f766e', r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-          <div className="card-content">
-            {activityItems.length > 0 ? (
-              <ul className="activity-list">
-                {activityItems.map((activity) => (
-                  <li key={activity.id} className="activity-item">
-                    <div className="activity-item-main">
-                      <span className="activity-dot" />
+        </article>
+
+        <article className="panel panel-chart">
+          <header className="panel-header">
+            <h2>Status Breakdown</h2>
+          </header>
+          <div className="panel-body chart-panel-body">
+            <ResponsiveContainer width="100%" height={235}>
+              <BarChart data={statusData}>
+                <CartesianGrid strokeDasharray="2 6" stroke="#d8dbe6" />
+                <XAxis dataKey="status" stroke="#5f6474" />
+                <YAxis stroke="#5f6474" allowDecimals={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #d8dbe6' }} />
+                <Bar dataKey="count" fill="#7c3aed" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </article>
+
+        <article className="panel panel-alerts panel-wide">
+          <header className="panel-header">
+            <h2>Alert Inbox</h2>
+            <Link to="/app/notifications" className="panel-link">Manage</Link>
+          </header>
+          <div className="panel-body">
+            {notifications.length > 0 ? (
+              <ul className="entry-list compact">
+                {notifications.slice(0, 4).map((notification) => (
+                  <li key={notification.notification_id}>
+                    <div className="alert-line">
+                      <span className={`alert-indicator ${notification.is_read ? 'read' : 'unread'}`} />
                       <div>
-                        <strong>{activity.title}</strong>
-                        <p>{activity.detail}</p>
+                        <strong>{formatStatusLabel(notification.notification_type || 'Notification')}</strong>
+                        <p>{truncate(notification.message, 110)}</p>
                       </div>
-                    </div>
-                    <div className="activity-item-side">
-                      <span className="activity-type">{activity.type}</span>
-                      <span className="activity-date">{formatDate(activity.date)}</span>
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="empty-state">Recent actions from your logs, feedback, and notifications will appear here.</p>
+              <p className="empty-state">No alerts right now.</p>
             )}
           </div>
-          <div className="card-footer">
-            <Link to="/app/activities" className="btn-view-all">
-              <span>View All Activities</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-
-        <div className="dashboard-card chart-card full-width">
-          <div className="card-header">
-            <div className="card-icon">📈</div>
-            <h3>Weekly Progress</h3>
-          </div>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={progressData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                <XAxis dataKey="week" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
-                <Legend />
-                <Line type="monotone" dataKey="hours" stroke="#4F46E5" name="Total Hours" strokeWidth={2} dot={{ fill: '#4F46E5', r: 4 }} />
-                <Line type="monotone" dataKey="approved" stroke="#10B981" name="Approved Hours" strokeWidth={2} dot={{ fill: '#10B981', r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="dashboard-card chart-card">
-          <div className="card-header">
-            <div className="card-icon">📊</div>
-            <h3>Log Status Overview</h3>
-          </div>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={statusData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                <XAxis dataKey="status" stroke="#666" />
-                <YAxis stroke="#666" />
-                <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
-                <Bar dataKey="count" fill="#4F46E5" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+        </article>
+      </section>
     </div>
   );
 };
