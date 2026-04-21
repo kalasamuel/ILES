@@ -120,6 +120,7 @@ function Router() {
         } />
         <Route path="reports/*" element={<ReportsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="notifications/:notificationId" element={<NotificationsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="help" element={<HelpPage />} />
 

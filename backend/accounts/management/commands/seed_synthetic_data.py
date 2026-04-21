@@ -51,12 +51,30 @@ class Command(BaseCommand):
             action="store_true",
             help="Delete existing synthetic-compatible data before seeding",
         )
+        parser.add_argument(
+            "--admin-email",
+            default="admin@iles.local",
+            help="Email for the seeded admin account. Default: admin@iles.local",
+        )
+        parser.add_argument(
+            "--admin-password",
+            default="Admin@123",
+            help="Password for the seeded admin account. Default: Admin@123",
+        )
+        parser.add_argument(
+            "--admin-reset-password",
+            action="store_true",
+            help="Reset password if the admin account already exists",
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
         student_count = max(options["students"], 1)
         weeks_per_placement = max(options["weeks"], 1)
         do_reset = options["reset"]
+        admin_email = options["admin_email"].strip().lower()
+        admin_password = options["admin_password"]
+        admin_reset_password = options["admin_reset_password"]
 
         random.seed(42)
         run_tag = timezone.now().strftime("%Y%m%d%H%M%S")
@@ -86,6 +104,33 @@ class Command(BaseCommand):
         for role_name in ["Admin", "Student", "Academic Supervisor", "Workplace Supervisor"]:
             role, _ = Role.objects.get_or_create(role_name=role_name)
             roles[role_name] = role
+
+        admin_user, admin_created = User.objects.get_or_create(
+            email=admin_email,
+            defaults={
+                "first_name": "System",
+                "last_name": "Admin",
+                "role": roles["Admin"],
+                "is_staff": True,
+                "is_superuser": True,
+            },
+        )
+        if admin_created or admin_reset_password:
+            admin_user.set_password(admin_password)
+            admin_user.save(update_fields=["password"])
+
+        updates = []
+        if admin_user.role_id != roles["Admin"].role_id:
+            admin_user.role = roles["Admin"]
+            updates.append("role")
+        if not admin_user.is_staff:
+            admin_user.is_staff = True
+            updates.append("is_staff")
+        if not admin_user.is_superuser:
+            admin_user.is_superuser = True
+            updates.append("is_superuser")
+        if updates:
+            admin_user.save(update_fields=updates)
 
         departments = []
         department_names = [
@@ -411,6 +456,11 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(self.style.SUCCESS("Synthetic data seeding complete."))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Admin ready: email={admin_email}, password={'set' if (admin_created or admin_reset_password) else 'unchanged'}"
+            )
+        )
         self.stdout.write(
             f"Created: students={len(students)}, placements={len(placements)}, logs={total_logs}, "
             f"reviews={total_reviews}, evaluations={evaluation_count}, notifications={Notification.objects.count()}"

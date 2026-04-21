@@ -15,6 +15,7 @@ function SystemStatusPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        await notificationsAPI.syncAdminSystemSnapshot();
         const [metricsRes, logsRes, reviewsRes, historyRes, notificationsRes] = await Promise.all([
           dashboardsAPI.refreshMetrics(),
           logbooksAPI.getLogs(),

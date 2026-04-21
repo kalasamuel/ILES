@@ -25,6 +25,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const isAppRoute = window.location.pathname.startsWith('/app');
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -46,14 +47,18 @@ api.interceptors.response.use(
           // Refresh token is invalid, logout user
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
+          if (isAppRoute) {
+            window.location.href = '/login';
+          }
           return Promise.reject(refreshError);
         }
       } else {
-        // No refresh token, logout user
+        // No refresh token. Keep public pages accessible without forced redirect.
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+        if (isAppRoute) {
+          window.location.href = '/login';
+        }
       }
     }
 
