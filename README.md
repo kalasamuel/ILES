@@ -164,9 +164,7 @@ This project is developed for educational purposes as part of the Software Devel
 
 
 ## User Stories
-
 ### Student Intern
-
 1. As an intern, I want to be able to register and log into the system in order to be able to access my internship dashboard
 2. As a student, I want to create and submit weekly internship logs so that my work can be reviewed by supervisors.
 3. As a student, I want to edit my weekly logs while they are still in draft mode so that I can correct mistakes before submission.
