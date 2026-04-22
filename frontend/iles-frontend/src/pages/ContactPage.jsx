@@ -77,14 +77,14 @@ function ContactPage() {
               </svg>
             </div>
             <h3>FAQ</h3>
-            <p>Check our frequently asked questions for quick answers.</p>
+            <p>Check out our frequently asked questions for quick answers.</p>
             <Link to="/help">Search FAQ →</Link>
           </div>
         </div>
 
         {/* The Contact Form */}
         <div className="contact-form-card">
-          <h2>Send us a Message</h2>
+          <h2>Send us a Message!</h2>
           {success ? (
             <div className="cf-success">
               ✓ <strong>Success!</strong> Your message has been sent! We will get back to you shortly.
