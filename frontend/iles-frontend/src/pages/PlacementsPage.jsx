@@ -172,7 +172,17 @@ function PlacementList() {
 function PlacementCreate() {
   const navigate = useNavigate();
   const [orgs, setOrgs]       = useState([]);
+  const [organizationMode, setOrganizationMode] = useState('existing');
   const [form, setForm]       = useState({ position_title: '', organization: '', start_date: '', end_date: '', description: '' });
+  const [newOrganization, setNewOrganization] = useState({
+    name: '',
+    industry: '',
+    address: '',
+    city: '',
+    country: '',
+    contact_email: '',
+    contact_phone: '',
+  });
   const [submitting, setSub]  = useState(false);
   const [error, setError]     = useState('');
 
@@ -181,15 +191,24 @@ function PlacementCreate() {
   }, []);
 
   const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const handleNewOrganizationChange = (e) => {
+    setNewOrganization((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSub(true);
     setError('');
     try {
+      let organizationId = form.organization;
+      if (organizationMode === 'new') {
+        const createdOrganization = await organizationsAPI.createOrganization(newOrganization);
+        organizationId = createdOrganization.organization_id;
+      }
+
       const payload = {
         position_title: form.position_title,
-        organization: form.organization,
+        organization: organizationId,
         start_date: form.start_date,
         end_date: form.end_date,
       };
@@ -216,6 +235,25 @@ function PlacementCreate() {
             <label htmlFor="position_title">Position Title *</label>
             <input id="position_title" name="position_title" value={form.position_title} onChange={handleChange} placeholder="e.g. Software Engineering Intern" required />
           </div>
+
+          <div className="pl-org-mode-switch" role="group" aria-label="Organization input mode">
+            <button
+              type="button"
+              className={`pl-org-mode-btn${organizationMode === 'existing' ? ' active' : ''}`}
+              onClick={() => setOrganizationMode('existing')}
+            >
+              Select Existing
+            </button>
+            <button
+              type="button"
+              className={`pl-org-mode-btn${organizationMode === 'new' ? ' active' : ''}`}
+              onClick={() => setOrganizationMode('new')}
+            >
+              Add New Organization
+            </button>
+          </div>
+
+          {organizationMode === 'existing' ? (
           <div className="pl-field">
             <label htmlFor="organization">Organization *</label>
             <select id="organization" name="organization" value={form.organization} onChange={handleChange} required>
@@ -223,6 +261,42 @@ function PlacementCreate() {
               {orgs.map((o) => <option key={o.organization_id} value={o.organization_id}>{o.name}</option>)}
             </select>
           </div>
+          ) : (
+            <>
+              <div className="pl-field">
+                <label htmlFor="name">Organization Name *</label>
+                <input id="name" name="name" value={newOrganization.name} onChange={handleNewOrganizationChange} placeholder="e.g. Acme Technologies" required />
+              </div>
+              <div className="pl-form-row">
+                <div className="pl-field">
+                  <label htmlFor="industry">Industry *</label>
+                  <input id="industry" name="industry" value={newOrganization.industry} onChange={handleNewOrganizationChange} placeholder="e.g. Information Technology" required />
+                </div>
+                <div className="pl-field">
+                  <label htmlFor="contact_phone">Contact Phone *</label>
+                  <input id="contact_phone" name="contact_phone" value={newOrganization.contact_phone} onChange={handleNewOrganizationChange} placeholder="e.g. +255700000000" required />
+                </div>
+              </div>
+              <div className="pl-field">
+                <label htmlFor="address">Address *</label>
+                <textarea id="address" name="address" value={newOrganization.address} onChange={handleNewOrganizationChange} placeholder="Office address" rows={3} required />
+              </div>
+              <div className="pl-form-row">
+                <div className="pl-field">
+                  <label htmlFor="city">City *</label>
+                  <input id="city" name="city" value={newOrganization.city} onChange={handleNewOrganizationChange} placeholder="e.g. Dar es Salaam" required />
+                </div>
+                <div className="pl-field">
+                  <label htmlFor="country">Country *</label>
+                  <input id="country" name="country" value={newOrganization.country} onChange={handleNewOrganizationChange} placeholder="e.g. Tanzania" required />
+                </div>
+              </div>
+              <div className="pl-field">
+                <label htmlFor="contact_email">Contact Email *</label>
+                <input id="contact_email" name="contact_email" type="email" value={newOrganization.contact_email} onChange={handleNewOrganizationChange} placeholder="e.g. hr@acme.com" required />
+              </div>
+            </>
+          )}
           <div className="pl-form-row">
             <div className="pl-field">
               <label htmlFor="start_date">Start Date *</label>
