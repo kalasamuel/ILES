@@ -87,7 +87,7 @@ function ContactPage() {
           <h2>Send us a Message</h2>
           {success ? (
             <div className="cf-success">
-              ✓ <strong>Success!</strong> Your message has been sent. We will get back to you shortly.
+              ✓ <strong>Success!</strong> Your message has been sent and we will get back to you shortly.
             </div>
           ) : (
             <form className="cf-form" onSubmit={handleSubmit}>
