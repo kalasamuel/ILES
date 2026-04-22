@@ -453,13 +453,13 @@ const StudentDashboard = () => {
           <div className="panel-body chart-panel-body">
             <ResponsiveContainer width="100%" height={285}>
               <LineChart data={progressData}>
-                <CartesianGrid strokeDasharray="2 6" stroke="#d8dbe6" />
-                <XAxis dataKey="week" stroke="#5f6474" />
-                <YAxis stroke="#5f6474" />
-                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #d8dbe6' }} />
+                <CartesianGrid strokeDasharray="2 6" stroke="#fed7aa" />
+                <XAxis dataKey="week" stroke="#7c3d0c" />
+                <YAxis stroke="#7c3d0c" />
+                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #fed7aa' }} />
                 <Legend />
-                <Line type="monotone" dataKey="hours" stroke="#1d4ed8" name="Total Hours" strokeWidth={3} dot={{ fill: '#1d4ed8', r: 3 }} />
-                <Line type="monotone" dataKey="approved" stroke="#0f766e" name="Approved Hours" strokeWidth={3} dot={{ fill: '#0f766e', r: 3 }} />
+                <Line type="monotone" dataKey="hours" stroke="#ea580c" name="Total Hours" strokeWidth={3} dot={{ fill: '#ea580c', r: 3 }} />
+                <Line type="monotone" dataKey="approved" stroke="#14532d" name="Approved Hours" strokeWidth={3} dot={{ fill: '#14532d', r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -472,11 +472,11 @@ const StudentDashboard = () => {
           <div className="panel-body chart-panel-body">
             <ResponsiveContainer width="100%" height={235}>
               <BarChart data={statusData}>
-                <CartesianGrid strokeDasharray="2 6" stroke="#d8dbe6" />
-                <XAxis dataKey="status" stroke="#5f6474" />
-                <YAxis stroke="#5f6474" allowDecimals={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #d8dbe6' }} />
-                <Bar dataKey="count" fill="#7c3aed" radius={[8, 8, 0, 0]} />
+                <CartesianGrid strokeDasharray="2 6" stroke="#fed7aa" />
+                <XAxis dataKey="status" stroke="#7c3d0c" />
+                <YAxis stroke="#7c3d0c" allowDecimals={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #fed7aa' }} />
+                <Bar dataKey="count" fill="#f97316" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

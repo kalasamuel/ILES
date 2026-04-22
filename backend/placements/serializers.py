@@ -48,8 +48,15 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
                     .first()
                 )
                 if workplace_supervisor is None:
+                    workplace_supervisor = (
+                        Supervisor.objects
+                        .filter(supervisor_type='workplace')
+                        .order_by('user__first_name', 'user__last_name')
+                        .first()
+                    )
+                if workplace_supervisor is None:
                     raise serializers.ValidationError({
-                        'workplace_supervisor': 'No workplace supervisor is assigned to the selected organization.'
+                        'workplace_supervisor': 'No workplace supervisor is available in the system.'
                     })
                 attrs['workplace_supervisor'] = workplace_supervisor
 
