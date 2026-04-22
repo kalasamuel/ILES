@@ -82,7 +82,7 @@ function ContactPage() {
           </div>
         </div>
 
-        {/* The SContact Form */}
+        {/* The Contact Form */}
         <div className="contact-form-card">
           <h2>Send us a Message</h2>
           {success ? (
