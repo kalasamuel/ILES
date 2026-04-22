@@ -43,7 +43,7 @@ function ContactPage() {
           <p>Have questions or facing issues? We're here to help you.</p>
         </header>
 
-        {/* Info Cards */}
+        {/* info cards */}
         <div className="contact-cards">
           <div className="contact-card">
             <div className="contact-card-icon">
@@ -82,7 +82,7 @@ function ContactPage() {
           </div>
         </div>
 
-        {/* Contact Form */}
+        {/* The SContact Form */}
         <div className="contact-form-card">
           <h2>Send us a Message</h2>
           {success ? (
