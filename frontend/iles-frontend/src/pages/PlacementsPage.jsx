@@ -6,6 +6,25 @@ import './PlacementsPage.css';
 
 const STATUS_FILTERS = ['All', 'Pending', 'Approved', 'Rejected', 'Completed'];
 
+const STATUS_META = {
+  approved:  { color: '#10b981', bg: 'rgba(16,185,129,0.10)',  label: 'Approved',  icon: '✦' },
+  pending:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.10)',  label: 'Pending',   icon: '◌' },
+  rejected:  { color: '#ef4444', bg: 'rgba(239,68,68,0.10)',   label: 'Rejected',  icon: '✕' },
+  completed: { color: '#6366f1', bg: 'rgba(99,102,241,0.10)', label: 'Completed', icon: '◉' },
+  active:    { color: '#10b981', bg: 'rgba(16,185,129,0.10)',  label: 'Active',    icon: '✦' },
+};
+
+function formatDate(raw) {
+  if (!raw) return '—';
+  return new Date(raw).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function daysCount(start, end) {
+  if (!start || !end) return null;
+  const diff = new Date(end) - new Date(start);
+  return Math.max(0, Math.round(diff / 86400000));
+}
+
 // ── Placement List ────────────────────────────────────────────────────────
 function PlacementList() {
   const [placements, setPlacements]   = useState([]);
@@ -230,33 +249,144 @@ function PlacementCreate() {
 
 // ── Placement Details ─────────────────────────────────────────────────────
 function PlacementDetails() {
-  const { id }  = useParams();
+  const { id }   = useParams();
   const navigate = useNavigate();
-  const [pl, setPl] = useState(null);
+  const [pl, setPl]           = useState(null);
+  const [revealed, setReveal] = useState(false);
 
   useEffect(() => {
-    if (id) placementsAPI.getPlacement(id).then(setPl).catch(console.error);
+    if (id) {
+      placementsAPI.getPlacement(id)
+        .then((data) => {
+          setPl(data);
+          setTimeout(() => setReveal(true), 50);
+        })
+        .catch(console.error);
+    }
   }, [id]);
 
   if (!pl) return <LoadingSpinner text="Loading placement…" fullscreen />;
 
+  const sm   = STATUS_META[pl.status?.toLowerCase()] || STATUS_META.pending;
+  const days = daysCount(pl.start_date, pl.end_date);
+  const org  = pl.organization_details?.name || `Organisation #${pl.organization}`;
+
   return (
-    <div className="pl-detail-page">
-      <button className="pl-back-btn" onClick={() => navigate(-1)}>← Back to Placements</button>
-      <div className="pl-detail-card">
-        <h2>{pl.position_title}</h2>
-        {[
-          { label: 'Organisation', value: pl.organization_details?.name || `#${pl.organization}` },
-          { label: 'Status',       value: pl.status },
-          { label: 'Start Date',   value: pl.start_date ? new Date(pl.start_date).toLocaleDateString() : '—' },
-          { label: 'End Date',     value: pl.end_date   ? new Date(pl.end_date).toLocaleDateString()   : '—' },
-          { label: 'Description',  value: pl.description || '—' },
-        ].map(({ label, value }) => (
-          <div className="pl-detail-row" key={label}>
-            <label>{label}</label>
-            <span>{value}</span>
+    <div className={`pd-shell${revealed ? ' pd-shell--in' : ''}`}>
+
+      {/* Back */}
+      <button className="pd-back" onClick={() => navigate(-1)}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5M5 12l7 7M5 12l7-7"/>
+        </svg>
+        Back to Placements
+      </button>
+
+      <div className="pd-layout">
+
+        {/* ── Left column ── */}
+        <div className="pd-left">
+
+          {/* Hero */}
+          <div className="pd-hero">
+            <div className="pd-hero-accent" style={{ '--sm-color': sm.color }} />
+            <div className="pd-org-tag">{org}</div>
+            <h1 className="pd-title">{pl.position_title}</h1>
+            <div className="pd-status-badge" style={{ color: sm.color, background: sm.bg }}>
+              <span className="pd-status-icon">{sm.icon}</span>
+              {sm.label}
+            </div>
           </div>
-        ))}
+
+          {/* Duration */}
+          {days !== null && (
+            <div className="pd-duration-card">
+              <div className="pd-duration-number">{days}</div>
+              <div className="pd-duration-label">day placement</div>
+            </div>
+          )}
+
+          {/* Description */}
+          {pl.description && (
+            <div className="pd-desc-block">
+              <div className="pd-block-heading">About this Role</div>
+              <p className="pd-desc-text">{pl.description}</p>
+            </div>
+          )}
+        </div>
+
+        {/* ── Right column ── */}
+        <div className="pd-right">
+          <div className="pd-info-card">
+            <div className="pd-block-heading">Placement Details</div>
+
+            <div className="pd-info-rows">
+              {[
+                {
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                    </svg>
+                  ),
+                  label: 'Start Date',
+                  value: formatDate(pl.start_date),
+                },
+                {
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 15l3 3 5-5"/>
+                    </svg>
+                  ),
+                  label: 'End Date',
+                  value: formatDate(pl.end_date),
+                },
+                {
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 21l1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>
+                    </svg>
+                  ),
+                  label: 'Organisation',
+                  value: org,
+                },
+                {
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                    </svg>
+                  ),
+                  label: 'Status',
+                  value: <span style={{ color: sm.color, fontWeight: 700 }}>{sm.label}</span>,
+                },
+                ...(pl.placement_id ? [{
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                  ),
+                  label: 'Placement ID',
+                  value: `#${pl.placement_id}`,
+                }] : []),
+              ].map(({ icon, label, value }, i) => (
+                <div className="pd-info-row" key={label} style={{ '--delay': `${i * 60}ms` }}>
+                  <div className="pd-info-icon">{icon}</div>
+                  <div className="pd-info-content">
+                    <div className="pd-info-label">{label}</div>
+                    <div className="pd-info-value">{value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pd-actions">
+            <button className="pd-action-btn pd-action-btn--back" onClick={() => navigate(-1)}>
+              ← Go Back
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
