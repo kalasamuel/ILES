@@ -3,12 +3,15 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Role, Department, User, Student, Supervisor, UserSettings
 from .serializers import RoleSerializer, DepartmentSerializer, UserSerializer, UserRegisterSerializer, StudentSerializer, SupervisorSerializer, UserSettingsSerializer
 from datetime import timedelta
 from django.utils import timezone
 import uuid
+import re
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.crypto import get_random_string
@@ -75,9 +78,33 @@ class UserViewSet(viewsets.ModelViewSet):
         _ensure_role_profile(request.user)
         if request.method.lower() == 'patch':
             update_data = {}
-            for field in ['first_name', 'last_name', 'email', 'phone_number']:
+            for field in ['first_name', 'last_name', 'phone_number']:
                 if field in request.data:
-                    update_data[field] = request.data.get(field)
+                    value = request.data.get(field)
+                    if isinstance(value, str):
+                        value = value.strip()
+                    update_data[field] = value
+
+            if 'first_name' in update_data and not update_data['first_name']:
+                return Response({'error': 'First name cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if 'last_name' in update_data and not update_data['last_name']:
+                return Response({'error': 'Last name cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if 'phone_number' in update_data and update_data['phone_number']:
+                phone_number = update_data['phone_number']
+                if not re.fullmatch(r'^\+?[0-9\s\-]{7,20}$', phone_number):
+                    return Response({'error': 'Phone number format is invalid.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if 'email' in request.data:
+                email = (request.data.get('email') or '').strip().lower()
+                if not email:
+                    return Response({'error': 'Email cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+
+                email_exists = User.objects.filter(email__iexact=email).exclude(user_id=request.user.user_id).exists()
+                if email_exists:
+                    return Response({'error': 'That email is already in use.'}, status=status.HTTP_400_BAD_REQUEST)
+                update_data['email'] = email
 
             if 'department_id' in request.data:
                 update_data['department_id'] = request.data.get('department_id') or None
@@ -118,6 +145,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if not request.user.check_password(current_password):
             return Response({'error': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            validate_password(new_password, request.user)
+        except ValidationError as exc:
+            return Response({'error': ' '.join(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
         request.user.set_password(new_password)
         request.user.save(update_fields=['password'])
