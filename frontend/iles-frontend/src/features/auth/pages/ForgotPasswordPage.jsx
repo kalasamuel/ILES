@@ -16,10 +16,10 @@ function ForgotPasswordPage() {
 
   try {
     const data = await authAPI.forgotPassword(email);
-    setMessage(data.message || 'Password reset instructions sent to your email.');
+    setMessage(data.message || 'Verification code sent to your email.');
     setMessageType('success');
   } catch (err) {
-    const msg = err?.response?.data?.error || 'Failed to send reset instructions. Please try again.';
+    const msg = err?.response?.data?.error || 'Failed to send verification code. Please try again.';
     setMessage(msg);
     setMessageType('error');
   } finally {
@@ -102,7 +102,7 @@ function ForgotPasswordPage() {
                     Sending…
                   </>
                 ) : (
-                  'Send Reset Link'
+                  'Send Verification Code'
                 )}
               </button>
             </form>
