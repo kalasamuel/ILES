@@ -160,22 +160,30 @@ class UserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
-        
-            return Response({'message': 'If that email is registered, a reset link has been sent.'})
-        token = get_random_string(64)
-        cache_key = f'password_reset_{token}'
+            return Response({'message': 'If that email is registered, a verification code has been sent.'})
+
+        verification_code = None
+        cache_key = None
+        while True:
+            verification_code = get_random_string(6, allowed_chars='0123456789')
+            cache_key = f'password_reset_{verification_code}'
+            if cache.get(cache_key) is None:
+                break
+
         cache.set(cache_key, user.user_id, timeout=3600)
 
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
-        reset_link = f'{frontend_url}/reset-password?token={token}'
+        reset_page = f'{frontend_url}/reset-password'
 
         send_mail(
-            subject='Reset Your ILES Password',
+            subject='Your ILES Password Verification Code',
             message=(
                 f'Hi {user.first_name},\n\n'
                 f'You requested a password reset for your ILES account.\n\n'
-                f'Click the link below to reset your password (valid for 1 hour):\n\n'
-                f'{reset_link}\n\n'
+                f'Use this verification code to reset your password (valid for 1 hour):\n\n'
+                f'{verification_code}\n\n'
+                f'Open the password reset page here:\n\n'
+                f'{reset_page}\n\n'
                 f'If you did not request this, you can safely ignore this email.\n\n'
                 f'— ILES Support Team'
             ),
@@ -184,16 +192,16 @@ class UserViewSet(viewsets.ModelViewSet):
             fail_silently=False,
         )
 
-        return Response({'message': 'If that email is registered, a reset link has been sent.'})
+        return Response({'message': 'If that email is registered, a verification code has been sent.'})
 
     
     @action(detail=False, methods=['post'], permission_classes=[], url_path='reset-password')
     def reset_password(self, request):
-        token = request.data.get('token', '').strip()
+        verification_code = request.data.get('verification_code', '').strip() or request.data.get('token', '').strip()
         new_password = request.data.get('new_password', '')
         confirm_password = request.data.get('confirm_password', '')
 
-        if not token or not new_password or not confirm_password:
+        if not verification_code or not new_password or not confirm_password:
             return Response({'error': 'All fields are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if new_password != confirm_password:
@@ -202,11 +210,11 @@ class UserViewSet(viewsets.ModelViewSet):
         if len(new_password) < 8:
             return Response({'error': 'Password must be at least 8 characters.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        cache_key = f'password_reset_{token}'
+        cache_key = f'password_reset_{verification_code}'
         user_id = cache.get(cache_key)
 
         if not user_id:
-            return Response({'error': 'Reset link is invalid or has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Verification code is invalid or has expired.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.get(user_id=user_id)
