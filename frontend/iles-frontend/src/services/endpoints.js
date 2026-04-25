@@ -14,9 +14,9 @@ export const authAPI = {
     const response = await api.post('/accounts/users/forgot-password/', { email });
     return response.data;
   },
-  resetPassword: async (token, new_password, confirm_password) => {
+  resetPassword: async (verificationCode, new_password, confirm_password) => {
     const response = await api.post('/accounts/users/reset-password/', {
-      token,
+      verification_code: verificationCode,
       new_password,
       confirm_password,
     });
