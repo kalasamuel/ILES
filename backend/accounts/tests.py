@@ -25,7 +25,7 @@ class PasswordResetWorkflowTests(APITestCase):
 		EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
 		FRONTEND_URL='http://localhost:5173',
 	)
-	@patch('accounts.views.get_random_string', return_value='a' * 64)
+	@patch('accounts.views.get_random_string', return_value='123456')
 	def test_forgot_password_sends_reset_link(self, mock_token):
 		response = self.client.post(
 			'/api/accounts/users/forgot-password/',
@@ -36,22 +36,20 @@ class PasswordResetWorkflowTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assertEqual(
 			response.data['message'],
-			'If that email is registered, a reset link has been sent.',
+			'If that email is registered, a verification code has been sent.',
 		)
 		self.assertEqual(len(mail.outbox), 1)
-		self.assertIn('Reset Your ILES Password', mail.outbox[0].subject)
-		self.assertIn(
-			'http://localhost:5173/reset-password?token=' + ('a' * 64),
-			mail.outbox[0].body,
-		)
-		self.assertEqual(cache.get(f'password_reset_{"a" * 64}'), self.user.user_id)
-		mock_token.assert_called_once_with(64)
+		self.assertIn('Your ILES Password Verification Code', mail.outbox[0].subject)
+		self.assertIn('123456', mail.outbox[0].body)
+		self.assertIn('http://localhost:5173/reset-password', mail.outbox[0].body)
+		self.assertEqual(cache.get('password_reset_123456'), self.user.user_id)
+		mock_token.assert_called_once_with(6, allowed_chars='0123456789')
 
 	@override_settings(
 		EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
 		FRONTEND_URL='http://localhost:5173',
 	)
-	@patch('accounts.views.get_random_string', return_value='b' * 64)
+	@patch('accounts.views.get_random_string', return_value='654321')
 	def test_reset_password_changes_password_and_invalidates_token(self, mock_token):
 		self.client.post(
 			'/api/accounts/users/forgot-password/',
@@ -62,7 +60,7 @@ class PasswordResetWorkflowTests(APITestCase):
 		response = self.client.post(
 			'/api/accounts/users/reset-password/',
 			{
-				'token': 'b' * 64,
+				'verification_code': '654321',
 				'new_password': 'NewPassword123',
 				'confirm_password': 'NewPassword123',
 			},
@@ -76,14 +74,14 @@ class PasswordResetWorkflowTests(APITestCase):
 		)
 		self.user.refresh_from_db()
 		self.assertTrue(self.user.check_password('NewPassword123'))
-		self.assertIsNone(cache.get(f'password_reset_{"b" * 64}'))
-		mock_token.assert_called_once_with(64)
+		self.assertIsNone(cache.get('password_reset_654321'))
+		mock_token.assert_called_once_with(6, allowed_chars='0123456789')
 
 	def test_reset_password_rejects_invalid_token(self):
 		response = self.client.post(
 			'/api/accounts/users/reset-password/',
 			{
-				'token': 'invalid-token',
+				'verification_code': 'invalid-code',
 				'new_password': 'NewPassword123',
 				'confirm_password': 'NewPassword123',
 			},
@@ -91,4 +89,4 @@ class PasswordResetWorkflowTests(APITestCase):
 		)
 
 		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-		self.assertEqual(response.data['error'], 'Reset link is invalid or has expired.')
+		self.assertEqual(response.data['error'], 'Verification code is invalid or has expired.')
