@@ -30,4 +30,8 @@ class DashboardMetricSerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError("Metric value cannot be negative.")
         return value  
+
+class EvaluationSerializer(serializers.ModelSerializer):
+    scores = EvaluationScoreSerializer(source='evaluationscore_set', many=True, read_only=True)
+        
     
