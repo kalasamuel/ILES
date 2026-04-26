@@ -136,4 +136,11 @@ def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
 def __str__(self):
-        return f"{self.criteria} score for {self.evaluation}"     
+        return f"{self.criteria} score for {self.evaluation}" 
+
+class ScoreBreakdown(models.Model):
+    score_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    placement = models.OneToOneField(InternshipPlacement, on_delete=models.CASCADE)
+    supervisor_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    academic_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+     
