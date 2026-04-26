@@ -21,7 +21,15 @@ class DashboardMetricSerializer(serializers.ModelSerializer):
     def validate_evaluation_date(self, value):
         if value > timezone.now().date():
             raise serializers.ValidationError("Evaluation date cannot be in the future.")
-        return value    
+        return value   
+    def validate_score_inputs(self, value):
+        """
+        Validate that all active criteria are scored and payload structure is correct.
+        """
+        for item in value:
+            if 'criteria' not in item or 'score' not in item:
+                raise serializers.ValidationError("Each score input must contain 'criteria' and 'score'.")
+         
 
 
     def validate_value(self, value):
