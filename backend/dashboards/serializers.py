@@ -33,5 +33,12 @@ class DashboardMetricSerializer(serializers.ModelSerializer):
 
 class EvaluationSerializer(serializers.ModelSerializer):
     scores = EvaluationScoreSerializer(source='evaluationscore_set', many=True, read_only=True)
-        
+      # Writable field for nested scores during creation
+    score_inputs = serializers.ListField(
+        child=serializers.DictField(),
+        write_only=True,
+        required=True,
+        help_text="List of objects containing 'criteria' (UUID or string) and 'score' (Decimal)"
+    )
+  
     
