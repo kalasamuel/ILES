@@ -119,4 +119,15 @@ class EvaluationScore(models.Model):
     history = HistoricalRecords()  
 
 class Meta:
-        unique_together = ('evaluation', 'criteria')      
+     unique_together = ('evaluation', 'criteria') 
+def clean(self):
+        super().clean()
+        if self.score is not None:
+            if self.score < 0:
+                raise ValidationError({'score': "Score cannot be negative."})
+            # Ensure criteria exists to avoid related object errors during validation
+            if hasattr(self, 'criteria') and self.criteria and self.score > self.criteria.max_score:
+                raise ValidationError(
+                    {'score': f"Score cannot exceed the maximum allowed score ({self.criteria.max_score})."}
+                )
+
