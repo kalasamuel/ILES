@@ -148,4 +148,7 @@ class ScoreBreakdown(models.Model):
     grade = models.CharField(max_length=10, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()   
+    history = HistoricalRecords()
+    def __str__(self):
+        return f"Score breakdown for {self.placement}"
+   
