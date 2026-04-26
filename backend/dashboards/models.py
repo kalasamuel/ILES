@@ -83,4 +83,16 @@ class EvaluationCriteria(models.Model):
     history = HistoricalRecords()
 
     def __str__(self):
-        return self.name        
+        return self.name 
+
+class Evaluation(models.Model):
+    evaluation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    placement = models.OneToOneField(InternshipPlacement, on_delete=models.CASCADE)
+    evaluator = models.ForeignKey(Supervisor, on_delete=models.CASCADE)
+    evaluation_date = models.DateField(default=timezone.now)
+    total_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    grade = models.CharField(max_length=10, null=True, blank=True)
+    comments = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()           
