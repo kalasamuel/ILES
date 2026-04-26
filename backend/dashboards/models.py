@@ -116,4 +116,7 @@ class EvaluationScore(models.Model):
     score = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()    
+    history = HistoricalRecords()  
+
+class Meta:
+        unique_together = ('evaluation', 'criteria')      
