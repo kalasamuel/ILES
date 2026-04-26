@@ -44,6 +44,12 @@ class DashboardMetricSerializer(serializers.ModelSerializer):
         scores_data = validated_data.pop('score_inputs')
         # Create the main evaluation record
         evaluation = super().create(validated_data)
+        # Create all associated scores
+        for score_data in scores_data:
+            criteria_id = score_data['criteria']
+            score_val = score_data['score']
+
+            
 
 
     def validate_value(self, value):
