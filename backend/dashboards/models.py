@@ -108,3 +108,12 @@ class Evaluation(models.Model):
 
     def __str__(self):
         return f"Evaluation for {self.placement}"
+
+class EvaluationScore(models.Model):
+    score_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
+    criteria = models.ForeignKey(EvaluationCriteria, on_delete=models.CASCADE)
+    score = models.DecimalField(max_digits=5, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()    
