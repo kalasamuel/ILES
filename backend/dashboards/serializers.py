@@ -42,6 +42,8 @@ class DashboardMetricSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         scores_data = validated_data.pop('score_inputs')
+        # Create the main evaluation record
+        evaluation = super().create(validated_data)
 
 
     def validate_value(self, value):
