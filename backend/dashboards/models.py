@@ -143,4 +143,9 @@ class ScoreBreakdown(models.Model):
     placement = models.OneToOneField(InternshipPlacement, on_delete=models.CASCADE)
     supervisor_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     academic_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-     
+    logbook_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    grade = models.CharField(max_length=10, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()   
