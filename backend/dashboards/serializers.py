@@ -80,6 +80,11 @@ class EvaluationSerializer(serializers.ModelSerializer):
         required=True,
         help_text="List of objects containing 'criteria' (UUID or string) and 'score' (Decimal)"
     )
-
+class ScoreBreakdownSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScoreBreakdown
+        fields = '__all__'
+        # These are computed values — protect them from direct write
+        read_only_fields = ['final_score', 'grade']
   
     
