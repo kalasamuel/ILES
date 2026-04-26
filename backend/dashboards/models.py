@@ -70,3 +70,17 @@ class DashboardMetric(models.Model):
         """
         self.value += amount
         self.save()   
+
+class EvaluationCriteria(models.Model):
+    criteria_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    weight_percentage = models.DecimalField(max_digits=5, decimal_places=2)  # e.g., 25.00 for 25%
+    max_score = models.DecimalField(max_digits=5, decimal_places=2)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return self.name        
