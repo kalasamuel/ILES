@@ -131,3 +131,9 @@ def clean(self):
                     {'score': f"Score cannot exceed the maximum allowed score ({self.criteria.max_score})."}
                 )
 
+def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+def __str__(self):
+        return f"{self.criteria} score for {self.evaluation}"     
