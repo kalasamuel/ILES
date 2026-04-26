@@ -95,4 +95,16 @@ class Evaluation(models.Model):
     comments = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()           
+    history = HistoricalRecords() 
+
+    def clean(self):
+        super().clean()
+        if self.evaluation_date and self.evaluation_date > timezone.now().date():
+            raise ValidationError({'evaluation_date': "Evaluation date cannot be in the future."})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Evaluation for {self.placement}"
