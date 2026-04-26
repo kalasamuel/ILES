@@ -34,6 +34,14 @@ class DashboardMetricSerializer(serializers.ModelSerializer):
         
         missing_criteria = all_criteria_ids - provided_criteria_ids
         if missing_criteria:
+            raise serializers.ValidationError(
+                f"Missing scores for criteria IDs: {', '.join(missing_criteria)}."
+            )
+        return value
+
+    @transaction.atomic
+    def create(self, validated_data):
+        scores_data = validated_data.pop('score_inputs')
 
 
     def validate_value(self, value):
