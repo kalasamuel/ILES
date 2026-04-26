@@ -29,7 +29,11 @@ class DashboardMetricSerializer(serializers.ModelSerializer):
         for item in value:
             if 'criteria' not in item or 'score' not in item:
                 raise serializers.ValidationError("Each score input must contain 'criteria' and 'score'.")
-         
+        provided_criteria_ids = {str(item['criteria']) for item in value}
+        all_criteria_ids = {str(c) for c in EvaluationCriteria.objects.values_list('criteria_id', flat=True)}
+        
+        missing_criteria = all_criteria_ids - provided_criteria_ids
+        if missing_criteria:
 
 
     def validate_value(self, value):
