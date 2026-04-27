@@ -120,4 +120,9 @@ class ScoreBreakdownSerializer(serializers.ModelSerializer):
     # Convenience fields so the frontend can label graphs without extra lookups
     student_name = serializers.SerializerMethodField()
     student_reg_number = serializers.SerializerMethodField()
+    class Meta:
+        model = ScoreBreakdown
+        fields = '__all__'
+        # These are computed values — protect them from direct write
+        read_only_fields = ['final_score', 'grade', 'student_name', 'student_reg_number']
 
