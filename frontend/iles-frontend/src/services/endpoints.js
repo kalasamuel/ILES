@@ -337,4 +337,8 @@ export const dashboardsAPI = {
     const response = await api.post('/dashboards/metrics/bootstrap-my-supervisor-data/');
     return response.data;
   },
+  getEvaluationCriteriaSummaries: async () => {
+    const response = await api.get('/dashboards/metrics/evaluation-criteria-summaries/');
+    return response.data;
+  },
 };
