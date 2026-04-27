@@ -127,10 +127,5 @@ class ScoreBreakdownSerializer(serializers.ModelSerializer):
         read_only_fields = ['final_score', 'grade', 'student_name', 'student_reg_number']
 
         
-def get_student_name(self, obj):
-        try:
-            user = obj.placement.student.user
-            return f"{user.first_name} {user.last_name}".strip() or user.email
-        except Exception:
-            return None   
+   
 
