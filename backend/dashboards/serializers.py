@@ -82,3 +82,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # score_inputs is required=False; default to [] to avoid KeyError
         scores_data = validated_data.pop('score_inputs', [])
+
+        # Create the main evaluation record
+        evaluation = super().create(validated_data)
+
