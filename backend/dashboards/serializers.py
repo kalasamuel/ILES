@@ -65,3 +65,15 @@ class EvaluationSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'score_inputs': "Each score input must contain 'criteria' and 'score'."}
                 )
+        if is_create and score_inputs is not None:
+            provided_criteria_ids = {str(item['criteria']) for item in score_inputs}
+            all_criteria_ids = {
+                str(c) for c in EvaluationCriteria.objects.filter(is_active=True).values_list('criteria_id', flat=True)
+            }
+            missing_criteria = all_criteria_ids - provided_criteria_ids
+            if missing_criteria:
+                raise serializers.ValidationError(
+                    {'score_inputs': f"Missing scores for criteria IDs: {', '.join(missing_criteria)}."}
+                )
+
+        return data
