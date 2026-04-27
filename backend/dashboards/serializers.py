@@ -40,3 +40,10 @@ class EvaluationSerializer(serializers.ModelSerializer):
         allow_empty=True,
         help_text="List of objects containing 'criteria' (UUID or string) and 'score' (Decimal)"
     )
+
+    class Meta:
+        model = Evaluation
+        fields = '__all__'
+        # total_score and grade are computed/set by business logic, not raw API input.
+        # evaluator is set automatically from the request context in the view.
+        read_only_fields = ['total_score', 'grade', 'evaluator']
