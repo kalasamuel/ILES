@@ -1,6 +1,5 @@
 import uuid
 from django.db import models
-from django.core.exceptions import ValidationError
 from django.utils import timezone
 from simple_history.models import HistoricalRecords  # For tracking changes
 
@@ -62,93 +61,11 @@ class DashboardMetric(models.Model):
 
     def __str__(self):
         return f"{self.get_metric_type_display()}: {self.value} (calculated at {self.calculated_at:%Y-%m-%d %H:%M})"
- # Optional: convenience method for incrementing metrics safely
+
     def increment(self, amount=1):
         """
         Increment the metric's value by a given amount.
         Ensures historical record is tracked automatically.
         """
         self.value += amount
-        self.save()   
-
-class EvaluationCriteria(models.Model):
-    criteria_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    weight_percentage = models.DecimalField(max_digits=5, decimal_places=2)  # e.g., 25.00 for 25%
-    max_score = models.DecimalField(max_digits=5, decimal_places=2)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()
-
-    def __str__(self):
-        return self.name 
-
-class Evaluation(models.Model):
-    evaluation_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    placement = models.OneToOneField(InternshipPlacement, on_delete=models.CASCADE)
-    evaluator = models.ForeignKey(Supervisor, on_delete=models.CASCADE)
-    evaluation_date = models.DateField(default=timezone.now)
-    total_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    grade = models.CharField(max_length=10, null=True, blank=True)
-    comments = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords() 
-
-    def clean(self):
-        super().clean()
-        if self.evaluation_date and self.evaluation_date > timezone.now().date():
-            raise ValidationError({'evaluation_date': "Evaluation date cannot be in the future."})
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"Evaluation for {self.placement}"
-
-class EvaluationScore(models.Model):
-    score_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE)
-    criteria = models.ForeignKey(EvaluationCriteria, on_delete=models.CASCADE)
-    score = models.DecimalField(max_digits=5, decimal_places=2)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()  
-
-class Meta:
-     unique_together = ('evaluation', 'criteria') 
-def clean(self):
-        super().clean()
-        if self.score is not None:
-            if self.score < 0:
-                raise ValidationError({'score': "Score cannot be negative."})
-            # Ensure criteria exists to avoid related object errors during validation
-            if hasattr(self, 'criteria') and self.criteria and self.score > self.criteria.max_score:
-                raise ValidationError(
-                    {'score': f"Score cannot exceed the maximum allowed score ({self.criteria.max_score})."}
-                )
-
-def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
-
-def __str__(self):
-        return f"{self.criteria} score for {self.evaluation}" 
-
-class ScoreBreakdown(models.Model):
-    score_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    placement = models.OneToOneField(InternshipPlacement, on_delete=models.CASCADE)
-    supervisor_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    academic_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    logbook_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    grade = models.CharField(max_length=10, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()
-    def __str__(self):
-        return f"Score breakdown for {self.placement}"
-   
+        self.save()
