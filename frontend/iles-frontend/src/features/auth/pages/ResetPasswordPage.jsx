@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FiArrowLeft } from 'react-icons/fi';
 import { authAPI } from '../../../services/endpoints'; // adjust path
 import './ResetPasswordPage.css';
 
@@ -127,9 +128,7 @@ function ResetPasswordPage() {
             <Link to="/login" className="back-btn">
               <div className="back-btn-left">
                 <div className="back-arrow-circle">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 12H5M12 5l-7 7 7 7"/>
-                  </svg>
+                  <FiArrowLeft size={15} />
                 </div>
                 <div className="back-btn-text">
                   <span className="back-btn-label">Back to Login</span>

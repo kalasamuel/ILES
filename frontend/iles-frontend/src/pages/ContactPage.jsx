@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FiInfo, FiMail, FiPhone } from 'react-icons/fi';
 import { contactAPI } from '../services/endpoints';
 import './ContactPage.css';
 
@@ -47,9 +48,7 @@ function ContactPage() {
         <div className="contact-cards">
           <div className="contact-card">
             <div className="contact-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 17.15l-3.3-1.09a1.09 1.09 0 0 0-1.12.26l-1.3 1.3a14.4 14.4 0 0 1-6.6-6.6l1.3-1.3a1.09 1.09 0 0 0 .26-1.12L10.25 5.2a1.1 1.1 0 0 0-1.12-.26C8.25 5 7.15 5.5 6.4 6.25A9.33 9.33 0 0 0 6 12a14.4 14.4 0 0 0 6 6 9.33 9.33 0 0 0 5.75-.4c.75-.75 1.25-1.85 1.25-2.73a1.1 1.1 0 0 0-.25-1.12z" />
-              </svg>
+              <FiPhone size={20} />
             </div>
             <h3>Call Us</h3>
             <p>Our support line is open Monday to Friday, 9am - 5pm.</p>
@@ -58,10 +57,7 @@ function ContactPage() {
 
           <div className="contact-card">
             <div className="contact-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                <polyline points="22,6 12,13 2,6" />
-              </svg>
+              <FiMail size={20} />
             </div>
             <h3>Email Us</h3>
             <p>Email your queries and we'll respond within 24 hours.</p>
@@ -70,11 +66,7 @@ function ContactPage() {
 
           <div className="contact-card">
             <div className="contact-card-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
+              <FiInfo size={20} />
             </div>
             <h3>FAQ</h3>
             <p>Check out our frequently asked questions for quick answers.</p>
