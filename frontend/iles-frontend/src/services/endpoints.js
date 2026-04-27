@@ -252,6 +252,10 @@ export const evaluationsAPI = {
     const response = await api.post('/evaluations/evaluations/', data);
     return response.data;
   },
+  getScoreBreakdowns: async () => {
+    const response = await api.get('/evaluations/breakdowns/');
+    return response.data;
+  },
   getScoreBreakdown: async (placementId) => {
     const response = await api.get(`/evaluations/breakdowns/?placement=${placementId}`);
     return response.data.results[0];
