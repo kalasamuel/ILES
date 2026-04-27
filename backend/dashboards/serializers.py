@@ -132,5 +132,10 @@ def get_student_name(self, obj):
             user = obj.placement.student.user
             return f"{user.first_name} {user.last_name}".strip() or user.email
         except Exception:
-            return None  
+            return None
+def get_student_reg_number(self, obj):
+        try:
+            return obj.placement.student.registration_number
+        except Exception:
+            return None          
 
