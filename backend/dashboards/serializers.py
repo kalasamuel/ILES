@@ -52,3 +52,10 @@ class EvaluationSerializer(serializers.ModelSerializer):
         if value > timezone.now().date():
             raise serializers.ValidationError("Evaluation date cannot be in the future.")
         return value
+    def validate(self, data):
+        """
+        On creation, require that ALL active criteria are provided.
+        On update, score_inputs is optional; if supplied, validate structure only.
+        """
+        score_inputs = data.get('score_inputs', [])
+        is_create = self.instance is None
