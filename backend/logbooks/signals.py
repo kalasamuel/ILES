@@ -11,38 +11,39 @@ def create_log_submission_notification(sender, instance, created, **kwargs):
     This notifies the assigned supervisors (workplace and/or academic) 
     that a student has submitted a new log for review.
     """
-    # Only notify on submission (when status is 'submitted' and submitted_at is set)
-    # This fires on each save, so we check if status is submitted
-    if instance.status == 'submitted' and instance.submitted_at:
-        placement = instance.placement
-        student_name = f"{placement.student.user.first_name} {placement.student.user.last_name}"
-        message = f"New log submission from {student_name} - Week {instance.week_number}"
+    if instance.status != 'submitted' or not instance.submitted_at:
+        return
 
-        # Notify workplace supervisor if assigned
-        if placement.workplace_supervisor:
-            supervisor_user = placement.workplace_supervisor.user
-            # Only create if not already created (avoid duplicates)
-            Notification.objects.get_or_create(
-                user=supervisor_user,
-                log=instance,
-                notification_type='log_submitted',
-                defaults={
-                    'message': message,
-                    'is_read': False,
-                }
-            )
+    placement = instance.placement
+    student_user = placement.student.user
+    student_name = f"{student_user.first_name} {student_user.last_name}".strip()
+    supervisor_message = f"New log submission from {student_name} - Week {instance.week_number}"
+    student_message = (
+        f"Your log for Week {instance.week_number} was successfully submitted to the lecturer."
+    )
 
-        # Notify academic supervisor if assigned
-        if placement.academic_supervisor:
-            supervisor_user = placement.academic_supervisor.user
-            # Only create if not already created (avoid duplicates)
-            Notification.objects.get_or_create(
-                user=supervisor_user,
-                log=instance,
-                notification_type='log_submitted',
-                defaults={
-                    'message': message,
-                    'is_read': False,
-                }
-            )
+    Notification.objects.get_or_create(
+        user=student_user,
+        log=instance,
+        notification_type='log_submitted',
+        defaults={
+            'message': student_message,
+            'is_read': False,
+        }
+    )
+
+    # Notify each assigned supervisor so both in-app alerts and emails are sent.
+    for supervisor in (placement.workplace_supervisor, placement.academic_supervisor):
+        if not supervisor:
+            continue
+
+        Notification.objects.get_or_create(
+            user=supervisor.user,
+            log=instance,
+            notification_type='log_submitted',
+            defaults={
+                'message': supervisor_message,
+                'is_read': False,
+            }
+        )
 
