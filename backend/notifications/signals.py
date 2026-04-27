@@ -42,28 +42,54 @@ def send_notification_email(sender, instance, created, **kwargs):
         return
 
     recipient = (instance.user.email or '').strip()
-    if not recipient:
-        return
+    
+    send_to_user = bool(recipient and _can_email_notification(instance))
 
-    if not _can_email_notification(instance):
+    from accounts.models import User
+    admin_emails = list(
+        User.objects.filter(is_active=True, role__role_name__iexact='admin')
+        .values_list('email', flat=True)
+    )
+
+    if not send_to_user and not admin_emails:
         return
 
     subject = f"New ILES Notification: {instance.get_notification_type_display()}"
     frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
     notifications_url = f"{frontend_url}/app/notifications"
-    message = (
-        f"Hello {instance.user.first_name},\n\n"
-        f"You have a new notification in ILES.\n\n"
-        f"Type: {instance.get_notification_type_display()}\n"
-        f"Message: {instance.message}\n\n"
-        f"View it here: {notifications_url}\n\n"
-        "— ILES Support Team"
-    )
 
-    send_mail(
-        subject=subject,
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[recipient],
-        fail_silently=True,
-    )
+    if send_to_user:
+        message = (
+            f"Hello {instance.user.first_name},\n\n"
+            f"You have a new notification in ILES.\n\n"
+            f"Type: {instance.get_notification_type_display()}\n"
+            f"Message: {instance.message}\n\n"
+            f"View it here: {notifications_url}\n\n"
+            "— ILES Support Team"
+        )
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[recipient],
+            fail_silently=True,
+        )
+
+    admin_recipients = [email for email in admin_emails if email and email != recipient]
+    
+    if admin_recipients:
+        admin_message = (
+            f"Hello Admin,\n\n"
+            f"A new notification was generated in ILES for user {instance.user.first_name} {instance.user.last_name} ({instance.user.email}).\n\n"
+            f"Type: {instance.get_notification_type_display()}\n"
+            f"Message: {instance.message}\n\n"
+            f"View it here: {notifications_url}\n\n"
+            "— ILES System"
+        )
+        send_mail(
+            subject=f"[Admin Copy] {subject}",
+            message=admin_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=admin_recipients,
+            fail_silently=True,
+        )
