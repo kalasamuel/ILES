@@ -28,3 +28,15 @@ class EvaluationScoreSerializer(serializers.ModelSerializer):
                 'score': 'Score cannot be negative.'
             })
         return data
+class EvaluationSerializer(serializers.ModelSerializer):
+    scores = EvaluationScoreSerializer(source='evaluationscore_set', many=True, read_only=True)
+    
+    # Writable field for nested scores during creation/update
+    # required=False so PATCH requests without scores still work
+    score_inputs = serializers.ListField(
+        child=serializers.DictField(),
+        write_only=True,
+        required=False,
+        allow_empty=True,
+        help_text="List of objects containing 'criteria' (UUID or string) and 'score' (Decimal)"
+    )
