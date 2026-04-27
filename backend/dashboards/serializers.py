@@ -105,4 +105,15 @@ class EvaluationSerializer(serializers.ModelSerializer):
         # If score_inputs supplied on update, upsert each score
         scores_data = validated_data.pop('score_inputs', None)
         instance = super().update(instance, validated_data)
+        if scores_data is not None:
+            for score_data in scores_data:
+                criteria_id = score_data['criteria']
+                score_val = score_data['score']
+                EvaluationScore.objects.update_or_create(
+                    evaluation=instance,
+                    criteria_id=criteria_id,
+                    defaults={'score': score_val},
+                )
+
+        return instance
 
