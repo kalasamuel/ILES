@@ -13,7 +13,7 @@ from .models import DashboardMetric
 from .serializers import DashboardMetricSerializer
 from placements.models import InternshipPlacement
 from accounts.models import Role, Student, Supervisor, User
-from evaluations.models import ScoreBreakdown
+from evaluations.models import ScoreBreakdown, Evaluation, EvaluationScore
 from reviews.models import LogReview
 from logbooks.models import WeeklyLog
 from notifications.models import Notification
@@ -424,3 +424,64 @@ class DashboardMetricViewSet(viewsets.ModelViewSet):
         metrics = DashboardMetric.objects.all().order_by('metric_type')
         serializer = self.get_serializer(metrics, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='evaluation-criteria-summaries')
+    def evaluation_criteria_summaries(self, request):
+        """
+        Return average scores by evaluation criteria for completed evaluations.
+        Restricted to supervisors and admins viewing their own evaluations.
+        """
+        user = request.user
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+
+        # Fetch relevant evaluations based on user role
+        if 'admin' in role_name:
+            evaluations = Evaluation.objects.all()
+        elif 'supervisor' in role_name or 'academic' in role_name or 'workplace' in role_name:
+            try:
+                supervisor = Supervisor.objects.get(user=user)
+                evaluations = Evaluation.objects.filter(
+                    Q(placement__workplace_supervisor=supervisor) |
+                    Q(placement__academic_supervisor=supervisor)
+                ).distinct()
+            except Supervisor.DoesNotExist:
+                evaluations = Evaluation.objects.none()
+        else:
+            evaluations = Evaluation.objects.none()
+
+        # Calculate average scores by criteria
+        criteria_map = {}
+        for evaluation in evaluations:
+            scores = EvaluationScore.objects.filter(evaluation=evaluation)
+            for score_entry in scores:
+                criteria_id = str(score_entry.criteria.criteria_id)
+                criteria_name = score_entry.criteria.name
+                score_val = float(score_entry.score)
+                max_score = float(score_entry.criteria.max_score)
+                percentage = (score_val / max_score * 100) if max_score > 0 else 0
+                percentage = max(0, min(100, percentage))
+
+                if criteria_id not in criteria_map:
+                    criteria_map[criteria_id] = {
+                        'criteria': criteria_name,
+                        'total_percentage': 0,
+                        'count': 0,
+                    }
+
+                criteria_map[criteria_id]['total_percentage'] += percentage
+                criteria_map[criteria_id]['count'] += 1
+
+        # Format and sort the data
+        criteria_data = [
+            {
+                'criteria': item['criteria'],
+                'avgPercentage': round(item['total_percentage'] / max(item['count'], 1), 1),
+            }
+            for item in criteria_map.values()
+        ]
+        criteria_data.sort(key=lambda x: x['avgPercentage'], reverse=True)
+
+        return Response({
+            'criteria_summaries': criteria_data,
+            'evaluation_count': len(evaluations),
+        }, status=status.HTTP_200_OK)
