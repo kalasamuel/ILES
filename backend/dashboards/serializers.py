@@ -77,3 +77,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
                 )
 
         return data
+    
+    @transaction.atomic
+    def create(self, validated_data):
+        # score_inputs is required=False; default to [] to avoid KeyError
+        scores_data = validated_data.pop('score_inputs', [])
