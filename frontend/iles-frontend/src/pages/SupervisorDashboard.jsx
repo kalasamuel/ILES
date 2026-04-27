@@ -101,6 +101,12 @@ function SupervisorDashboard() {
       try {
         setError(null);
 
+        try {
+          await evaluationsAPI.recalculateMySummaries();
+        } catch (recalcError) {
+          console.warn('Failed to recalculate evaluation summaries:', recalcError);
+        }
+
         const [reviewsRes, placementsRes, logsRes, evaluationsRes, scoreBreakdownsRes, criteriaSummariesRes] = await Promise.all([
           reviewsAPI.getReviews(),
           placementsAPI.getPlacements(),
