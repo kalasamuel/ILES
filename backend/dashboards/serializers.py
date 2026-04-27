@@ -59,3 +59,9 @@ class EvaluationSerializer(serializers.ModelSerializer):
         """
         score_inputs = data.get('score_inputs', [])
         is_create = self.instance is None
+
+        for item in score_inputs:
+            if 'criteria' not in item or 'score' not in item:
+                raise serializers.ValidationError(
+                    {'score_inputs': "Each score input must contain 'criteria' and 'score'."}
+                )
