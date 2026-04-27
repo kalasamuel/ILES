@@ -89,4 +89,14 @@ class EvaluationSerializer(serializers.ModelSerializer):
         for score_data in scores_data:
             criteria_id = score_data['criteria']
             score_val = score_data['score']
+            # Use the existing score serializer to maintain all validation logic
+            score_serializer = EvaluationScoreSerializer(data={
+                'evaluation': str(evaluation.evaluation_id),
+                'criteria': str(criteria_id),
+                'score': score_val,
+            })
+            score_serializer.is_valid(raise_exception=True)
+            score_serializer.save()
+
+        return evaluation
 
