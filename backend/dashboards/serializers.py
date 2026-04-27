@@ -85,4 +85,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
         # Create the main evaluation record
         evaluation = super().create(validated_data)
+        # Create all associated scores
+        for score_data in scores_data:
+            criteria_id = score_data['criteria']
+            score_val = score_data['score']
 
