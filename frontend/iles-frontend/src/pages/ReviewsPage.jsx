@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { FiClipboard } from 'react-icons/fi';
 import { reviewsAPI } from '../services/endpoints';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './ReviewsPage.css';
@@ -123,11 +124,7 @@ function ReviewsPage() {
                 <tr>
                   <td colSpan={7}>
                     <div className="rv-empty">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                        <rect x="9" y="3" width="6" height="4" rx="1"/>
-                        <path d="m9 12 2 2 4-4"/>
-                      </svg>
+                      <FiClipboard size={48} />
                       <p>No reviews found</p>
                     </div>
                   </td>
