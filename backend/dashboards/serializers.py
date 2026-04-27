@@ -116,4 +116,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
                 )
 
         return instance
+class ScoreBreakdownSerializer(serializers.ModelSerializer):
+    # Convenience fields so the frontend can label graphs without extra lookups
+    student_name = serializers.SerializerMethodField()
+    student_reg_number = serializers.SerializerMethodField()
 
