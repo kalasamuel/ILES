@@ -47,3 +47,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
         # total_score and grade are computed/set by business logic, not raw API input.
         # evaluator is set automatically from the request context in the view.
         read_only_fields = ['total_score', 'grade', 'evaluator']
+
+    def validate_evaluation_date(self, value):
+        if value > timezone.now().date():
+            raise serializers.ValidationError("Evaluation date cannot be in the future.")
+        return value
