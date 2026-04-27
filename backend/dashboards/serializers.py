@@ -99,4 +99,10 @@ class EvaluationSerializer(serializers.ModelSerializer):
             score_serializer.save()
 
         return evaluation
+    
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        # If score_inputs supplied on update, upsert each score
+        scores_data = validated_data.pop('score_inputs', None)
+        instance = super().update(instance, validated_data)
 
