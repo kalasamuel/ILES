@@ -65,7 +65,11 @@ class EvaluationSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'score_inputs': "Each score input must contain 'criteria' and 'score'."}
                 )
-        if is_create and score_inputs is not None:
+        if is_create:
+            if not score_inputs:
+                raise serializers.ValidationError(
+                    {'score_inputs': "Score inputs are required on creation."}
+                )
             provided_criteria_ids = {str(item['criteria']) for item in score_inputs}
             all_criteria_ids = {
                 str(c) for c in EvaluationCriteria.objects.filter(is_active=True).values_list('criteria_id', flat=True)
@@ -80,24 +84,34 @@ class EvaluationSerializer(serializers.ModelSerializer):
     
     @transaction.atomic
     def create(self, validated_data):
-        # score_inputs is required=False; default to [] to avoid KeyError
+        # score_inputs is required on creation (validated in validate())
         scores_data = validated_data.pop('score_inputs', [])
 
         # Create the main evaluation record
         evaluation = super().create(validated_data)
+        
         # Create all associated scores
-        for score_data in scores_data:
-            criteria_id = score_data['criteria']
-            score_val = score_data['score']
-            # Use the existing score serializer to maintain all validation logic
-            score_serializer = EvaluationScoreSerializer(data={
-                'evaluation': str(evaluation.evaluation_id),
-                'criteria': str(criteria_id),
-                'score': score_val,
-            })
-            score_serializer.is_valid(raise_exception=True)
-            score_serializer.save()
-
+        try:
+            for score_data in scores_data:
+                criteria_id = score_data['criteria']
+                score_val = score_data['score']
+                # Use the existing score serializer to maintain all validation logic
+                score_serializer = EvaluationScoreSerializer(data={
+                    'evaluation': str(evaluation.evaluation_id),
+                    'criteria': str(criteria_id),
+                    'score': score_val,
+                })
+                if not score_serializer.is_valid():
+                    raise serializers.ValidationError({
+                        'score_inputs': f"Invalid score for criteria {criteria_id}: {score_serializer.errors}"
+                    })
+                score_serializer.save()
+        except Exception as e:
+            # Transaction will be rolled back automatically
+            if isinstance(e, serializers.ValidationError):
+                raise
+            raise serializers.ValidationError({'score_inputs': str(e)})
+        
         return evaluation
     
     @transaction.atomic
@@ -105,21 +119,40 @@ class EvaluationSerializer(serializers.ModelSerializer):
         # If score_inputs supplied on update, upsert each score
         scores_data = validated_data.pop('score_inputs', None)
         instance = super().update(instance, validated_data)
+        
         if scores_data is not None:
-            for score_data in scores_data:
-                criteria_id = score_data['criteria']
-                score_val = score_data['score']
-                EvaluationScore.objects.update_or_create(
-                    evaluation=instance,
-                    criteria_id=criteria_id,
-                    defaults={'score': score_val},
-                )
+            try:
+                for score_data in scores_data:
+                    criteria_id = score_data['criteria']
+                    score_val = score_data['score']
+                    
+                    # Validate score before upserting
+                    score_serializer = EvaluationScoreSerializer(data={
+                        'evaluation': str(instance.evaluation_id),
+                        'criteria': str(criteria_id),
+                        'score': score_val,
+                    })
+                    if not score_serializer.is_valid():
+                        raise serializers.ValidationError({
+                            'score_inputs': f"Invalid score for criteria {criteria_id}: {score_serializer.errors}"
+                        })
+                    
+                    EvaluationScore.objects.update_or_create(
+                        evaluation=instance,
+                        criteria_id=criteria_id,
+                        defaults={'score': score_val},
+                    )
+            except Exception as e:
+                if isinstance(e, serializers.ValidationError):
+                    raise
+                raise serializers.ValidationError({'score_inputs': str(e)})
 
         return instance
 class ScoreBreakdownSerializer(serializers.ModelSerializer):
     # Convenience fields so the frontend can label graphs without extra lookups
     student_name = serializers.SerializerMethodField()
     student_reg_number = serializers.SerializerMethodField()
+    
     class Meta:
         model = ScoreBreakdown
         fields = '__all__'
