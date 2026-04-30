@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from evaluations.models import EvaluationCriteria, Evaluation, EvaluationScore, ScoreBreakdown
+from .models import EvaluationCriteria, Evaluation, EvaluationScore, ScoreBreakdown
 
 
 class EvaluationCriteriaSerializer(serializers.ModelSerializer):
