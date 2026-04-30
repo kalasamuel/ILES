@@ -101,7 +101,10 @@ function AdminUsersPage() {
           <h2>Manage Users</h2>
           <p>Update roles, account status, and permissions.</p>
         </div>
-        <Link to="/app/dashboard" className="admin-link">← Back to Dashboard</Link>
+        <Link to="/app/dashboard" className="admin-back-btn">
+          <span className="admin-back-arrow">←</span>
+          Back to Dashboard
+        </Link>
       </div>
 
       {message && <div className="admin-message">{message}</div>}
