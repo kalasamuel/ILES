@@ -14,9 +14,9 @@ export const authAPI = {
     const response = await api.post('/accounts/users/forgot-password/', { email });
     return response.data;
   },
-  resetPassword: async (token, new_password, confirm_password) => {
+  resetPassword: async (verificationCode, new_password, confirm_password) => {
     const response = await api.post('/accounts/users/reset-password/', {
-      token,
+      verification_code: verificationCode,
       new_password,
       confirm_password,
     });
@@ -252,6 +252,14 @@ export const evaluationsAPI = {
     const response = await api.post('/evaluations/evaluations/', data);
     return response.data;
   },
+  recalculateMySummaries: async () => {
+    const response = await api.post('/evaluations/evaluations/recalculate-my-summaries/');
+    return response.data;
+  },
+  getScoreBreakdowns: async () => {
+    const response = await api.get('/evaluations/breakdowns/');
+    return response.data;
+  },
   getScoreBreakdown: async (placementId) => {
     const response = await api.get(`/evaluations/breakdowns/?placement=${placementId}`);
     return response.data.results[0];
@@ -335,6 +343,10 @@ export const dashboardsAPI = {
   },
   bootstrapMySupervisorData: async () => {
     const response = await api.post('/dashboards/metrics/bootstrap-my-supervisor-data/');
+    return response.data;
+  },
+  getEvaluationCriteriaSummaries: async () => {
+    const response = await api.get('/dashboards/metrics/evaluation-criteria-summaries/');
     return response.data;
   },
 };

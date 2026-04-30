@@ -2,10 +2,12 @@
 
 /* ─── Root Variables ─────────────────────────────────────────────── */
 :root {
-  --accent:        #4F46E5;
-  --accent-light:  #6366f1;
-  --accent-glow:   rgba(79, 70, 229, 0.15);
-  --accent-border: rgba(79, 70, 229, 0.25);
+  --accent:        #F97316;
+  --accent-light:  #fb923c;
+  --accent-dark:   #ea6c00;
+  --accent-glow:   rgba(249, 115, 22, 0.12);
+  --accent-border: rgba(249, 115, 22, 0.25);
+  --accent-2:      #f59e0b;
   --success:       #10b981;
   --success-bg:    #ecfdf5;
   --success-border:#a7f3d0;
@@ -13,10 +15,10 @@
   --text-secondary:#475569;
   --text-muted:    #94a3b8;
   --surface:       #ffffff;
-  --surface-2:     #f8fafc;
-  --surface-3:     #f1f5f9;
-  --border:        #e2e8f0;
-  --border-light:  #f1f5f9;
+  --surface-2:     #fafaf9;
+  --surface-3:     #f5f5f4;
+  --border:        #e7e5e4;
+  --border-light:  #f5f5f4;
   --shadow-sm:     0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
   --shadow-md:     0 4px 16px rgba(15,23,42,0.08), 0 2px 6px rgba(15,23,42,0.05);
   --shadow-lg:     0 12px 40px rgba(15,23,42,0.12), 0 4px 12px rgba(15,23,42,0.06);
@@ -42,6 +44,18 @@
 .settings-header {
   margin-bottom: 2.25rem;
   position: relative;
+  padding-left: 1.125rem;
+}
+
+.settings-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-2) 100%);
+  border-radius: 4px;
 }
 
 .settings-header h1 {
@@ -133,6 +147,17 @@
   gap: 2px;
   position: sticky;
   top: 1.5rem;
+  overflow: hidden;
+}
+
+/* Orange top stripe on sidebar */
+.settings-sidebar::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+  border-radius: 2px;
+  margin: -0.625rem -0.625rem 0.625rem -0.625rem;
 }
 
 .settings-tab {
@@ -161,13 +186,14 @@
 
 .settings-tab.active {
   background: var(--accent-glow);
-  color: var(--accent);
+  color: var(--accent-dark);
   font-weight: 600;
 }
 
 .settings-tab.active .tab-icon-wrap {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
   color: white;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
 }
 
 .tab-icon-wrap {
@@ -180,7 +206,7 @@
   background: var(--surface-3);
   font-size: 0.9rem;
   flex-shrink: 0;
-  transition: background 0.18s, color 0.18s;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
 }
 
 /* ─── Settings Content Panel ─────────────────────────────────────── */
@@ -193,6 +219,19 @@
   box-shadow: var(--shadow-sm);
   padding: 2rem 2.25rem;
   animation: fadeIn 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Orange accent bar along top of content panel */
+.settings-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 60%, transparent 100%);
 }
 
 @keyframes fadeIn {
@@ -300,7 +339,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
   color: white;
   padding: 0.6875rem 1.5rem;
   border: none;
@@ -309,16 +348,16 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
   margin-top: 0.75rem;
   letter-spacing: 0.01em;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.35);
 }
 
 .btn-save:hover:not(:disabled) {
-  background: var(--accent-light);
+  opacity: 0.92;
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 4px 18px rgba(249, 115, 22, 0.45);
 }
 
 .btn-save:active:not(:disabled) {
@@ -354,7 +393,7 @@
 }
 
 .toggle-item:hover {
-  background: var(--surface-2);
+  background: #fff8f5;
 }
 
 .toggle-info {
@@ -415,7 +454,7 @@
 }
 
 input:checked + .toggle-slider {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
 }
 
 input:checked + .toggle-slider:before {
@@ -437,6 +476,7 @@ input:checked + .toggle-slider:before {
   box-shadow: var(--shadow-sm);
   color: var(--text-secondary);
   font-size: 0.95rem;
+  border-top: 3px solid var(--accent);
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────── */
@@ -460,6 +500,10 @@ input:checked + .toggle-slider:before {
     scrollbar-width: none;
   }
 
+  .settings-sidebar::before {
+    display: none;
+  }
+
   .settings-sidebar::-webkit-scrollbar {
     display: none;
   }
@@ -472,12 +516,13 @@ input:checked + .toggle-slider:before {
   }
 
   .settings-tab.active {
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
     color: white;
   }
 
   .settings-tab.active .tab-icon-wrap {
     background: rgba(255,255,255,0.25);
+    box-shadow: none;
   }
 
   .settings-content {

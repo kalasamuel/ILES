@@ -1,30 +1,37 @@
 from rest_framework import serializers
 from .models import DashboardMetric
+from evaluations.models import EvaluationCriteria, Evaluation, EvaluationScore, ScoreBreakdown
+
 
 class DashboardMetricSerializer(serializers.ModelSerializer):
-    """
-    Serializer for DashboardMetric.
-    - Only exposes relevant fields.
-    - Protects read-only fields from being modified via API.
-    - Validates metric values.
-    """
-
     class Meta:
         model = DashboardMetric
-        fields = [
-            'metric_id',
-            'metric_type',
-            'value',
-            'calculated_at',
-            'created_at',
-            'updated_at',
-        ]
-        read_only_fields = ['metric_id', 'created_at', 'updated_at']
+        fields = '__all__'
 
-    def validate_value(self, value):
-        """
-        Ensure the metric value is non-negative.
-        """
-        if value < 0:
-            raise serializers.ValidationError("Metric value cannot be negative.")
-        return value  
+
+class EvaluationCriteriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EvaluationCriteria
+        fields = '__all__'
+
+
+class EvaluationScoreSerializer(serializers.ModelSerializer):
+    criteria_details = EvaluationCriteriaSerializer(source='criteria', read_only=True)
+
+    class Meta:
+        model = EvaluationScore
+        fields = '__all__'
+
+
+class EvaluationSerializer(serializers.ModelSerializer):
+    scores = EvaluationScoreSerializer(source='evaluationscore_set', many=True, read_only=True)
+
+    class Meta:
+        model = Evaluation
+        fields = '__all__'
+
+
+class ScoreBreakdownSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScoreBreakdown
+        fields = '__all__'

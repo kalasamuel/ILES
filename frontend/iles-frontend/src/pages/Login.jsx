@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { FiArrowLeft, FiAward, FiEye, FiEyeOff, FiLock, FiMail } from 'react-icons/fi';
 import { useAuth } from '../hooks/AuthContext';
 import './Login.css';
 
@@ -47,10 +48,7 @@ const Login = () => {
         <Link to="/" className="login-logo-link">
           <div className="login-logo">
             <div className="login-logo-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5" />
-              </svg>
+              <FiAward />
             </div>
             <span className="login-logo-text">ILES</span>
           </div>
@@ -72,10 +70,7 @@ const Login = () => {
             <label htmlFor="email">Email Address</label>
             <div className="input-wrapper">
               <span className="input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="4" width="20" height="16" rx="2"/>
-                  <path d="M2 7l10 7 10-7"/>
-                </svg>
+                <FiMail size={16} />
               </span>
               <input
                 type="email"
@@ -97,10 +92,7 @@ const Login = () => {
             </div>
             <div className="input-wrapper">
               <span className="input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
+                <FiLock size={16} />
               </span>
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -118,16 +110,9 @@ const Login = () => {
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
-                  </svg>
+                  <FiEyeOff size={16} />
                 ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
+                  <FiEye size={16} />
                 )}
               </button>
             </div>
@@ -168,9 +153,7 @@ const Login = () => {
           <Link to="/" className="back-to-home">
             <div className="back-btn-left">
               <div className="back-arrow-circle">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 12H5M12 5l-7 7 7 7"/>
-                </svg>
+                <FiArrowLeft size={15} />
               </div>
               <div className="back-btn-text">
                 <span className="back-btn-label">Back to Home</span>

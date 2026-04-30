@@ -1,32 +1,28 @@
 import React, { useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiArrowLeft } from 'react-icons/fi';
 import { authAPI } from '../../../services/endpoints'; // adjust path
 import './ResetPasswordPage.css';
 
 function ResetPasswordPage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get('token');
 
+  const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!token) {
-    return (
-      <main style={{ textAlign: 'center', padding: '4rem' }}>
-        <h2>Invalid Reset Link</h2>
-        <p>This password reset link is missing a token.</p>
-        <Link to="/forgot-password">Request a new link</Link>
-      </main>
-    );
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
+
+    if (!verificationCode.trim()) {
+      setMessage('Verification code is required.');
+      setMessageType('error');
+      return;
+    }
 
     if (newPassword !== confirmPassword) {
       setMessage('Passwords do not match.');
@@ -41,12 +37,12 @@ function ResetPasswordPage() {
 
     setIsLoading(true);
     try {
-      const data = await authAPI.resetPassword(token, newPassword, confirmPassword);
+      const data = await authAPI.resetPassword(verificationCode, newPassword, confirmPassword);
       setMessage(data.message || 'Password reset successfully!');
       setMessageType('success');
       setTimeout(() => navigate('/login'), 2500);
     } catch (err) {
-      const msg = err?.response?.data?.error || 'Reset failed. The link may have expired.';
+      const msg = err?.response?.data?.error || 'Reset failed. The code may have expired.';
       setMessage(msg);
       setMessageType('error');
     } finally {
@@ -65,15 +61,31 @@ function ResetPasswordPage() {
       <main className="forgot-password-page">
         <div className="forgot-password-hero">
           <h1 className="hero-title">Reset Your Password</h1>
-          <p className="hero-subtitle">Choose a new secure password</p>
+          <p className="hero-subtitle">Enter the code sent to your email</p>
         </div>
 
         <div className="forgot-password-form-container">
           <div className="card-body">
-            <h2>New Password</h2>
-            <p className="card-description">Enter and confirm your new password below.</p>
+            <h2>Verification Code</h2>
+            <p className="card-description">Enter the code from your email and choose a new password.</p>
 
             <form onSubmit={handleSubmit} className="forgot-password-form">
+              <div className="form-group">
+                <label htmlFor="verification-code">Verification Code</label>
+                <div className="input-wrapper">
+                  <input
+                    type="text"
+                    id="verification-code"
+                    placeholder="Enter the 6-digit code"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="new-password">New Password</label>
                 <div className="input-wrapper">
@@ -116,9 +128,7 @@ function ResetPasswordPage() {
             <Link to="/login" className="back-btn">
               <div className="back-btn-left">
                 <div className="back-arrow-circle">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 12H5M12 5l-7 7 7 7"/>
-                  </svg>
+                  <FiArrowLeft size={15} />
                 </div>
                 <div className="back-btn-text">
                   <span className="back-btn-label">Back to Login</span>

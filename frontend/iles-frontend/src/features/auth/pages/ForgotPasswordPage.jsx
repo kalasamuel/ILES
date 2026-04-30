@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FiArrowLeft, FiAward, FiMail } from 'react-icons/fi';
 import { authAPI } from '../../../services/endpoints'; 
 import './ForgotPasswordPage.css';
 
@@ -16,10 +17,10 @@ function ForgotPasswordPage() {
 
   try {
     const data = await authAPI.forgotPassword(email);
-    setMessage(data.message || 'Password reset instructions sent to your email.');
+    setMessage(data.message || 'Verification code sent to your email.');
     setMessageType('success');
   } catch (err) {
-    const msg = err?.response?.data?.error || 'Failed to send reset instructions. Please try again.';
+    const msg = err?.response?.data?.error || 'Failed to send verification code. Please try again.';
     setMessage(msg);
     setMessageType('error');
   } finally {
@@ -33,10 +34,7 @@ function ForgotPasswordPage() {
       <nav className="navbar">
         <Link to="/" className="navbar-brand">
           <div className="navbar-logo">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-              <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5"/>
-            </svg>
+            <FiAward size={20} />
           </div>
           <span className="navbar-title">ILES</span>
         </Link>
@@ -52,10 +50,7 @@ function ForgotPasswordPage() {
         {/* Hero */}
         <div className="forgot-password-hero">
           <div className="hero-icon">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-              <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5"/>
-            </svg>
+            <FiAward size={30} />
           </div>
           <h1 className="hero-title">Internship Logging &amp; Evaluation</h1>
           <p className="hero-subtitle">Password Recovery Portal</p>
@@ -74,10 +69,7 @@ function ForgotPasswordPage() {
                 <label htmlFor="email">Email Address</label>
                 <div className="input-wrapper">
                   <span className="input-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="4" width="20" height="16" rx="2"/>
-                      <path d="M2 7l10 7 10-7"/>
-                    </svg>
+                    <FiMail size={16} />
                   </span>
                   <input
                     type="email"
@@ -102,7 +94,7 @@ function ForgotPasswordPage() {
                     Sending…
                   </>
                 ) : (
-                  'Send Reset Link'
+                  'Send Verification Code'
                 )}
               </button>
             </form>
@@ -112,9 +104,7 @@ function ForgotPasswordPage() {
             <Link to="/login" className="back-btn">
               <div className="back-btn-left">
                 <div className="back-arrow-circle">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 12H5M12 5l-7 7 7 7"/>
-                  </svg>
+                  <FiArrowLeft size={15} />
                 </div>
                 <div className="back-btn-text">
                   <span className="back-btn-label">Back to Login</span>

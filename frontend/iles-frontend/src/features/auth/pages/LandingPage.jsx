@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FiBarChart2, FiFileText, FiTrendingUp, FiUser } from 'react-icons/fi';
 import { dashboardsAPI } from '../../../services/endpoints';
 import landingPageImage from '../../../assets/landingpage.png';
 import './LandingPage.css';
@@ -117,22 +118,22 @@ function LandingPage() {
 
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-card-icon">📋</div>
+              <div className="feature-card-icon"><FiFileText size={20} /></div>
               <h3>Log Management</h3>
               <p>Track your internship activities and progress with structured weekly logs.</p>
             </div>
             <div className="feature-card">
-              <div className="feature-card-icon">👤</div>
+              <div className="feature-card-icon"><FiUser size={20} /></div>
               <h3>Supervisor Reviews</h3>
               <p>Get feedback from workplace and academic supervisors in real-time.</p>
             </div>
             <div className="feature-card">
-              <div className="feature-card-icon">📊</div>
+              <div className="feature-card-icon"><FiBarChart2 size={20} /></div>
               <h3>Evaluations</h3>
               <p>Comprehensive evaluation system for fair and consistent internship grading.</p>
             </div>
             <div className="feature-card">
-              <div className="feature-card-icon">📈</div>
+              <div className="feature-card-icon"><FiTrendingUp size={20} /></div>
               <h3>Reports</h3>
               <p>Generate detailed reports and analytics across all departments.</p>
             </div>

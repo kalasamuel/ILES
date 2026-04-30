@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
+import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { dashboardsAPI, evaluationsAPI, placementsAPI } from '../services/endpoints';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './ReportsPage.css';
@@ -9,21 +10,24 @@ function ReportsPage() {
   const [placements, setPlacements] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [metrics, setMetrics] = useState([]);
+  const [criteriaData, setCriteriaData] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [placementsRes, evaluationsRes, metricsRes] = await Promise.all([
+        const [placementsRes, evaluationsRes, metricsRes, criteriaSummariesRes] = await Promise.all([
           placementsAPI.getPlacements(),
           evaluationsAPI.getEvaluations(),
           dashboardsAPI.getMetrics(),
+          dashboardsAPI.getEvaluationCriteriaSummaries(),
         ]);
 
         setPlacements(placementsRes.results || placementsRes || []);
         setEvaluations(evaluationsRes.results || evaluationsRes || []);
         setMetrics(metricsRes.results || metricsRes || []);
+        setCriteriaData(criteriaSummariesRes?.criteria_summaries || []);
       } catch (error) {
         console.error('Failed to fetch reports data', error);
         setError('Failed to load reports data. Please refresh and try again.');
@@ -282,6 +286,22 @@ function ReportsPage() {
                   <strong>{aGrades}</strong>
                 </div>
               </div>
+
+              {/* Average Scores by Criteria Chart */}
+              {criteriaData.length > 0 && (
+                <div className="rp-chart-container" style={{ marginBottom: '40px' }}>
+                  <h3 style={{ marginBottom: '20px' }}>Average Scores by Criteria</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={criteriaData} layout="vertical" margin={{ left: 150, right: 16 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" domain={[0, 100]} unit="%" />
+                      <YAxis dataKey="criteria" type="category" width={140} />
+                      <Tooltip />
+                      <Bar dataKey="avgPercentage" fill="#f97316" radius={[4, 4, 4, 4]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
 
               {evaluations.length === 0 ? (
                 <div className="rp-message">No evaluations submitted yet.</div>

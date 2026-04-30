@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, useParams, useNavigate, Link } from 'react-router-dom';
+import { FiArrowLeft, FiBriefcase, FiCalendar, FiCheckSquare, FiClock, FiHash, FiMessageCircle } from 'react-icons/fi';
 import { placementsAPI, organizationsAPI } from '../services/endpoints';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './PlacementsPage.css';
@@ -116,10 +117,7 @@ function PlacementList() {
         <LoadingSpinner text="Loading placements…" />
       ) : filtered.length === 0 ? (
         <div className="pl-empty">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <rect x="2" y="7" width="20" height="14" rx="2"/>
-            <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
-          </svg>
+          <FiBriefcase size={48} />
           <p>No placements found</p>
         </div>
       ) : (
@@ -350,9 +348,7 @@ function PlacementDetails() {
 
       {/* Back */}
       <button className="pd-back" onClick={() => navigate(-1)}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 12H5M5 12l7 7M5 12l7-7"/>
-        </svg>
+        <FiArrowLeft size={16} />
         Back to Placements
       </button>
 
@@ -397,48 +393,27 @@ function PlacementDetails() {
             <div className="pd-info-rows">
               {[
                 {
-                  icon: (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-                    </svg>
-                  ),
+                  icon: <FiCalendar size={18} />,
                   label: 'Start Date',
                   value: formatDate(pl.start_date),
                 },
                 {
-                  icon: (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 15l3 3 5-5"/>
-                    </svg>
-                  ),
+                  icon: <FiCheckSquare size={18} />,
                   label: 'End Date',
                   value: formatDate(pl.end_date),
                 },
                 {
-                  icon: (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 21l1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>
-                    </svg>
-                  ),
+                  icon: <FiMessageCircle size={18} />,
                   label: 'Organisation',
                   value: org,
                 },
                 {
-                  icon: (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                    </svg>
-                  ),
+                  icon: <FiClock size={18} />,
                   label: 'Status',
                   value: <span style={{ color: sm.color, fontWeight: 700 }}>{sm.label}</span>,
                 },
                 ...(pl.placement_id ? [{
-                  icon: (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                  ),
+                  icon: <FiHash size={18} />,
                   label: 'Placement ID',
                   value: `#${pl.placement_id}`,
                 }] : []),

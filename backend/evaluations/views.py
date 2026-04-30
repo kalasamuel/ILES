@@ -3,10 +3,122 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
-from django.db.models import Sum
+from django.db.models import Sum, Avg
+from decimal import Decimal
 from .models import EvaluationCriteria, Evaluation, EvaluationScore, ScoreBreakdown
 from .serializers import EvaluationCriteriaSerializer, EvaluationSerializer, EvaluationScoreSerializer, ScoreBreakdownSerializer
 from accounts.models import Student, Supervisor
+
+
+def _to_decimal(value, default='0'):
+    if value is None:
+        return Decimal(default)
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return Decimal(default)
+
+
+def _clamp_percentage(value):
+    if value < Decimal('0'):
+        return Decimal('0')
+    if value > Decimal('100'):
+        return Decimal('100')
+    return value
+
+
+def _grade_for_score(score):
+    if score >= Decimal('90'):
+        return 'A'
+    if score >= Decimal('80'):
+        return 'B'
+    if score >= Decimal('70'):
+        return 'C'
+    if score >= Decimal('60'):
+        return 'D'
+    return 'F'
+
+
+def _calculate_academic_score_percentage(evaluation):
+    scores = evaluation.evaluationscore_set.select_related('criteria').all()
+    if not scores.exists():
+        return Decimal('0.00')
+
+    weighted_total = Decimal('0')
+    total_weight = Decimal('0')
+    raw_score_sum = Decimal('0')
+    raw_max_sum = Decimal('0')
+
+    for entry in scores:
+        score_value = _to_decimal(entry.score)
+        max_score = _to_decimal(getattr(entry.criteria, 'max_score', 0))
+        weight = _to_decimal(getattr(entry.criteria, 'weight_percentage', 0))
+
+        if max_score > 0:
+            percentage = _clamp_percentage((score_value / max_score) * Decimal('100'))
+            raw_score_sum += score_value
+            raw_max_sum += max_score
+
+            if weight > 0:
+                weighted_total += percentage * weight
+                total_weight += weight
+
+    if total_weight > 0:
+        return _clamp_percentage(weighted_total / total_weight).quantize(Decimal('0.01'))
+
+    if raw_max_sum > 0:
+        return _clamp_percentage((raw_score_sum / raw_max_sum) * Decimal('100')).quantize(Decimal('0.01'))
+
+    return Decimal('0.00')
+
+
+def _recalculate_evaluation_and_breakdown(evaluation):
+    if not evaluation:
+        return
+
+    placement = evaluation.placement
+
+    academic_score = _calculate_academic_score_percentage(evaluation)
+    evaluation.total_score = academic_score
+    evaluation.grade = _grade_for_score(academic_score)
+    evaluation.save(update_fields=['total_score', 'grade'])
+
+    from reviews.models import LogReview
+    from logbooks.models import WeeklyLog
+
+    avg_rating = LogReview.objects.filter(
+        log__placement=placement,
+        supervisor__supervisor_type='workplace'
+    ).aggregate(avg_rating=Avg('rating'))['avg_rating']
+
+    # Convert workplace review ratings (typically 0-5) to a percentage scale.
+    supervisor_score = _clamp_percentage(_to_decimal(avg_rating) * Decimal('20'))
+
+    approved_logs = WeeklyLog.objects.filter(
+        placement=placement,
+        status='approved'
+    ).count()
+    total_logs = WeeklyLog.objects.filter(placement=placement).count()
+    logbook_score = Decimal('0')
+    if total_logs > 0:
+        logbook_score = _clamp_percentage((Decimal(approved_logs) / Decimal(total_logs)) * Decimal('100'))
+
+    final_score = (
+        (supervisor_score * Decimal('0.4')) +
+        (academic_score * Decimal('0.3')) +
+        (logbook_score * Decimal('0.3'))
+    ).quantize(Decimal('0.01'))
+
+    ScoreBreakdown.objects.update_or_create(
+        placement=placement,
+        defaults={
+            'supervisor_score': supervisor_score.quantize(Decimal('0.01')),
+            'academic_score': academic_score,
+            'logbook_score': logbook_score.quantize(Decimal('0.01')),
+            'final_score': final_score,
+            'grade': _grade_for_score(final_score),
+        }
+    )
 
 
 class EvaluationCriteriaViewSet(viewsets.ModelViewSet):
@@ -121,14 +233,11 @@ class EvaluationViewSet(viewsets.ModelViewSet):
         else:
             evaluation = serializer.save()
 
-        # Calculate total score
-        total_score = evaluation.evaluationscore_set.aggregate(
-            total=Sum('score')
-        )['total'] or 0
-        evaluation.total_score = total_score
-        evaluation.save()
-        # Update score breakdown
-        self._update_score_breakdown(evaluation.placement)
+        _recalculate_evaluation_and_breakdown(evaluation)
+
+    def perform_update(self, serializer):
+        evaluation = serializer.save()
+        _recalculate_evaluation_and_breakdown(evaluation)
 
     def create(self, request, *args, **kwargs):
         self._assert_academic_or_admin(request.user)
@@ -146,59 +255,19 @@ class EvaluationViewSet(viewsets.ModelViewSet):
         self._assert_academic_or_admin(request.user)
         return super().destroy(request, *args, **kwargs)
 
-    def _update_score_breakdown(self, placement):
-        # Calculate scores
-        evaluation = Evaluation.objects.filter(placement=placement).first()
-        if not evaluation:
-            return
+    @action(detail=False, methods=['post'], url_path='recalculate-my-summaries')
+    def recalculate_my_summaries(self, request):
+        evaluations = self.get_queryset().select_related('placement')
+        updated = 0
 
-        academic_score = evaluation.total_score
+        for evaluation in evaluations:
+            _recalculate_evaluation_and_breakdown(evaluation)
+            updated += 1
 
-        # Supervisor score from reviews
-        from reviews.models import LogReview
-        from django.db.models import Avg
-        supervisor_reviews = LogReview.objects.filter(
-            log__placement=placement,
-            supervisor__supervisor_type='workplace'
-        )
-        supervisor_score = supervisor_reviews.aggregate(
-            avg_rating=Avg('rating')
-        )['avg_rating'] or 0
-
-        # Logbook score (average of approved logs)
-        from logbooks.models import WeeklyLog
-        approved_logs = WeeklyLog.objects.filter(
-            placement=placement,
-            status='approved'
-        ).count()
-        total_logs = WeeklyLog.objects.filter(placement=placement).count()
-        logbook_score = (approved_logs / total_logs * 100) if total_logs > 0 else 0
-
-        # Weighted final score
-        final_score = (supervisor_score * 0.4) + (academic_score * 0.3) + (logbook_score * 0.3)
-
-        # Determine grade
-        if final_score >= 90:
-            grade = 'A'
-        elif final_score >= 80:
-            grade = 'B'
-        elif final_score >= 70:
-            grade = 'C'
-        elif final_score >= 60:
-            grade = 'D'
-        else:
-            grade = 'F'
-
-        ScoreBreakdown.objects.update_or_create(
-            placement=placement,
-            defaults={
-                'supervisor_score': supervisor_score,
-                'academic_score': academic_score,
-                'logbook_score': logbook_score,
-                'final_score': final_score,
-                'grade': grade
-            }
-        )
+        return Response({
+            'updated_evaluations': updated,
+            'message': 'Evaluation summaries recalculated successfully.',
+        }, status=status.HTTP_200_OK)
 
 
 class EvaluationScoreViewSet(viewsets.ModelViewSet):
@@ -256,9 +325,17 @@ class EvaluationScoreViewSet(viewsets.ModelViewSet):
         self._assert_academic_or_admin(request.user)
         return super().create(request, *args, **kwargs)
 
+    def perform_create(self, serializer):
+        score = serializer.save()
+        _recalculate_evaluation_and_breakdown(score.evaluation)
+
     def update(self, request, *args, **kwargs):
         self._assert_academic_or_admin(request.user)
         return super().update(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        score = serializer.save()
+        _recalculate_evaluation_and_breakdown(score.evaluation)
 
     def partial_update(self, request, *args, **kwargs):
         self._assert_academic_or_admin(request.user)
@@ -266,7 +343,11 @@ class EvaluationScoreViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         self._assert_academic_or_admin(request.user)
-        return super().destroy(request, *args, **kwargs)
+        score = self.get_object()
+        evaluation = score.evaluation
+        response = super().destroy(request, *args, **kwargs)
+        _recalculate_evaluation_and_breakdown(evaluation)
+        return response
 
 
 class ScoreBreakdownViewSet(viewsets.ReadOnlyModelViewSet):

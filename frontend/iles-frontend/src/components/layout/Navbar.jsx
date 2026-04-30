@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiAward, FiBell, FiChevronDown } from 'react-icons/fi';
 import { useAuth } from '../../hooks/AuthContext';
 import { notificationsAPI } from '../../services/endpoints';
 import { ROLES } from '../../constants';
@@ -70,10 +71,7 @@ function Navbar({ user, onMenuClick }) {
 
         <div className="navbar-logo">
           <div className="navbar-logo-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-              <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5"/>
-            </svg>
+            <FiAward size={16} color="white" />
           </div>
           <span className="navbar-logo-text">ILES</span>
         </div>
@@ -90,10 +88,7 @@ function Navbar({ user, onMenuClick }) {
             aria-label="Notifications"
             onClick={handleNotificationClick}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
+            <FiBell size={18} />
             {unreadCount > 0 && (
               <span className="notification-badge">
                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -106,9 +101,7 @@ function Navbar({ user, onMenuClick }) {
         <div className="user-menu" onClick={() => setProfileOpen(!profileOpen)}>
           <div className="user-avatar">{initials}</div>
           <span>{user?.first_name} {user?.last_name}</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9a4f1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
+          <FiChevronDown size={14} color="#9a4f1c" />
 
           {/* Dropdown */}
           {profileOpen && (

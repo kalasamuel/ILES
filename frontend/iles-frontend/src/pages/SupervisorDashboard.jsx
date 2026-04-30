@@ -76,12 +76,22 @@ function getGradeBucket(score) {
   return 'F';
 }
 
+function getPlacementId(value) {
+  if (!value) return null;
+  if (typeof value === 'object') {
+    return value.placement_id || value.id || null;
+  }
+  return value;
+}
+
 function SupervisorDashboard() {
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [placements, setPlacements] = useState([]);
   const [logs, setLogs] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
+  const [scoreBreakdowns, setScoreBreakdowns] = useState([]);
+  const [criteriaSummaries, setCriteriaSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const bootstrapAttemptedRef = useRef(false);
@@ -91,17 +101,27 @@ function SupervisorDashboard() {
       try {
         setError(null);
 
-        const [reviewsRes, placementsRes, logsRes, evaluationsRes] = await Promise.all([
+        try {
+          await evaluationsAPI.recalculateMySummaries();
+        } catch (recalcError) {
+          console.warn('Failed to recalculate evaluation summaries:', recalcError);
+        }
+
+        const [reviewsRes, placementsRes, logsRes, evaluationsRes, scoreBreakdownsRes, criteriaSummariesRes] = await Promise.all([
           reviewsAPI.getReviews(),
           placementsAPI.getPlacements(),
           logbooksAPI.getLogs(),
           evaluationsAPI.getEvaluations(),
+          evaluationsAPI.getScoreBreakdowns(),
+          dashboardsAPI.getEvaluationCriteriaSummaries(),
         ]);
 
         let reviewsData = reviewsRes?.results || reviewsRes || [];
         let placementsData = placementsRes?.results || placementsRes || [];
         let logsData = logsRes?.results || logsRes || [];
         let evaluationsData = evaluationsRes?.results || evaluationsRes || [];
+        let scoreBreakdownsData = scoreBreakdownsRes?.results || scoreBreakdownsRes || [];
+        let criteriaSummariesData = criteriaSummariesRes?.criteria_summaries || [];
 
         let context = null;
         try {
@@ -125,17 +145,21 @@ function SupervisorDashboard() {
             await dashboardsAPI.bootstrapMySupervisorData();
             bootstrapAttemptedRef.current = true;
 
-            const [reviewsRefetch, placementsRefetch, logsRefetch, evaluationsRefetch] = await Promise.all([
+            const [reviewsRefetch, placementsRefetch, logsRefetch, evaluationsRefetch, scoreBreakdownsRefetch, criteriaSummariesRefetch] = await Promise.all([
               reviewsAPI.getReviews(),
               placementsAPI.getPlacements(),
               logbooksAPI.getLogs(),
               evaluationsAPI.getEvaluations(),
+              evaluationsAPI.getScoreBreakdowns(),
+              dashboardsAPI.getEvaluationCriteriaSummaries(),
             ]);
 
             reviewsData = reviewsRefetch?.results || reviewsRefetch || [];
             placementsData = placementsRefetch?.results || placementsRefetch || [];
             logsData = logsRefetch?.results || logsRefetch || [];
             evaluationsData = evaluationsRefetch?.results || evaluationsRefetch || [];
+            scoreBreakdownsData = scoreBreakdownsRefetch?.results || scoreBreakdownsRefetch || [];
+            criteriaSummariesData = criteriaSummariesRefetch?.criteria_summaries || [];
           } catch (bootstrapError) {
             console.warn('Supervisor starter data bootstrap failed:', bootstrapError);
           }
@@ -145,6 +169,8 @@ function SupervisorDashboard() {
         setPlacements(placementsData);
         setLogs(logsData);
         setEvaluations(evaluationsData);
+        setScoreBreakdowns(scoreBreakdownsData);
+        setCriteriaSummaries(criteriaSummariesData);
       } catch (fetchError) {
         console.error('Error fetching dashboard data:', fetchError);
         setError('Failed to load dashboard data. Please try again.');
@@ -190,51 +216,57 @@ function SupervisorDashboard() {
     });
   }, [evaluations]);
 
-  const criteriaChartData = useMemo(() => {
-    const map = new Map();
-
-    completedEvaluations.forEach((evaluation) => {
-      (Array.isArray(evaluation?.scores) ? evaluation.scores : []).forEach((entry, index) => {
-        const criteriaId = entry?.criteria_details?.criteria_id || entry?.criteria || `${evaluation.evaluation_id || 'evaluation'}-${index}`;
-        const criteriaName = entry?.criteria_details?.name || `Criteria ${index + 1}`;
-        const score = Number(entry?.score) || 0;
-        const maxScore = Number(entry?.criteria_details?.max_score) || 100;
-        const percentage = maxScore > 0 ? Math.max(0, Math.min(100, (score / maxScore) * 100)) : 0;
-
-        if (!map.has(criteriaId)) {
-          map.set(criteriaId, {
-            criteria: criteriaName,
-            totalPercentage: 0,
-            count: 0,
-          });
-        }
-
-        const metric = map.get(criteriaId);
-        metric.totalPercentage += percentage;
-        metric.count += 1;
-      });
+  const completedScoreBreakdowns = useMemo(() => {
+    return [...scoreBreakdowns].filter((breakdown) => {
+      const score = Number(breakdown?.final_score);
+      return Number.isFinite(score) || breakdown?.grade;
     });
+  }, [scoreBreakdowns]);
 
-    return Array.from(map.values())
+  const completedEvaluationCount = completedScoreBreakdowns.length || completedEvaluations.length;
+
+  const criteriaChartData = useMemo(() => {
+    return [...criteriaSummaries]
       .map((item) => ({
         criteria: item.criteria,
-        avgPercentage: Number((item.totalPercentage / Math.max(item.count, 1)).toFixed(1)),
+        avgPercentage: Number(item.avgPercentage || 0),
       }))
       .sort((left, right) => right.avgPercentage - left.avgPercentage)
       .slice(0, 8);
-  }, [completedEvaluations]);
+  }, [criteriaSummaries]);
 
   const completedScoreTrend = useMemo(() => {
-    return [...completedEvaluations]
+    const source = completedScoreBreakdowns.length > 0
+      ? completedScoreBreakdowns.map((breakdown) => {
+          const placementId = getPlacementId(breakdown?.placement);
+          const placement = placementsById.get(placementId);
+          const score = Number(breakdown?.final_score);
+          const normalized = Number.isFinite(score) ? score : 0;
+          return {
+            evaluation_date: placement?.end_date || placement?.start_date || null,
+            score: Number(normalized.toFixed(1)),
+            grade: breakdown?.grade || getGradeBucket(normalized),
+          };
+        })
+      : completedEvaluations.map((evaluation) => {
+          const score = getEvaluationDisplayScore(evaluation);
+          return {
+            evaluation_date: evaluation?.evaluation_date,
+            score: Number(score.toFixed(1)),
+            grade: evaluation?.grade || getGradeBucket(score),
+          };
+        });
+
+    return source
       .sort((left, right) => sortByDateDesc(left?.evaluation_date, right?.evaluation_date))
       .slice(0, 6)
       .map((evaluation, index) => ({
         label: `#${index + 1}`,
-        score: Number(getEvaluationDisplayScore(evaluation).toFixed(1)),
-        grade: evaluation?.grade || getGradeBucket(getEvaluationDisplayScore(evaluation)),
+        score: Number(evaluation.score || 0),
+        grade: evaluation?.grade || getGradeBucket(Number(evaluation.score || 0)),
       }))
       .reverse();
-  }, [completedEvaluations]);
+  }, [completedScoreBreakdowns, completedEvaluations, placementsById]);
 
   const gradeDistribution = useMemo(() => {
     const buckets = [
@@ -245,25 +277,78 @@ function SupervisorDashboard() {
       { grade: 'F', count: 0 },
     ];
 
-    completedEvaluations.forEach((evaluation) => {
-      const score = getEvaluationDisplayScore(evaluation);
+    const source = completedScoreBreakdowns.length > 0
+      ? completedScoreBreakdowns.map((breakdown) => ({
+          score: Number(breakdown?.final_score) || 0,
+          grade: breakdown?.grade,
+        }))
+      : completedEvaluations.map((evaluation) => ({
+          score: getEvaluationDisplayScore(evaluation),
+          grade: evaluation?.grade,
+        }));
+
+    source.forEach((evaluation) => {
+      const score = Number(evaluation.score || 0);
       const grade = String(evaluation?.grade || getGradeBucket(score)).toUpperCase().slice(0, 1);
       const bucket = buckets.find((item) => item.grade === grade) || buckets[buckets.length - 1];
       bucket.count += 1;
     });
 
     return buckets.filter((item) => item.count > 0);
-  }, [completedEvaluations]);
+  }, [completedScoreBreakdowns, completedEvaluations]);
 
   const averageEvaluationPercentage = useMemo(() => {
-    const percentages = completedEvaluations.map((evaluation) => getEvaluationPercentage(evaluation));
+    const percentages = completedScoreBreakdowns.length > 0
+      ? completedScoreBreakdowns
+          .map((breakdown) => Number(breakdown?.final_score))
+          .filter((score) => Number.isFinite(score))
+      : completedEvaluations.map((evaluation) => getEvaluationPercentage(evaluation));
     if (percentages.length === 0) return 0;
     return percentages.reduce((sum, value) => sum + value, 0) / percentages.length;
-  }, [completedEvaluations]);
+  }, [completedScoreBreakdowns, completedEvaluations]);
 
   const evaluatedStudents = useMemo(() => {
-    return new Set(completedEvaluations.map((evaluation) => evaluation?.placement).filter(Boolean)).size;
-  }, [completedEvaluations]);
+    const placementIds = completedScoreBreakdowns.length > 0
+      ? completedScoreBreakdowns.map((breakdown) => getPlacementId(breakdown?.placement))
+      : completedEvaluations.map((evaluation) => getPlacementId(evaluation?.placement));
+    return new Set(placementIds.filter(Boolean)).size;
+  }, [completedScoreBreakdowns, completedEvaluations]);
+
+  const completionRate = useMemo(() => {
+    if (activeStudents.length === 0) return 0;
+    return Math.round((evaluatedStudents / activeStudents.length) * 100);
+  }, [activeStudents.length, evaluatedStudents]);
+
+  const completedEvaluationRows = useMemo(() => {
+    if (completedScoreBreakdowns.length > 0) {
+      return completedScoreBreakdowns.slice(0, 4).map((breakdown) => {
+        const placement = placementsById.get(getPlacementId(breakdown?.placement));
+        const score = Number(breakdown?.final_score);
+        const normalized = Number.isFinite(score) ? score : 0;
+        return {
+          id: breakdown?.score_id || `${getPlacementId(breakdown?.placement)}-${breakdown?.grade || 'grade'}`,
+          student: getStudentLabel(placement),
+          placementTitle: placement?.position_title || 'Placement',
+          date: placement?.end_date || placement?.start_date || null,
+          score: normalized,
+          grade: breakdown?.grade || getGradeBucket(normalized),
+        };
+      });
+    }
+
+    return completedEvaluations.slice(0, 4).map((evaluation) => {
+      const placement = placementsById.get(getPlacementId(evaluation?.placement));
+      const score = getEvaluationDisplayScore(evaluation);
+      return {
+        id: evaluation?.evaluation_id || evaluation?.id,
+        student: getStudentLabel(placement),
+        placementTitle: placement?.position_title || 'Placement',
+        date: evaluation?.evaluation_date,
+        score,
+        grade: evaluation?.grade || getGradeBucket(score),
+      };
+    });
+  }, [completedScoreBreakdowns, completedEvaluations, placementsById]);
 
   const recentActivity = useMemo(() => {
     const items = [
@@ -433,7 +518,7 @@ function SupervisorDashboard() {
         <div className="dashboard-card chart-card">
           <h3>Completed Evaluations</h3>
           <Link to="/app/reports" className="stat-link" aria-label="Open evaluation summaries">
-            <div className="stat-number">{completedEvaluations.length}</div>
+            <div className="stat-number">{completedEvaluationCount}</div>
           </Link>
           <p>Click to view summaries and full evaluation analytics</p>
 
@@ -448,7 +533,7 @@ function SupervisorDashboard() {
             </div>
             <div className="overview-pill">
               <span>Completion rate</span>
-              <strong>{evaluations.length ? `${Math.round((completedEvaluations.length / evaluations.length) * 100)}%` : '0%'}</strong>
+              <strong>{`${completionRate}%`}</strong>
             </div>
           </div>
 
@@ -487,24 +572,20 @@ function SupervisorDashboard() {
             <p className="no-data">No completed evaluation data available</p>
           )}
 
-          {completedEvaluations.length > 0 && (
+          {completedEvaluationRows.length > 0 && (
             <div className="completed-evaluations-list">
-              {completedEvaluations.slice(0, 4).map((evaluation) => {
-                const placement = placementsById.get(evaluation?.placement);
-                const score = getEvaluationDisplayScore(evaluation);
-                return (
-                  <div key={evaluation.evaluation_id || evaluation.id} className="completed-evaluation-row">
+              {completedEvaluationRows.map((evaluation) => (
+                  <div key={evaluation.id} className="completed-evaluation-row">
                     <div>
-                      <strong>{getStudentLabel(placement)}</strong>
-                      <span>{placement?.position_title || 'Placement'} • {formatDate(evaluation?.evaluation_date)}</span>
+                      <strong>{evaluation.student}</strong>
+                      <span>{evaluation.placementTitle} • {formatDate(evaluation.date)}</span>
                     </div>
                     <div className="completed-evaluation-score">
-                      <span>{score.toFixed(1)}%</span>
-                      <small>{evaluation?.grade || getGradeBucket(score)}</small>
+                      <span>{evaluation.score.toFixed(1)}%</span>
+                      <small>{evaluation.grade}</small>
                     </div>
                   </div>
-                );
-              })}
+              ))}
             </div>
           )}
 
