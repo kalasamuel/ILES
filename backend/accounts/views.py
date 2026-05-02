@@ -16,6 +16,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.crypto import get_random_string
 from django.core.cache import cache
+from organizations.models import Organization
 
 
 def _generate_registration_number():
@@ -182,6 +183,17 @@ class UserViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['get'], permission_classes=[], url_path='organization-suggestions')
+    def organization_suggestions(self, request):
+        """Public search endpoint used by registration typeahead for workplace organizations."""
+        query = (request.query_params.get('q') or '').strip()
+        queryset = Organization.objects.all()
+        if query:
+            queryset = queryset.filter(name__icontains=query)
+
+        results = queryset.order_by('name').values('organization_id', 'name')[:10]
+        return Response({'results': list(results)})
+
     
     @action(detail=False, methods=['post'], permission_classes=[], url_path='forgot-password')
     def forgot_password(self, request):
@@ -286,6 +298,8 @@ class StudentViewSet(viewsets.ModelViewSet):
             return Student.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
+            if supervisor.organization_id:
+                return self.queryset.filter(internshipplacement__organization=supervisor.organization).distinct()
             return self.queryset.filter(internshipplacement__workplace_supervisor=supervisor).distinct()
 
         if supervisor.supervisor_type == 'academic':
