@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/AuthContext';
-import { departmentsAPI, usersAPI } from '../services/endpoints';
+import { departmentsAPI, usersAPI, notificationsAPI } from '../services/endpoints';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
@@ -144,6 +144,16 @@ const SettingsPage = () => {
     setError('');
     try {
       await usersAPI.updateCurrentUserSettings(notifications);
+      // If push preference turned on, attempt to subscribe; if turned off, remove subscriptions
+      try {
+        if (notifications.push_notifications) {
+          await handlePushToggle(true);
+        } else {
+          await handlePushToggle(false);
+        }
+      } catch (e) {
+        console.warn('Push subscription step failed:', e);
+      }
       setSuccess('Notification preferences saved!');
       clearFeedbackLater();
     } catch (error) {
@@ -151,6 +161,62 @@ const SettingsPage = () => {
       setError('Failed to save notification preferences.');
     } finally {
       setSavingAction('');
+    }
+  };
+
+  const urlBase = import.meta.env.VITE_API_BASE_URL || '';
+  const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || null;
+
+  const base64ToUint8Array = (base64String) => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const handlePushToggle = async (enabled) => {
+    try {
+      if (!enabled) {
+        // delete existing subscriptions on server
+        const list = await notificationsAPI.listPushSubscriptions();
+        if (Array.isArray(list.results || list)) {
+          const items = list.results || list;
+          for (const s of items) {
+            await notificationsAPI.deletePushSubscription(s.subscription_id);
+          }
+        }
+        return;
+      }
+
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        setError('Push is not supported in this browser.');
+        return;
+      }
+
+      const reg = await navigator.serviceWorker.register('/sw.js');
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setError('Notification permission was not granted.');
+        return;
+      }
+
+      const subscribeOptions = {
+        userVisibleOnly: true,
+        applicationServerKey: vapidPublicKey ? base64ToUint8Array(vapidPublicKey) : undefined,
+      };
+
+      const subscription = await reg.pushManager.subscribe(subscribeOptions);
+
+      // send subscription to server
+      await notificationsAPI.createPushSubscription({ endpoint: subscription.endpoint, p256dh: subscription.getKey('p256dh') ? btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))) : '', auth: subscription.getKey('auth') ? btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth')))) : '' });
+    } catch (e) {
+      console.error('Push subscription failed', e);
+      setError('Failed to register push subscription.');
     }
   };
 
@@ -364,6 +430,22 @@ const SettingsPage = () => {
 
               <button onClick={handleNotificationUpdate} className="btn-save" disabled={savingAction === 'notifications'}>
                 {savingAction === 'notifications' ? 'Saving…' : 'Save Preferences'}
+              </button>
+              <button
+                type="button"
+                className="btn-save btn-test"
+                onClick={async () => {
+                  try {
+                    await notificationsAPI.sendTestNotification({ title: 'ILES Test', body: 'This is a test notification from Settings' });
+                    setSuccess('Test notification triggered');
+                    clearFeedbackLater();
+                  } catch (e) {
+                    console.error('Failed to send test notification', e);
+                    setError('Failed to trigger test notification');
+                  }
+                }}
+              >
+                Send test notification
               </button>
             </div>
           )}

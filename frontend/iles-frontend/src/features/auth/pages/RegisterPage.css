@@ -466,6 +466,45 @@ body {
   margin-bottom: 0;
 }
 
+.org-search-group {
+  position: relative;
+}
+
+.org-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.org-option {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--gray-900);
+}
+
+.org-option:hover {
+  background: var(--orange-faint);
+}
+
+.org-help-text {
+  margin-top: 6px;
+  color: var(--gray-500);
+  font-size: 0.76rem;
+}
+
 /* Labels */
 .form-group label {
   font-size: 0.825rem;

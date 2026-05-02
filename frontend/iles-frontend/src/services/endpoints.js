@@ -10,6 +10,12 @@ export const authAPI = {
     const response = await api.post('/accounts/users/register/', payload);
     return response.data;
   },
+  getOrganizationSuggestions: async (query) => {
+    const response = await api.get('/accounts/users/organization-suggestions/', {
+      params: { q: query || '' },
+    });
+    return response.data;
+  },
   forgotPassword: async (email) => {
     const response = await api.post('/accounts/users/forgot-password/', { email });
     return response.data;
@@ -290,6 +296,22 @@ export const notificationsAPI = {
   },
   createDeadline: async (data) => {
     const response = await api.post('/notifications/deadlines/', data);
+    return response.data;
+  },
+  sendTestNotification: async (payload) => {
+    const response = await api.post('/notifications/notifications/send_test/', payload || {});
+    return response.data;
+  },
+  listPushSubscriptions: async () => {
+    const response = await api.get('/notifications/push-subscriptions/');
+    return response.data;
+  },
+  createPushSubscription: async (data) => {
+    const response = await api.post('/notifications/push-subscriptions/', data);
+    return response.data;
+  },
+  deletePushSubscription: async (id) => {
+    const response = await api.delete(`/notifications/push-subscriptions/${id}/`);
     return response.data;
   },
   updateDeadline: async (id, data) => {
