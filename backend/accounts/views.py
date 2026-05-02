@@ -19,6 +19,30 @@ from django.core.cache import cache
 from organizations.models import Organization
 
 
+def _get_client_ip(request):
+    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', 'unknown')
+
+
+def _is_rate_limited(key, limit, ttl_seconds):
+    current = cache.get(key)
+    if current is None:
+        cache.set(key, 1, timeout=ttl_seconds)
+        return False
+
+    if int(current) >= int(limit):
+        return True
+
+    try:
+        cache.incr(key)
+    except ValueError:
+        cache.set(key, int(current) + 1, timeout=ttl_seconds)
+
+    return False
+
+
 def _generate_registration_number():
     while True:
         value = f"TEMP-{uuid.uuid4().hex[:8].upper()}"
@@ -172,6 +196,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[])
     def register(self, request):
+        # Basic IP-based throttle for unauthenticated registration attempts.
+        ip = _get_client_ip(request)
+        register_key = f"rate_limit:register:{ip}"
+        if _is_rate_limited(register_key, limit=10, ttl_seconds=60):
+            return Response(
+                {'error': 'Too many registration attempts. Please wait a minute and try again.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -187,9 +220,22 @@ class UserViewSet(viewsets.ModelViewSet):
     def organization_suggestions(self, request):
         """Public search endpoint used by registration typeahead for workplace organizations."""
         query = (request.query_params.get('q') or '').strip()
+
+        # Do not return broad lists for tiny/empty queries.
+        if len(query) < 2:
+            return Response({'results': []})
+
+        # IP-based throttle to reduce organization enumeration risk.
+        ip = _get_client_ip(request)
+        lookup_key = f"rate_limit:org_lookup:{ip}"
+        if _is_rate_limited(lookup_key, limit=60, ttl_seconds=60):
+            return Response(
+                {'error': 'Too many organization lookups. Please wait and try again.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
         queryset = Organization.objects.all()
-        if query:
-            queryset = queryset.filter(name__icontains=query)
+        queryset = queryset.filter(name__icontains=query)
 
         results = queryset.order_by('name').values('organization_id', 'name')[:10]
         return Response({'results': list(results)})

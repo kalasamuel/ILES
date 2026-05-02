@@ -46,3 +46,19 @@ class Deadline(models.Model):
 
     def __str__(self):
         return f"Deadline for week {self.week_number}: {self.submission_deadline}"
+
+
+class PushSubscription(models.Model):
+    """Stores a browser push subscription for a user (VAPID-based)."""
+    subscription_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_subscriptions')
+    endpoint = models.TextField()
+    p256dh = models.CharField(max_length=512)
+    auth = models.CharField(max_length=512)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = (('user', 'endpoint'),)
+
+    def __str__(self):
+        return f"PushSubscription for {self.user.email} -> {self.endpoint[:60]}"
