@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../../services/endpoints';
 import { useAuth } from '../../../hooks/AuthContext';
@@ -12,7 +12,11 @@ function RegisterPage() {
     password: '',
     confirmPassword: '',
     role: 'student',
+    organizationName: '',
+    organizationId: '',
   });
+  const [organizationResults, setOrganizationResults] = useState([]);
+  const [showOrgDropdown, setShowOrgDropdown] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +29,40 @@ function RegisterPage() {
       ...current,
       [event.target.name]: event.target.value,
     }));
+
+    if (event.target.name === 'organizationName') {
+      setFormData((current) => ({ ...current, organizationId: '' }));
+      setShowOrgDropdown(true);
+    }
+  };
+
+  useEffect(() => {
+    const isWorkplace = formData.role === 'workplace_supervisor';
+    const query = (formData.organizationName || '').trim();
+    if (!isWorkplace || query.length < 2) {
+      setOrganizationResults([]);
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await authAPI.getOrganizationSuggestions(query);
+        setOrganizationResults(res?.results || []);
+      } catch (e) {
+        setOrganizationResults([]);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [formData.role, formData.organizationName]);
+
+  const handleOrganizationSelect = (org) => {
+    setFormData((current) => ({
+      ...current,
+      organizationName: org.name,
+      organizationId: org.organization_id,
+    }));
+    setShowOrgDropdown(false);
   };
 
   const handleSubmit = async (event) => {
@@ -34,6 +72,11 @@ function RegisterPage() {
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    if (formData.role === 'workplace_supervisor' && !(formData.organizationName || '').trim()) {
+      setError('Organization name is required for workplace supervisors.');
       return;
     }
 
@@ -52,6 +95,8 @@ function RegisterPage() {
         email: formData.email,
         password: formData.password,
         role: roleMap[formData.role] || 'Student',
+        organization_name: formData.organizationName || undefined,
+        organization_id: formData.organizationId || undefined,
       };
 
       await authAPI.register(payload);
@@ -149,6 +194,41 @@ function RegisterPage() {
                   />
                 </div>
               </div>
+
+              {formData.role === 'workplace_supervisor' && (
+                <div className="form-group org-search-group">
+                  <label htmlFor="organizationName">Organization / Company</label>
+                  <input
+                    type="text"
+                    id="organizationName"
+                    name="organizationName"
+                    value={formData.organizationName}
+                    onChange={handleChange}
+                    onFocus={() => setShowOrgDropdown(true)}
+                    onBlur={() => window.setTimeout(() => setShowOrgDropdown(false), 120)}
+                    required
+                    className="no-icon"
+                    placeholder="Type to search existing organizations"
+                  />
+                  {showOrgDropdown && organizationResults.length > 0 && (
+                    <div className="org-dropdown">
+                      {organizationResults.map((org) => (
+                        <button
+                          key={org.organization_id}
+                          type="button"
+                          className="org-option"
+                          onMouseDown={() => handleOrganizationSelect(org)}
+                        >
+                          {org.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <small className="org-help-text">
+                    If no existing result matches, keep typing and it will be created as a new organization.
+                  </small>
+                </div>
+              )}
 
               <div className="form-group">
                 <label htmlFor="email">Email</label>

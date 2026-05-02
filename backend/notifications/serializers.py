@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Notification, Deadline
+from .models import PushSubscription
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -60,3 +61,10 @@ class DeadlineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deadline
         fields = '__all__'
+
+
+class PushSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PushSubscription
+        fields = ('subscription_id', 'endpoint', 'p256dh', 'auth', 'created_at')
+        read_only_fields = ('subscription_id', 'created_at')
