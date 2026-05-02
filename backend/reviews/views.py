@@ -44,6 +44,8 @@ class LogReviewViewSet(viewsets.ModelViewSet):
 
     def _can_supervisor_review_log(self, supervisor, log):
         if supervisor.supervisor_type == 'workplace':
+            if supervisor.organization_id:
+                return log.placement.organization_id == supervisor.organization_id
             return log.placement.workplace_supervisor_id == supervisor.supervisor_id
         if supervisor.supervisor_type == 'academic':
             return log.placement.academic_supervisor_id == supervisor.supervisor_id
@@ -74,6 +76,8 @@ class LogReviewViewSet(viewsets.ModelViewSet):
             return LogReview.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
+            if supervisor.organization_id:
+                return self.queryset.filter(log__placement__organization=supervisor.organization)
             return self.queryset.filter(supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
@@ -203,8 +207,13 @@ class WorkflowHistoryViewSet(viewsets.ReadOnlyModelViewSet):
 
         supervised_placements = []
         if supervisor.supervisor_type == 'workplace':
-            supervised_placements = supervisor.workplace_placements.values_list('placement_id', flat=True)
-            supervised_logs = supervisor.workplace_placements.values_list('weeklylog__log_id', flat=True)
+            if supervisor.organization_id:
+                org_placements = InternshipPlacement.objects.filter(organization=supervisor.organization)
+                supervised_placements = org_placements.values_list('placement_id', flat=True)
+                supervised_logs = org_placements.values_list('weeklylog__log_id', flat=True)
+            else:
+                supervised_placements = supervisor.workplace_placements.values_list('placement_id', flat=True)
+                supervised_logs = supervisor.workplace_placements.values_list('weeklylog__log_id', flat=True)
         else:
             supervised_placements = supervisor.academic_placements.values_list('placement_id', flat=True)
             supervised_logs = supervisor.academic_placements.values_list('weeklylog__log_id', flat=True)
