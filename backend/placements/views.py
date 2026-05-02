@@ -35,6 +35,8 @@ class InternshipPlacementViewSet(viewsets.ModelViewSet):
             return InternshipPlacement.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
+            if supervisor.organization_id:
+                return self.queryset.filter(organization=supervisor.organization)
             return self.queryset.filter(workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
@@ -125,6 +127,8 @@ class PlacementDocumentViewSet(viewsets.ModelViewSet):
             return PlacementDocument.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
+            if supervisor.organization_id:
+                return self.queryset.filter(placement__organization=supervisor.organization)
             return self.queryset.filter(placement__workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
