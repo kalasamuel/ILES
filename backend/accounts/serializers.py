@@ -3,6 +3,7 @@ from .models import Role, Department, User, Student, Supervisor, UserSettings
 from datetime import timedelta
 from django.utils import timezone
 import uuid
+from organizations.models import Organization
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -50,10 +51,12 @@ class UserSerializer(serializers.ModelSerializer):
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     role = serializers.CharField(write_only=True, required=True)  # Accept role name as string
+    organization_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+    organization_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'password', 'role']
+        fields = ['first_name', 'last_name', 'email', 'password', 'role', 'organization_id', 'organization_name']
 
     def _generate_registration_number(self):
         while True:
@@ -61,7 +64,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             if not Student.objects.filter(registration_number=value).exists():
                 return value
 
-    def _ensure_role_profile(self, user, role_name):
+    def _ensure_role_profile(self, user, role_name, organization=None):
         normalized = role_name.strip().lower().replace('-', ' ').replace('_', ' ')
 
         if 'student' in normalized:
@@ -78,16 +81,48 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
         if 'supervisor' in normalized or 'academic' in normalized or 'workplace' in normalized:
             supervisor_type = 'academic' if 'academic' in normalized else 'workplace'
-            Supervisor.objects.get_or_create(
+            supervisor, _ = Supervisor.objects.get_or_create(
                 user=user,
                 defaults={
                     'supervisor_type': supervisor_type,
+                    'organization': organization if supervisor_type == 'workplace' else None,
                 }
             )
+            if supervisor_type == 'workplace' and organization and supervisor.organization_id != organization.organization_id:
+                supervisor.organization = organization
+                supervisor.save(update_fields=['organization'])
+
+    def _resolve_workplace_organization(self, organization_id, organization_name):
+        if organization_id:
+            try:
+                return Organization.objects.get(organization_id=organization_id)
+            except Organization.DoesNotExist:
+                raise serializers.ValidationError({'organization_id': 'Selected organization does not exist.'})
+
+        cleaned_name = (organization_name or '').strip()
+        if not cleaned_name:
+            raise serializers.ValidationError({'organization_name': 'Organization name is required for workplace supervisors.'})
+
+        existing = Organization.objects.filter(name__iexact=cleaned_name).first()
+        if existing:
+            return existing
+
+        # Allow creating new organizations inline during registration.
+        return Organization.objects.create(
+            name=cleaned_name,
+            industry='Not specified',
+            address='Not provided',
+            city='Not provided',
+            country='Not provided',
+            contact_email='no-reply@iles.local',
+            contact_phone='0000000000',
+        )
 
     def create(self, validated_data):
         role_name = validated_data.pop('role')
         password = validated_data.pop('password')
+        organization_id = validated_data.pop('organization_id', None)
+        organization_name = validated_data.pop('organization_name', '')
 
         # Get or create the role
         role, created = Role.objects.get_or_create(role_name=role_name)
@@ -99,7 +134,12 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             **{k: v for k, v in validated_data.items() if k != 'email'}
         )
 
-        self._ensure_role_profile(user, role_name)
+        normalized = role_name.strip().lower().replace('-', ' ').replace('_', ' ')
+        workplace_org = None
+        if 'workplace' in normalized:
+            workplace_org = self._resolve_workplace_organization(organization_id, organization_name)
+
+        self._ensure_role_profile(user, role_name, organization=workplace_org)
         return user
 
 
