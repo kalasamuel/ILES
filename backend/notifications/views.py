@@ -4,12 +4,20 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Notification, Deadline
 from .serializers import NotificationSerializer, DeadlineSerializer
+from .serializers import PushSubscriptionSerializer
+from .models import PushSubscription
 from accounts.models import User
 from logbooks.models import WeeklyLog
 from placements.models import InternshipPlacement
 from reviews.models import LogReview
 from django.utils import timezone
 from datetime import timedelta
+from django.conf import settings
+import json
+try:
+    from pywebpush import webpush
+except Exception:
+    webpush = None
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
@@ -58,6 +66,59 @@ class NotificationViewSet(viewsets.ModelViewSet):
             is_read=False,
             details=details,
         )
+
+    @action(detail=False, methods=['post'])
+    def send_test(self, request):
+        """Send a test notification to the current user.
+
+        Creates a Notification object and attempts push delivery if subscriptions
+        and VAPID keys are configured. Returns created notification and push results.
+        """
+        user = request.user
+        payload = request.data.get('payload', {'title': 'ILES - Test', 'body': 'This is a test notification'})
+        notif = Notification.objects.create(
+            user=user,
+            message=payload.get('body', 'Test notification'),
+            notification_type=payload.get('type', 'system_health_update'),
+            is_read=False,
+            details=payload,
+        )
+
+        push_results = []
+        subscriptions = PushSubscription.objects.filter(user=user)
+        vapid_private = getattr(settings, 'WEBPUSH_VAPID_PRIVATE_KEY', None)
+        vapid_public = getattr(settings, 'WEBPUSH_VAPID_PUBLIC_KEY', None)
+        vapid_email = getattr(settings, 'WEBPUSH_CONTACT_EMAIL', settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else None)
+
+        if webpush and vapid_private and vapid_public and subscriptions.exists():
+            for sub in subscriptions:
+                sub_info = {
+                    'endpoint': sub.endpoint,
+                    'keys': {
+                        'p256dh': sub.p256dh,
+                        'auth': sub.auth,
+                    }
+                }
+                try:
+                    webpush(
+                        subscription_info=sub_info,
+                        data=json.dumps(payload),
+                        vapid_private_key=vapid_private,
+                        vapid_claims={"sub": f"mailto:{vapid_email}"},
+                    )
+                    push_results.append({'endpoint': sub.endpoint, 'status': 'sent'})
+                except Exception as e:
+                    push_results.append({'endpoint': sub.endpoint, 'status': 'error', 'detail': str(e)})
+        else:
+            if not subscriptions.exists():
+                push_results.append({'status': 'no_subscriptions'})
+            elif not webpush:
+                push_results.append({'status': 'pywebpush_not_installed'})
+            else:
+                push_results.append({'status': 'vapid_not_configured'})
+
+        serializer = NotificationSerializer(notif)
+        return Response({'notification': serializer.data, 'push': push_results})
 
     @action(detail=False, methods=['post'])
     def admin_system_snapshot(self, request):
@@ -140,3 +201,17 @@ class DeadlineViewSet(viewsets.ModelViewSet):
     queryset = Deadline.objects.all()
     serializer_class = DeadlineSerializer
     permission_classes = [IsAuthenticated]
+
+
+class PushSubscriptionViewSet(viewsets.ModelViewSet):
+    """Create / list / delete push subscriptions for the current user."""
+    queryset = PushSubscription.objects.all()
+    serializer_class = PushSubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
