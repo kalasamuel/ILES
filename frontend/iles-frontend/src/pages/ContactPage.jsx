@@ -97,7 +97,7 @@ function ContactPage() {
                   />
                 </div>
                 <div className="cf-field">
-                  <label htmlFor="email">Email Address *</label>
+                  <label htmlFor="email">Email Address*</label>
                   <input
                     type="email"
                     id="email"
