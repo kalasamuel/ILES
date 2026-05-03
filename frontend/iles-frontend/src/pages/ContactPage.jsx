@@ -97,7 +97,7 @@ function ContactPage() {
                   />
                 </div>
                 <div className="cf-field">
-                  <label htmlFor="email">Email Address*</label>
+                  <label htmlFor="email">Email Address *</label>
                   <input
                     type="email"
                     id="email"
@@ -115,10 +115,10 @@ function ContactPage() {
                   value={form.subject}
                   onChange={(e) => setForm({ ...form, subject: e.target.value })}
                 >
-                  <option>General Inquiry</option>
-                  <option>Technical Support</option>
-                  <option>Account Access</option>
-                  <option>Placement Dispute</option>
+                  <option>General  Inquiry</option>
+                  <option>Technical  Support</option>
+                  <option>Account  Access</option>
+                  <option>Placement  Dispute</option>
                   <option>Bug Report</option>
                 </select>
               </div>
