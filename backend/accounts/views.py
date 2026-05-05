@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Role, Department, User, Student, Supervisor, UserSettings
 from .serializers import RoleSerializer, DepartmentSerializer, UserSerializer, UserRegisterSerializer, StudentSerializer, SupervisorSerializer, UserSettingsSerializer
 from datetime import timedelta
+import logging
 from django.utils import timezone
 import uuid
 import re
@@ -16,9 +17,13 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.crypto import get_random_string
 from django.core.cache import cache
+from django.db import transaction
 from organizations.models import Organization
 from notifications.models import Notification, LoginHistory
 from notifications.utils import extract_device_info, get_location_from_ip, get_client_ip
+
+
+logger = logging.getLogger(__name__)
 
 
 def _is_rate_limited(key, limit, ttl_seconds):
@@ -187,24 +192,26 @@ class UserViewSet(viewsets.ModelViewSet):
             device_info = extract_device_info(user_agent)
             location_info = get_location_from_ip(ip_address)
             
-            # Create LoginHistory record
             try:
-                login_history = LoginHistory.objects.create(
-                    user=user,
-                    ip_address=ip_address,
-                    device_name=device_info['device_name'],
-                    device_type=device_info['device_type'],
-                    browser=device_info['browser'],
-                    operating_system=device_info['operating_system'],
-                    location=location_info['location'],
-                    country=location_info['country'],
-                    city=location_info['city'],
-                    latitude=location_info['latitude'],
-                    longitude=location_info['longitude'],
-                    user_agent=user_agent,
-                )
-                
-                # Create in-app notification
+                with transaction.atomic():
+                    LoginHistory.objects.create(
+                        user=user,
+                        ip_address=ip_address,
+                        device_name=device_info['device_name'],
+                        device_type=device_info['device_type'],
+                        browser=device_info['browser'],
+                        operating_system=device_info['operating_system'],
+                        location=location_info['location'],
+                        country=location_info['country'],
+                        city=location_info['city'],
+                        latitude=location_info['latitude'],
+                        longitude=location_info['longitude'],
+                        user_agent=user_agent,
+                    )
+            except Exception:
+                logger.exception('Failed to record login history for user %s', user.user_id)
+
+            try:
                 notification_message = f"New login detected on {device_info['device_name']} from {location_info['location']}"
                 Notification.objects.create(
                     user=user,
@@ -221,9 +228,8 @@ class UserViewSet(viewsets.ModelViewSet):
                         'ip_address': ip_address,
                     }
                 )
-            except Exception as e:
-                # Don't fail login if notification creation fails
-                pass
+            except Exception:
+                logger.exception('Failed to create login alert notification for user %s', user.user_id)
             
             refresh = RefreshToken.for_user(user)
             return Response({
