@@ -170,7 +170,7 @@ function LogDetails() {
 
   const roleName = String(user?.role?.role_name || '').toLowerCase();
   const canReviewRole = roleName.includes('supervisor') || roleName === 'admin';
-  const canCreateReview = canReviewRole && String(log.status || '').toLowerCase() === 'submitted';
+  const canCreateReview = canReviewRole && String(log?.status || '').toLowerCase() === 'submitted';
 
   const reviewDisabledReason = !canReviewRole
     ? 'Only supervisors and admins can create review feedback.'
