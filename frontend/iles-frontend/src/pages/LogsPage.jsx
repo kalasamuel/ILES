@@ -4,6 +4,7 @@ import { FiFileText } from 'react-icons/fi';
 import { logbooksAPI, reviewsAPI } from '../services/endpoints';
 import WeeklyLogForm from './WeeklyLogForm';
 import { useAuth } from '../context/AuthContext';
+import ReviewCreateForm from '../components/reviews/ReviewCreateForm';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './LogsPage.css';
 
@@ -142,8 +143,7 @@ function LogDetails() {
   const [log, setLog] = useState(null);
   const [reviews, setReviews] = useState([]);
   const { user } = useAuth();
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewPayload, setReviewPayload] = useState({ comments: '', rating: 5, status: 'approved' });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -167,6 +167,32 @@ function LogDetails() {
       return String(reviewLogId) === String(id);
     })
     .sort((left, right) => new Date(right.reviewed_at || 0).getTime() - new Date(left.reviewed_at || 0).getTime());
+
+  const roleName = String(user?.role?.role_name || '').toLowerCase();
+  const canReviewRole = roleName.includes('supervisor') || roleName === 'admin';
+  const canCreateReview = canReviewRole && String(log.status || '').toLowerCase() === 'submitted';
+
+  const reviewDisabledReason = !canReviewRole
+    ? 'Only supervisors and admins can create review feedback.'
+    : 'Reviews can only be created when the log status is Submitted.';
+
+  const handleCreateReview = async (payload) => {
+    try {
+      setSubmittingReview(true);
+      await reviewsAPI.createReview({ ...payload, log: log.log_id });
+      const [refreshedReviews, refreshedLog] = await Promise.all([
+        reviewsAPI.getReviews(),
+        logbooksAPI.getLog(id),
+      ]);
+      setReviews(refreshedReviews.results || refreshedReviews || []);
+      setLog(refreshedLog);
+    } catch (err) {
+      console.error('Failed to submit review', err);
+      alert('Failed to submit review. You may not have permission to review this log.');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   if (!log) return <LoadingSpinner text="Loading log details…" fullscreen />;
 
@@ -229,58 +255,13 @@ function LogDetails() {
               </div>
             )}
 
-            {/* Add review form for supervisors/admins */}
-            {(user && (user.role?.role_name?.toLowerCase().includes('supervisor') || user.role?.role_name?.toLowerCase() === 'admin')) && (
-              <div style={{ marginTop: '0.75rem' }}>
-                <button className="lp-btn-primary" onClick={() => setShowReviewForm((s) => !s)}>
-                  {showReviewForm ? 'Cancel' : 'Add Feedback'}
-                </button>
-
-                {showReviewForm && (
-                  <div style={{ marginTop: '0.75rem', padding: '1rem', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <label style={{ minWidth: 80 }}>Rating</label>
-                      <select value={reviewPayload.rating} onChange={(e) => setReviewPayload((p) => ({ ...p, rating: Number(e.target.value) }))}>
-                        {[5,4,3,2,1].map((n) => <option key={n} value={n}>{n} ⭐</option>)}
-                      </select>
-                    </div>
-                    <div style={{ marginTop: '0.5rem' }}>
-                      <label>Comments</label>
-                      <textarea value={reviewPayload.comments} onChange={(e) => setReviewPayload((p) => ({ ...p, comments: e.target.value }))} rows={4} style={{ width: '100%', marginTop: '0.25rem' }} />
-                    </div>
-                    <div style={{ marginTop: '0.5rem' }}>
-                      <label>Status</label>
-                      <select value={reviewPayload.status} onChange={(e) => setReviewPayload((p) => ({ ...p, status: e.target.value }))} style={{ marginLeft: '0.5rem' }}>
-                        <option value="approved">Approved</option>
-                        <option value="needs_revision">Needs Revision</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
-                    </div>
-                    <div style={{ marginTop: '0.75rem' }}>
-                      <button
-                        className="lp-btn-primary"
-                        onClick={async () => {
-                          try {
-                            const payload = { ...reviewPayload, log: log.log_id };
-                            await reviewsAPI.createReview(payload);
-                            const refreshed = await reviewsAPI.getReviews();
-                            setReviews(refreshed.results || refreshed || []);
-                            const refreshedLog = await logbooksAPI.getLog(id);
-                            setLog(refreshedLog);
-                            setShowReviewForm(false);
-                            setReviewPayload({ comments: '', rating: 5, status: 'approved' });
-                          } catch (err) {
-                            console.error('Failed to submit review', err);
-                            alert('Failed to submit review. You may not have permission to review this log.');
-                          }
-                        }}
-                      >
-                        Submit Feedback
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+            {user && (
+              <ReviewCreateForm
+                canCreate={canCreateReview}
+                disabledReason={reviewDisabledReason}
+                submitting={submittingReview}
+                onSubmit={handleCreateReview}
+              />
             )}
           </div>
         </div>

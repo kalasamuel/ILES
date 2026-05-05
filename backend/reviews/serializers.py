@@ -11,6 +11,7 @@ class LogReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = LogReview
         fields = '__all__'
+        read_only_fields = ['review_id', 'supervisor', 'reviewed_at']
 
 
 class WorkflowHistorySerializer(serializers.ModelSerializer):
