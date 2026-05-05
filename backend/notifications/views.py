@@ -2,9 +2,9 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Notification, Deadline
+from .models import Notification, Deadline, LoginHistory
 from .serializers import NotificationSerializer, DeadlineSerializer
-from .serializers import PushSubscriptionSerializer
+from .serializers import PushSubscriptionSerializer, LoginHistorySerializer
 from .models import PushSubscription
 from accounts.models import User
 from logbooks.models import WeeklyLog
@@ -214,4 +214,23 @@ class PushSubscriptionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+class LoginHistoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """View login history for the current user."""
+    queryset = LoginHistory.objects.all()
+    serializer_class = LoginHistorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Return login history for the current user, ordered by most recent first."""
+        return self.queryset.filter(user=self.request.user).order_by('-logged_in_at')
+
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """Get the 10 most recent login events for the current user."""
+        logins = self.get_queryset()[:10]
+        serializer = self.get_serializer(logins, many=True)
+        return Response(serializer.data)
+
 

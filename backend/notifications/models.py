@@ -18,6 +18,7 @@ class Notification(models.Model):
         ('pending_updates', 'Pending Updates'),
         ('system_alert', 'System Alert'),
         ('new_company_added', 'New Company Added'),
+        ('login_alert', 'Login Alert'),
     ]
 
     notification_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -62,3 +63,30 @@ class PushSubscription(models.Model):
 
     def __str__(self):
         return f"PushSubscription for {self.user.email} -> {self.endpoint[:60]}"
+
+
+class LoginHistory(models.Model):
+    """Tracks user login events with device and location information."""
+    login_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='login_history')
+    ip_address = models.GenericIPAddressField()
+    device_name = models.CharField(max_length=255)
+    device_type = models.CharField(max_length=50, blank=True)  # e.g., 'mobile', 'tablet', 'desktop'
+    browser = models.CharField(max_length=100, blank=True)
+    operating_system = models.CharField(max_length=100, blank=True)
+    location = models.CharField(max_length=255, blank=True)  # e.g., 'New York, US' or 'Unknown'
+    country = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    user_agent = models.TextField()
+    logged_in_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-logged_in_at']
+        indexes = [
+            models.Index(fields=['user', '-logged_in_at']),
+        ]
+
+    def __str__(self):
+        return f"Login by {self.user.email} from {self.device_name} ({self.location}) on {self.logged_in_at}"

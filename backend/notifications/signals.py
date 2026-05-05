@@ -33,6 +33,9 @@ def _can_email_notification(notification):
     if notification_type == 'weekly_summary' and not user_settings.weekly_summary:
         return False
 
+    if notification_type == 'login_alert' and not user_settings.login_alerts:
+        return False
+
     return True
 
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Notification, Deadline
-from .models import PushSubscription
+from .models import PushSubscription, LoginHistory
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -68,3 +68,21 @@ class PushSubscriptionSerializer(serializers.ModelSerializer):
         model = PushSubscription
         fields = ('subscription_id', 'endpoint', 'p256dh', 'auth', 'created_at')
         read_only_fields = ('subscription_id', 'created_at')
+
+
+class LoginHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoginHistory
+        fields = (
+            'login_id',
+            'device_name',
+            'device_type',
+            'browser',
+            'operating_system',
+            'location',
+            'country',
+            'city',
+            'ip_address',
+            'logged_in_at',
+        )
+        read_only_fields = fields
