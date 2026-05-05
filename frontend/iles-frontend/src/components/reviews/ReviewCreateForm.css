@@ -1,0 +1,64 @@
+.rcf-wrap {
+  margin-top: 0.75rem;
+}
+
+.rcf-card {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: linear-gradient(180deg, #ffffff 0%, #fffbf5 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rcf-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rcf-row label,
+.rcf-col label {
+  min-width: 82px;
+  font-weight: 600;
+  color: #7c2d12;
+}
+
+.rcf-row select,
+.rcf-col textarea {
+  width: 100%;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  background: #fff;
+}
+
+.rcf-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.rcf-note {
+  margin-top: 0.75rem;
+  border: 1px dashed #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 700px) {
+  .rcf-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rcf-row label,
+  .rcf-col label {
+    min-width: auto;
+  }
+}

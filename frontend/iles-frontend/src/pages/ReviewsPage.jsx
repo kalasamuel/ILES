@@ -137,7 +137,7 @@ function ReviewsPage() {
                     <tr key={rv.review_id || idx}>
                       <td>{idx + 1}</td>
                       <td><strong>Week {rv.log_details?.week_number ?? rv.log}</strong></td>
-                      <td>{rv.reviewer_details?.first_name || `Reviewer #${rv.reviewer}`}</td>
+                      <td>{rv.supervisor_details?.first_name || `Supervisor #${rv.supervisor || 'N/A'}`}</td>
                       <td>
                         <span className={`rv-status ${rv.status || 'pending'}`}>
                           {rv.status?.replace('_', ' ') || 'Pending'}
