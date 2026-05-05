@@ -125,8 +125,6 @@ class WeeklyLogViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(placement__workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
-            if supervisor.department:
-                return self.queryset.filter(placement__student__user__department=supervisor.department)
             return self.queryset.filter(placement__academic_supervisor=supervisor)
 
         return WeeklyLog.objects.none()

@@ -76,14 +76,10 @@ class LogReviewViewSet(viewsets.ModelViewSet):
             return LogReview.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
-            if supervisor.organization_id:
-                return self.queryset.filter(log__placement__organization=supervisor.organization)
             return self.queryset.filter(supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
-            if supervisor.department:
-                return self.queryset.filter(log__placement__student__user__department=supervisor.department)
-            return self.queryset.filter(log__placement__academic_supervisor=supervisor)
+            return self.queryset.filter(supervisor=supervisor)
 
         return LogReview.objects.none()
 
