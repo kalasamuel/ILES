@@ -75,8 +75,8 @@ class LoginHistory(models.Model):
     browser = models.CharField(max_length=100, blank=True)
     operating_system = models.CharField(max_length=100, blank=True)
     location = models.CharField(max_length=255, blank=True)  # e.g., 'New York, US' or 'Unknown'
-    country = models.CharField(max_length=100, blank=True)
-    city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     user_agent = models.TextField()
