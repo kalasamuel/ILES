@@ -17,13 +17,8 @@ from django.conf import settings
 from django.utils.crypto import get_random_string
 from django.core.cache import cache
 from organizations.models import Organization
-
-
-def _get_client_ip(request):
-    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if forwarded_for:
-        return forwarded_for.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', 'unknown')
+from notifications.models import Notification, LoginHistory
+from notifications.utils import extract_device_info, get_location_from_ip, get_client_ip
 
 
 def _is_rate_limited(key, limit, ttl_seconds):
@@ -186,6 +181,50 @@ class UserViewSet(viewsets.ModelViewSet):
         password = request.data.get('password')
         user = authenticate(request, username=email, password=password)
         if user:
+            # Extract device and location information
+            user_agent = request.META.get('HTTP_USER_AGENT', '')
+            ip_address = get_client_ip(request)
+            device_info = extract_device_info(user_agent)
+            location_info = get_location_from_ip(ip_address)
+            
+            # Create LoginHistory record
+            try:
+                login_history = LoginHistory.objects.create(
+                    user=user,
+                    ip_address=ip_address,
+                    device_name=device_info['device_name'],
+                    device_type=device_info['device_type'],
+                    browser=device_info['browser'],
+                    operating_system=device_info['operating_system'],
+                    location=location_info['location'],
+                    country=location_info['country'],
+                    city=location_info['city'],
+                    latitude=location_info['latitude'],
+                    longitude=location_info['longitude'],
+                    user_agent=user_agent,
+                )
+                
+                # Create in-app notification
+                notification_message = f"New login detected on {device_info['device_name']} from {location_info['location']}"
+                Notification.objects.create(
+                    user=user,
+                    notification_type='login_alert',
+                    message=notification_message,
+                    details={
+                        'device_name': device_info['device_name'],
+                        'device_type': device_info['device_type'],
+                        'browser': device_info['browser'],
+                        'operating_system': device_info['operating_system'],
+                        'location': location_info['location'],
+                        'country': location_info['country'],
+                        'city': location_info['city'],
+                        'ip_address': ip_address,
+                    }
+                )
+            except Exception as e:
+                # Don't fail login if notification creation fails
+                pass
+            
             refresh = RefreshToken.for_user(user)
             return Response({
                 'refresh': str(refresh),
@@ -197,7 +236,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[])
     def register(self, request):
         # Basic IP-based throttle for unauthenticated registration attempts.
-        ip = _get_client_ip(request)
+        ip = get_client_ip(request)
         register_key = f"rate_limit:register:{ip}"
         if _is_rate_limited(register_key, limit=10, ttl_seconds=60):
             return Response(
@@ -226,7 +265,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'results': []})
 
         # IP-based throttle to reduce organization enumeration risk.
-        ip = _get_client_ip(request)
+        ip = get_client_ip(request)
         lookup_key = f"rate_limit:org_lookup:{ip}"
         if _is_rate_limited(lookup_key, limit=60, ttl_seconds=60):
             return Response(

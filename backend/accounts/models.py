@@ -103,6 +103,7 @@ class UserSettings(models.Model):
     log_reminders = models.BooleanField(default=True)
     review_alerts = models.BooleanField(default=True)
     weekly_summary = models.BooleanField(default=False)
+    login_alerts = models.BooleanField(default=True)
     profile_visible = models.BooleanField(default=True)
     show_email = models.BooleanField(default=False)
     show_phone = models.BooleanField(default=False)
