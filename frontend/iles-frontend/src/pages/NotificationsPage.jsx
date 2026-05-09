@@ -153,49 +153,20 @@ function NotificationsPage() {
     <div style={{ padding: '2rem', maxWidth: '980px', margin: '0 auto' }}>
 
       {/* ── Back Button ── */}
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          marginBottom: '1.5rem',
-          background: 'transparent',
-          border: '1.5px solid #e4ddd5',
-          borderRadius: '999px',
-          padding: '0.4rem 1rem 0.4rem 0.5rem',
-          cursor: 'pointer',
-          fontSize: '0.82rem',
-          fontWeight: '500',
-          color: '#6b5f55',
-          transition: 'all 220ms ease',
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = '#f5f2ee';
-          e.currentTarget.style.borderColor = '#c9bfb3';
-          e.currentTarget.style.color = '#1c1916';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.borderColor = '#e4ddd5';
-          e.currentTarget.style.color = '#6b5f55';
-        }}
-      >
-        <span style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '24px',
-          height: '24px',
-          borderRadius: '50%',
-          background: '#1c1916',
-          color: '#fff',
-          flexShrink: 0,
-        }}>
-          <FiArrowLeft size={13} />
-        </span>
-        Back
-      </button>
+      <div className="notif-back-container">
+        <button onClick={() => navigate(-1)} className="notif-back-btn">
+          <div className="notif-back-left">
+            <div className="back-arrow-circle">
+              <FiArrowLeft size={15} />
+            </div>
+            <div className="back-btn-text">
+              <span className="back-btn-label">Go Back</span>
+              <span className="back-btn-sub">Return to previous page</span>
+            </div>
+          </div>
+          <span className="back-btn-badge">Back</span>
+        </button>
+      </div>
 
       {/* ── Page Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
