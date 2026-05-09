@@ -123,7 +123,10 @@ function LogList() {
                       {log.activities_performed || <span style={{ color: '#9ca3af' }}>—</span>}
                     </td>
                     <td>
-                      <Link to={String(log.log_id)} className="lp-link-btn">View →</Link>
+                      <Link to={String(log.log_id)} className="lp-view-btn">
+                        <FiFileText size={13} />
+                        View
+                      </Link>
                     </td>
                   </tr>
                 ))
