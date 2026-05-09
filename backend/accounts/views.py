@@ -26,6 +26,40 @@ from notifications.utils import extract_device_info, get_location_from_ip, get_c
 logger = logging.getLogger(__name__)
 
 
+def _send_login_alert_email(user, device_info, location_info):
+    recipient = (user.email or '').strip()
+    if not recipient:
+        return
+
+    sender = settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL
+    subject = 'New ILES Login Alert'
+    frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+    notifications_url = f'{frontend_url}/app/notifications'
+    message = (
+        f'Hello {user.first_name},\n\n'
+        'A new sign-in to your ILES account was detected.\n\n'
+        f"Device: {device_info['device_name']}\n"
+        f"Browser: {device_info['browser']}\n"
+        f"Operating system: {device_info['operating_system']}\n"
+        f"Location: {location_info['location']}\n"
+        f"IP address: {location_info.get('ip_address') or 'Unknown'}\n\n"
+        f'View your notifications here: {notifications_url}\n\n'
+        'If this was not you, please change your password immediately.\n\n'
+        '— ILES Support Team'
+    )
+
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=sender,
+            recipient_list=[recipient],
+            fail_silently=False,
+        )
+    except Exception:
+        logger.exception('Failed to send login alert email to %s for user %s', recipient, user.user_id)
+
+
 def _is_rate_limited(key, limit, ttl_seconds):
     current = cache.get(key)
     if current is None:
@@ -227,6 +261,11 @@ class UserViewSet(viewsets.ModelViewSet):
                         'city': location_info['city'],
                         'ip_address': ip_address,
                     }
+                )
+                _send_login_alert_email(
+                    user,
+                    device_info,
+                    {**location_info, 'ip_address': ip_address},
                 )
             except Exception:
                 logger.exception('Failed to create login alert notification for user %s', user.user_id)
