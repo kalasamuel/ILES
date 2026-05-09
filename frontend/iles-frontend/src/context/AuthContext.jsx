@@ -7,10 +7,7 @@ const AuthContext = createContext(undefined);
 const REMEMBER_ME_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 const DEFAULT_SESSION_MS      =      2 * 60 * 60 * 1000;  //  2 hours  (no remember-me)
 
-/**
- * Check whether the stored session has expired.
- * Returns true if the session is still valid, false if it has expired.
- */
+
 const isSessionValid = () => {
   const loginTime   = localStorage.getItem('loginTime');
   const rememberMe  = localStorage.getItem('rememberMe') === 'true';
