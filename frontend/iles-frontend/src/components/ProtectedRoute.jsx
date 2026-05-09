@@ -10,7 +10,17 @@ function normalizeRole(rawRole) {
 }
 
 function ProtectedRoute({ children, allowedRoles = null }) {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  let user, isAuthenticated, isLoading;
+  try {
+    ({ user, isAuthenticated, isLoading } = useAuth());
+  } catch (err) {
+    // If the hook is used outside the provider during a transient render (HMR, race),
+    // avoid crashing the whole app — show a loading state and allow the provider to mount.
+    // This keeps UX stable while debugging authentication mounting issues.
+    // eslint-disable-next-line no-console
+    console.warn('useAuth threw an error in ProtectedRoute (likely transient):', err.message || err);
+    return <div>Loading...</div>;
+  }
 
   if (isLoading) {
     return <div>Loading...</div>;

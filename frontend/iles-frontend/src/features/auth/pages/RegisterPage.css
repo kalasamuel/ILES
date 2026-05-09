@@ -755,6 +755,84 @@ body {
   background: var(--gray-200);
 }
 
+.verify-btn {
+  margin-top: 8px;
+}
+
+.form-group label .verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  vertical-align: middle;
+}
+
+.form-group label .verified-badge svg {
+  fill: currentColor;
+}
+
+.change-email-btn {
+  margin-top: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--orange-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.change-email-btn:hover {
+  text-decoration: underline;
+}
+
+.verification-timer {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--orange-dark);
+  font-weight: 600;
+}
+
+.verification-expired {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.verification-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.verification-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.16);
+}
+
 .register-links a,
 .register-links span {
   font-size: 0.825rem;

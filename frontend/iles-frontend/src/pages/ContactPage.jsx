@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiInfo, FiMail, FiPhone } from 'react-icons/fi';
+import { FiInfo, FiMail, FiPhone, FiCheck } from 'react-icons/fi';
 import { contactAPI } from '../services/endpoints';
 import './ContactPage.css';
 
@@ -79,7 +79,7 @@ function ContactPage() {
           <h2>Send us a Message!</h2>
           {success ? (
             <div className="cf-success">
-              ✓ <strong>Success!</strong> Your message has been sent! We will get back to you shortly.
+              <FiCheck aria-hidden="true" /> <strong>Success!</strong> Your message has been sent! We will get back to you shortly.
             </div>
           ) : (
             <form className="cf-form" onSubmit={handleSubmit}>

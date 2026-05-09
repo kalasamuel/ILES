@@ -22,6 +22,13 @@ export const authAPI = {
     });
     return response.data;
   },
+  verifyInstitutionVerificationCode: async (institutionEmail, verificationCode) => {
+    const response = await api.post('/accounts/users/verify-institution-verification-code/', {
+      institution_email: institutionEmail,
+      institution_verification_code: verificationCode,
+    });
+    return response.data;
+  },
   forgotPassword: async (email) => {
     const response = await api.post('/accounts/users/forgot-password/', { email });
     return response.data;

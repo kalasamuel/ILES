@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { rolesAPI, usersAPI } from '../services/endpoints';
+import { FiXCircle } from 'react-icons/fi';
 import './AdminUsersPage.css';
 
 const ROLE_PERMISSIONS = {
@@ -232,7 +233,7 @@ function AdminUsersPage() {
                 className="admin-link-button"
                 onClick={() => setSelectedUser(null)}
               >
-                ✕ Close
+                <FiXCircle aria-hidden="true" /> Close
               </button>
             </div>
 

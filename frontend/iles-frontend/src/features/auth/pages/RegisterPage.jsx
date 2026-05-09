@@ -5,6 +5,8 @@ import { useAuth } from '../../../hooks/AuthContext';
 import './RegisterPage.css';
 
 function RegisterPage() {
+  const CODE_EXPIRY_SECONDS = 10 * 60;
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -25,6 +27,10 @@ function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+  const [codeExpiresAt, setCodeExpiresAt] = useState(null);
+  const [codeTimeLeft, setCodeTimeLeft] = useState(0);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [isInstitutionVerified, setIsInstitutionVerified] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -42,10 +48,16 @@ function RegisterPage() {
           next.institutionEmail = '';
           next.institutionVerificationCode = '';
           setCodeSent(false);
+          setCodeExpiresAt(null);
+          setIsInstitutionVerified(false);
         } else {
           next.organizationName = '';
           next.organizationId = '';
         }
+      }
+
+      if (event.target.name === 'institutionEmail' || event.target.name === 'institutionVerificationCode') {
+        setIsInstitutionVerified(false);
       }
 
       return next;
@@ -69,13 +81,38 @@ function RegisterPage() {
       try {
         const res = await authAPI.getOrganizationSuggestions(query);
         setOrganizationResults(res?.results || []);
-      } catch (e) {
+      } catch {
         setOrganizationResults([]);
       }
     }, 250);
 
     return () => window.clearTimeout(timer);
   }, [formData.role, formData.organizationName]);
+
+  useEffect(() => {
+    if (!codeExpiresAt) {
+      setCodeTimeLeft(0);
+      return;
+    }
+
+    const tick = () => {
+      const secondsLeft = Math.max(0, Math.ceil((codeExpiresAt - Date.now()) / 1000));
+      setCodeTimeLeft(secondsLeft);
+      if (secondsLeft === 0) {
+        setCodeSent(false);
+      }
+    };
+
+    tick();
+    const interval = window.setInterval(tick, 1000);
+    return () => window.clearInterval(interval);
+  }, [codeExpiresAt]);
+
+  const formatCountdown = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
 
   const handleOrganizationSelect = (org) => {
     setFormData((current) => ({
@@ -100,9 +137,15 @@ function RegisterPage() {
     try {
       await authAPI.sendInstitutionVerificationCode(institutionEmail);
       setCodeSent(true);
+      setCodeExpiresAt(Date.now() + (CODE_EXPIRY_SECONDS * 1000));
+      setIsInstitutionVerified(false);
       setSuccess('Verification code sent to institution email.');
     } catch (err) {
       const apiError = err?.response?.data;
+      // Debug: log full API error to console for easier inspection
+      // (helps diagnose 400 responses shown in browser network tab)
+      // eslint-disable-next-line no-console
+      console.debug('sendInstitutionVerificationCode error:', err?.response || err);
       if (typeof apiError === 'string') {
         setError(apiError);
       } else {
@@ -111,6 +154,59 @@ function RegisterPage() {
     } finally {
       setIsSendingCode(false);
     }
+  };
+
+  const handleVerifyInstitutionCode = async () => {
+    setError('');
+    setSuccess('');
+
+    const institutionEmail = (formData.institutionEmail || '').trim();
+    const verificationCode = (formData.institutionVerificationCode || '').trim();
+
+    if (!institutionEmail) {
+      setError('Please enter institution email first.');
+      return;
+    }
+
+    if (!verificationCode) {
+      setError('Please enter the verification code.');
+      return;
+    }
+
+    if (codeTimeLeft === 0) {
+      setError('Institution verification code expired. Please resend a new code.');
+      return;
+    }
+
+    setIsVerifyingCode(true);
+    try {
+      await authAPI.verifyInstitutionVerificationCode(institutionEmail, verificationCode);
+      setIsInstitutionVerified(true);
+      setSuccess('Institution email verified successfully.');
+    } catch (err) {
+      const apiError = err?.response?.data;
+      // eslint-disable-next-line no-console
+      console.debug('verifyInstitutionVerificationCode error:', err?.response || err);
+      setIsInstitutionVerified(false);
+      if (typeof apiError === 'string') {
+        setError(apiError);
+      } else {
+        setError(apiError?.error || 'Failed to verify institution code.');
+      }
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  };
+
+  const handleChangeInstitutionEmail = () => {
+    setIsInstitutionVerified(false);
+    setCodeSent(false);
+    setCodeExpiresAt(null);
+    setFormData((current) => ({
+      ...current,
+      institutionVerificationCode: '',
+    }));
+    setSuccess('Institution email unlocked. Update it and send a new code.');
   };
 
   const handleSubmit = async (event) => {
@@ -143,6 +239,16 @@ function RegisterPage() {
       return;
     }
 
+    if ((formData.role === 'student' || formData.role === 'academic_supervisor') && codeTimeLeft === 0) {
+      setError('Institution verification code expired. Please resend a new code.');
+      return;
+    }
+
+    if ((formData.role === 'student' || formData.role === 'academic_supervisor') && !isInstitutionVerified) {
+      setError('Please verify your institution email before registering.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -171,6 +277,8 @@ function RegisterPage() {
       navigate('/app/dashboard');
     } catch (err) {
       const apiError = err?.response?.data;
+      // eslint-disable-next-line no-console
+      console.debug('register error response:', err?.response || err);
       if (typeof apiError === 'string') {
         setError(apiError);
       } else if (apiError?.email?.length) {
@@ -321,7 +429,17 @@ function RegisterPage() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="institutionEmail">Institution Email</label>
+                    <label htmlFor="institutionEmail">
+                      Institution Email
+                      {isInstitutionVerified && (
+                        <span className="verified-badge">
+                          <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
+                            <path d="M7 10V8a5 5 0 1 1 10 0v2h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1zm2 0h6V8a3 3 0 1 0-6 0v2z" />
+                          </svg>
+                          Verified
+                        </span>
+                      )}
+                    </label>
                     <div className="verification-row">
                       <input
                         type="email"
@@ -329,6 +447,7 @@ function RegisterPage() {
                         name="institutionEmail"
                         value={formData.institutionEmail}
                         onChange={handleChange}
+                        disabled={isInstitutionVerified}
                         required
                         className="no-icon"
                         placeholder="you@institution.edu"
@@ -337,26 +456,56 @@ function RegisterPage() {
                         type="button"
                         className="btn btn-secondary"
                         onClick={handleSendInstitutionCode}
-                        disabled={isSendingCode}
+                        disabled={isSendingCode || isInstitutionVerified}
                       >
                         {isSendingCode ? 'Sending...' : (codeSent ? 'Resend Code' : 'Send Code')}
                       </button>
                     </div>
+                    {isInstitutionVerified && (
+                      <button
+                        type="button"
+                        className="change-email-btn"
+                        onClick={handleChangeInstitutionEmail}
+                      >
+                        Change Email
+                      </button>
+                    )}
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="institutionVerificationCode">Verification Code</label>
-                    <input
-                      type="text"
-                      id="institutionVerificationCode"
-                      name="institutionVerificationCode"
-                      value={formData.institutionVerificationCode}
-                      onChange={handleChange}
-                      required
-                      className="no-icon"
-                      placeholder="Enter 6-digit code"
-                    />
-                  </div>
+                  {isInstitutionVerified ? (
+                    <div className="verification-status-row" role="status" aria-live="polite">
+                      <span className="verification-status-dot" aria-hidden="true" />
+                      Institution email verified. You can continue registration.
+                    </div>
+                  ) : (
+                    <div className="form-group">
+                      <label htmlFor="institutionVerificationCode">Verification Code</label>
+                      <input
+                        type="text"
+                        id="institutionVerificationCode"
+                        name="institutionVerificationCode"
+                        value={formData.institutionVerificationCode}
+                        onChange={handleChange}
+                        required
+                        className="no-icon"
+                        placeholder="Enter 6-digit code"
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-secondary verify-btn"
+                        onClick={handleVerifyInstitutionCode}
+                        disabled={isVerifyingCode || !codeSent || codeTimeLeft === 0}
+                      >
+                        {isVerifyingCode ? 'Verifying...' : 'Verify Code'}
+                      </button>
+                      {codeSent && codeTimeLeft > 0 && (
+                        <small className="verification-timer">Code expires in {formatCountdown(codeTimeLeft)}</small>
+                      )}
+                      {!codeSent && codeExpiresAt && codeTimeLeft === 0 && (
+                        <small className="verification-expired">Code expired. Click Send Code to get a new one.</small>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiCalendar, FiEye, FiXCircle, FiCheck, FiMessageCircle, FiHeart, FiMonitor, FiClock, FiAlertCircle, FiBriefcase, FiFileText, FiBell, FiSearch, FiTrash2, FiStar, FiBook, FiSettings } from 'react-icons/fi';
 import { notificationsAPI } from '../services/endpoints';
 import { useAuth } from '../hooks/AuthContext';
 import './NotificationsPage.css';
@@ -77,18 +77,18 @@ function NotificationsPage() {
 
   const getTypeIcon = (type) => {
     switch(type) {
-      case 'submission_deadline': return '📅';
-      case 'log_review_pending': return '👀';
-      case 'placement_rejected': return '❌';
-      case 'evaluation_completed': return '✅';
-      case 'feedback_added': return '💬';
-      case 'log_submitted': return '📝';
-      case 'system_health_update': return '❤️';
-      case 'server_status_update': return '🖥️';
-      case 'pending_updates': return '⏳';
-      case 'system_alert': return '🚨';
-      case 'new_company_added': return '🏢';
-      default: return '🔔';
+      case 'submission_deadline': return <FiCalendar aria-hidden="true" />;
+      case 'log_review_pending': return <FiEye aria-hidden="true" />;
+      case 'placement_rejected': return <FiXCircle aria-hidden="true" />;
+      case 'evaluation_completed': return <FiCheck aria-hidden="true" />;
+      case 'feedback_added': return <FiMessageCircle aria-hidden="true" />;
+      case 'log_submitted': return <FiFileText aria-hidden="true" />;
+      case 'system_health_update': return <FiHeart aria-hidden="true" />;
+      case 'server_status_update': return <FiMonitor aria-hidden="true" />;
+      case 'pending_updates': return <FiClock aria-hidden="true" />;
+      case 'system_alert': return <FiAlertCircle aria-hidden="true" />;
+      case 'new_company_added': return <FiBriefcase aria-hidden="true" />;
+      default: return <FiBell aria-hidden="true" />;
     }
   };
 
@@ -178,7 +178,7 @@ function NotificationsPage() {
             className="btn-mark-all"
             title="Mark all notifications as read"
           >
-            ✓ Mark all as read
+            <FiCheck aria-hidden="true" /> Mark all as read
           </button>
         )}
       </div>
@@ -231,7 +231,7 @@ function NotificationsPage() {
               className="btn-close-details"
               title="Close details panel"
             >
-              ✕
+              <FiXCircle aria-hidden="true" />
             </button>
           </div>
           <p className="notification-details-message">
@@ -262,7 +262,7 @@ function NotificationsPage() {
       {/* Notifications List */}
       {!loading && filteredNotifications.length === 0 ? (
         <div className="notifications-empty">
-          <span className="empty-icon">🔔</span>
+          <span className="empty-icon"><FiBell size={48} aria-hidden="true" /></span>
           <p className="empty-text">No notifications to show</p>
         </div>
       ) : (
@@ -412,16 +412,16 @@ function NotificationCard({
           {/* Action Buttons */}
           <div className="notification-actions">
             {!notification.is_read && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMarkAsRead(notification.notification_id);
-                }}
-                className="btn-action btn-mark-read"
-                title="Mark this notification as read"
-              >
-                ✓ Mark as read
-              </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMarkAsRead(notification.notification_id);
+                    }}
+                    className="btn-action btn-mark-read"
+                    title="Mark this notification as read"
+                  >
+                    <FiCheck aria-hidden="true" /> Mark as read
+                  </button>
             )}
 
             {notification.notification_type === 'feedback_added' &&
@@ -438,8 +438,8 @@ function NotificationCard({
                     '--btn-color': getTypeColor(notification.notification_type),
                   }}
                   title="View feedback on log"
-                >
-                  💬 View Feedback
+                  >
+                  <FiMessageCircle aria-hidden="true" /> View Feedback
                 </button>
               )}
 
@@ -456,7 +456,7 @@ function NotificationCard({
                   }}
                   title="Review submitted log"
                 >
-                  📝 Review Log
+                  <FiFileText aria-hidden="true" /> Review Log
                 </button>
               )}
 
@@ -471,9 +471,9 @@ function NotificationCard({
                   '--btn-color': getTypeColor(notification.notification_type),
                 }}
                 title="View full notification details"
-              >
-                🔍 Details
-              </button>
+                >
+                <FiSearch aria-hidden="true" /> Details
+                </button>
             )}
 
             <button
@@ -484,7 +484,7 @@ function NotificationCard({
               className="btn-action btn-delete"
               title="Delete this notification"
             >
-              🗑 Delete
+              <FiTrash2 aria-hidden="true" /> Delete
             </button>
           </div>
         </div>
@@ -498,7 +498,7 @@ function FeedbackDetailsBox({ details, typeColor }) {
   return (
     <div className="notification-detail-box" style={{ '--type-color': typeColor }}>
       <div className="detail-box-header">
-        <span className="detail-box-title">💬 Feedback from Supervisor</span>
+        <span className="detail-box-title"><FiMessageCircle aria-hidden="true" /> Feedback from Supervisor</span>
       </div>
       <div className="detail-box-content">
         <div className="detail-row-inline">
@@ -522,7 +522,9 @@ function FeedbackDetailsBox({ details, typeColor }) {
           <div className="detail-row-inline">
             <span className="detail-label">Rating:</span>
             <span className="detail-value detail-rating">
-              {'⭐'.repeat(Math.round(details.rating))} ({details.rating}/5)
+              {Array.from({ length: Math.round(details.rating || 0) }).map((_, i) => (
+                <FiStar key={i} aria-hidden="true" />
+              ))} ({details.rating}/5)
             </span>
           </div>
         )}
@@ -537,7 +539,7 @@ function LogSubmissionDetailsBox({ details, typeColor }) {
   return (
     <div className="notification-detail-box" style={{ '--type-color': typeColor }}>
       <div className="detail-box-header">
-        <span className="detail-box-title">📚 Log Submission</span>
+        <span className="detail-box-title"><FiBook aria-hidden="true" /> Log Submission</span>
       </div>
       <div className="detail-box-content">
         <div className="detail-student-info">
@@ -584,7 +586,7 @@ function AdminDetailsBox({ typeColor }) {
       style={{ '--type-color': typeColor }}
     >
       <div className="detail-box-header">
-        <span className="detail-box-title">🔧 System Information</span>
+        <span className="detail-box-title"><FiSettings aria-hidden="true" /> System Information</span>
       </div>
       <p className="detail-hint">← Click card to view full system details</p>
     </div>

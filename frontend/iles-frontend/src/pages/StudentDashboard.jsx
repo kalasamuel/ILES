@@ -74,6 +74,10 @@ const StudentDashboard = () => {
           notificationsAPI.getNotifications(),
         ]);
 
+        // Debug: inspect raw API responses when student dashboard shows no data
+        // eslint-disable-next-line no-console
+        console.debug('StudentDashboard raw responses', { placementsRes, logsRes, reviewsRes, notificationsRes });
+
         let placementsData = placementsRes?.results || placementsRes || [];
         let logsData = logsRes?.results || logsRes || [];
         let reviewsData = reviewsRes?.results || reviewsRes || [];
@@ -85,6 +89,10 @@ const StudentDashboard = () => {
         } catch (ctxError) {
           console.warn('Failed to load dashboard context:', ctxError);
         }
+
+        // Debug: show dashboard context
+        // eslint-disable-next-line no-console
+        console.debug('StudentDashboard context', context);
 
         const shouldBootstrap =
           !bootstrapAttemptedRef.current &&
@@ -115,6 +123,31 @@ const StudentDashboard = () => {
             console.warn('Student bootstrap failed:', bootstrapError);
           }
         }
+
+          // Fallback bootstrap if we still have no key data
+          const noKeyData = (placementsData?.length || 0) + (logsData?.length || 0) + (reviewsData?.length || 0) === 0;
+          if (!bootstrapAttemptedRef.current && context && String(context.role_name || '').toLowerCase().includes('student') && noKeyData) {
+            try {
+              // eslint-disable-next-line no-console
+              console.info('StudentDashboard: attempting fallback bootstrap due to empty data');
+              await dashboardsAPI.bootstrapMyStudentData();
+              bootstrapAttemptedRef.current = true;
+
+              const [p2, l2, r2, n2] = await Promise.all([
+                placementsAPI.getPlacements(),
+                logbooksAPI.getLogs(),
+                reviewsAPI.getReviews(),
+                notificationsAPI.getNotifications(),
+              ]);
+
+              placementsData = p2?.results || p2 || [];
+              logsData = l2?.results || l2 || [];
+              reviewsData = r2?.results || r2 || [];
+              notificationsData = n2?.results || n2 || [];
+            } catch (fallbackError) {
+              console.warn('Student fallback bootstrap failed:', fallbackError);
+            }
+          }
 
         setPlacements(placementsData);
         setLogs(logsData);

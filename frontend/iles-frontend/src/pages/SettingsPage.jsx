@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/AuthContext';
+import { FiUser, FiLock, FiBell, FiShield } from 'react-icons/fi';
 import { departmentsAPI, usersAPI, notificationsAPI } from '../services/endpoints';
 import './SettingsPage.css';
 
@@ -351,10 +352,10 @@ const SettingsPage = () => {
   };
 
   const tabs = [
-    { id: 'profile',       label: 'Profile',       icon: '👤' },
-    { id: 'password',      label: 'Password',       icon: '🔒' },
-    { id: 'notifications', label: 'Notifications',  icon: '🔔' },
-    { id: 'privacy',       label: 'Privacy',        icon: '🛡️' },
+    { id: 'profile',       label: 'Profile',       icon: <FiUser aria-hidden="true" /> },
+    { id: 'password',      label: 'Password',      icon: <FiLock aria-hidden="true" /> },
+    { id: 'notifications', label: 'Notifications', icon: <FiBell aria-hidden="true" /> },
+    { id: 'privacy',       label: 'Privacy',       icon: <FiShield aria-hidden="true" /> },
   ];
 
   const profileInitials = [profile.first_name, profile.last_name]

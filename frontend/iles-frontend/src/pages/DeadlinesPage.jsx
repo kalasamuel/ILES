@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { notificationsAPI } from '../services/endpoints';
+import { FiXCircle } from 'react-icons/fi';
 import './DeadlinesPage.css';
 
 const EMPTY_FORM = {
@@ -296,7 +297,7 @@ function DeadlinesPage() {
                 className="deadlines-link-button"
                 onClick={closeEditor}
               >
-                ✕ Close
+                <FiXCircle aria-hidden="true" /> Close
               </button>
             </div>
 

@@ -408,6 +408,29 @@ class RegistrationAffiliationWorkflowTests(APITestCase):
 		self.assertEqual(user.institution_email, 'staff@makerere.ac.ug')
 
 	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+	def test_verify_institution_verification_code_endpoint_confirms_valid_code(self):
+		send_code_response = self.client.post(
+			'/api/accounts/users/send-institution-verification-code/',
+			{'institution_email': 'verify@makerere.ac.ug'},
+			format='json',
+		)
+
+		self.assertEqual(send_code_response.status_code, status.HTTP_200_OK)
+		code = ''.join([char for char in mail.outbox[0].body if char.isdigit()][:6])
+
+		verify_response = self.client.post(
+			'/api/accounts/users/verify-institution-verification-code/',
+			{
+				'institution_email': 'verify@makerere.ac.ug',
+				'institution_verification_code': code,
+			},
+			format='json',
+		)
+
+		self.assertEqual(verify_response.status_code, status.HTTP_200_OK)
+		self.assertTrue(verify_response.data.get('verified'))
+
+	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 	def test_send_institution_verification_code_requires_email(self):
 		response = self.client.post(
 			'/api/accounts/users/send-institution-verification-code/',

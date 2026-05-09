@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiBarChart2 } from 'react-icons/fi';
+import { FiBarChart2, FiClock, FiStar, FiTrendingUp, FiFileText, FiCalendar, FiZap, FiCheck } from 'react-icons/fi';
 import {
   Bar,
   BarChart,
@@ -238,21 +238,21 @@ function AcademicDashboard() {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">✓</div>
+          <div className="stat-icon"><FiCheck aria-hidden="true" /></div>
           <div className="stat-info">
             <h3>{dashboardStats.completed}</h3>
             <p>Completed</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">⏳</div>
+          <div className="stat-icon"><FiClock aria-hidden="true" /></div>
           <div className="stat-info">
             <h3>{dashboardStats.pending}</h3>
             <p>Pending</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">⭐</div>
+          <div className="stat-icon"><FiStar aria-hidden="true" /></div>
           <div className="stat-info">
             <h3>{dashboardStats.averageScore}</h3>
             <p>Avg Score</p>
@@ -263,7 +263,7 @@ function AcademicDashboard() {
       <div className="dashboard-grid">
         <div className="dashboard-card chart-card full-width">
           <div className="card-header">
-            <div className="card-icon">📈</div>
+            <div className="card-icon"><FiTrendingUp aria-hidden="true" /></div>
             <h3>Evaluation Status Overview</h3>
           </div>
           <div className="chart-container">
@@ -310,7 +310,7 @@ function AcademicDashboard() {
 
         <div className="dashboard-card half-width">
           <div className="card-header">
-            <div className="card-icon">📝</div>
+            <div className="card-icon"><FiFileText aria-hidden="true" /></div>
             <h3>Pending Evaluations</h3>
           </div>
           <div className="card-content">
@@ -339,7 +339,7 @@ function AcademicDashboard() {
 
         <div className="dashboard-card half-width">
           <div className="card-header">
-            <div className="card-icon">🕒</div>
+            <div className="card-icon"><FiClock aria-hidden="true" /></div>
             <h3>Recent Evaluation Activity</h3>
           </div>
           <div className="card-content">
@@ -371,7 +371,7 @@ function AcademicDashboard() {
 
         <div className="dashboard-card chart-card half-width">
           <div className="card-header">
-            <div className="card-icon">📅</div>
+            <div className="card-icon"><FiCalendar aria-hidden="true" /></div>
             <h3>Monthly Evaluation Throughput</h3>
           </div>
           <div className="chart-container">
@@ -393,7 +393,7 @@ function AcademicDashboard() {
 
         <div className="dashboard-card half-width">
           <div className="card-header">
-            <div className="card-icon">⚡</div>
+            <div className="card-icon"><FiZap aria-hidden="true" /></div>
             <h3>Quick Actions</h3>
           </div>
           <div className="card-content">

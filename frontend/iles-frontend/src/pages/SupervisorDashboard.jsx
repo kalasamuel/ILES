@@ -116,6 +116,17 @@ function SupervisorDashboard() {
           dashboardsAPI.getEvaluationCriteriaSummaries(),
         ]);
 
+        // Debug: inspect raw API responses during development when data appears missing
+        // eslint-disable-next-line no-console
+        console.debug('SupervisorDashboard raw responses', {
+          reviewsRes,
+          placementsRes,
+          logsRes,
+          evaluationsRes,
+          scoreBreakdownsRes,
+          criteriaSummariesRes,
+        });
+
         let reviewsData = reviewsRes?.results || reviewsRes || [];
         let placementsData = placementsRes?.results || placementsRes || [];
         let logsData = logsRes?.results || logsRes || [];
@@ -129,6 +140,10 @@ function SupervisorDashboard() {
         } catch (ctxError) {
           console.warn('Failed to load dashboard context:', ctxError);
         }
+
+        // Debug: show dashboard context
+        // eslint-disable-next-line no-console
+        console.debug('SupervisorDashboard context', context);
 
         const roleName = String(context?.role_name || '').toLowerCase();
         const shouldBootstrap =
@@ -164,6 +179,36 @@ function SupervisorDashboard() {
             console.warn('Supervisor starter data bootstrap failed:', bootstrapError);
           }
         }
+
+          // Fallback: if we still have no key data but the user appears to be a supervisor,
+          // attempt a bootstrap once more to ensure starter data populates during development.
+          const noKeyData = (reviewsData?.length || 0) + (placementsData?.length || 0) + (evaluationsData?.length || 0) === 0;
+          if (!bootstrapAttemptedRef.current && context && String(context.role_name || '').toLowerCase().includes('supervisor') && noKeyData) {
+            try {
+              // eslint-disable-next-line no-console
+              console.info('SupervisorDashboard: attempting fallback bootstrap due to empty data');
+              await dashboardsAPI.bootstrapMySupervisorData();
+              bootstrapAttemptedRef.current = true;
+
+              const [r2, p2, l2, e2, sb2, cs2] = await Promise.all([
+                reviewsAPI.getReviews(),
+                placementsAPI.getPlacements(),
+                logbooksAPI.getLogs(),
+                evaluationsAPI.getEvaluations(),
+                evaluationsAPI.getScoreBreakdowns(),
+                dashboardsAPI.getEvaluationCriteriaSummaries(),
+              ]);
+
+              reviewsData = r2?.results || r2 || [];
+              placementsData = p2?.results || p2 || [];
+              logsData = l2?.results || l2 || [];
+              evaluationsData = e2?.results || e2 || [];
+              scoreBreakdownsData = sb2?.results || sb2 || [];
+              criteriaSummariesData = cs2?.criteria_summaries || [];
+            } catch (fallbackError) {
+              console.warn('Fallback bootstrap failed:', fallbackError);
+            }
+          }
 
         setReviews(reviewsData);
         setPlacements(placementsData);

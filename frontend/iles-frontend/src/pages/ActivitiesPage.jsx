@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { evaluationsAPI, logbooksAPI, placementsAPI, reviewsAPI } from '../services/endpoints';
+import { FiClock, FiFileText, FiCheck } from 'react-icons/fi';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './ActivitiesPage.css';
 
@@ -94,7 +95,7 @@ function ActivitiesPage() {
           subtitle: placement?.position_title ? `${placement.position_title} at ${placement?.organization_details?.name || 'Organization'}` : 'Placement details unavailable',
           date: log?.submitted_at,
           type: 'Pending Review',
-          icon: '⏳',
+          icon: <FiClock className="ac-icon" aria-hidden="true" />,
         };
       });
 
@@ -105,19 +106,19 @@ function ActivitiesPage() {
       subtitle: review?.comments ? review.comments : 'No comment provided',
       date: review?.reviewed_at,
       type: 'Review',
-      icon: '📝',
+      icon: <FiFileText className="ac-icon" aria-hidden="true" />,
     }));
 
     const evaluationActivities = evaluations.map((evaluation) => {
       const placement = placementsById.get(evaluation?.placement);
-      return {
+        return {
         id: `evaluation-${evaluation.evaluation_id || evaluation.id}`,
         title: 'Evaluation completed',
         detail: `${getStudentLabel(placement)} • Grade: ${evaluation?.grade || 'N/A'}`,
         subtitle: placement?.position_title ? `${placement.position_title} at ${placement?.organization_details?.name || 'Organization'}` : 'Placement details unavailable',
         date: evaluation?.evaluation_date,
         type: 'Evaluation',
-        icon: '✅',
+        icon: <FiCheck className="ac-icon" aria-hidden="true" />,
       };
     });
 
