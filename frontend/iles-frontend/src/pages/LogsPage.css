@@ -184,25 +184,38 @@
   color: #f97316;
 }
 
-/* Link button */
-.lp-link-btn {
+/* View Button */
+.lp-view-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  gap: 5px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1.5px solid rgba(249, 115, 22, 0.3);
+  border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
   font-family: 'DM Sans', sans-serif;
-  color: #374151;
+  color: #ea6c0a;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(249, 115, 22, 0.1);
 }
 
-.lp-link-btn:hover { background: #e5e7eb; color: #111827; }
+.lp-view-btn:hover {
+  background: linear-gradient(135deg, #f97316 0%, #ea6c0a 100%);
+  border-color: #f97316;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
+}
+
+.lp-view-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(249, 115, 22, 0.2);
+}
 
 /* Empty */
 .lp-empty {
