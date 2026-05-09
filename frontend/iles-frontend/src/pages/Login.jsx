@@ -96,6 +96,7 @@ const Login = () => {
                 type="email"
                 id="email"
                 name="email"
+                autoComplete="email"  
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="name@gmail.com"
