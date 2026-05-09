@@ -18,7 +18,11 @@ const SettingsPage = () => {
     email: '',
     phone_number: '',
     department_id: '',
+    profile_picture_url: '',
   });
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState('');
+  const [removeProfilePicture, setRemoveProfilePicture] = useState(false);
 
   const [notifications, setNotifications] = useState({
     email_notifications: true,
@@ -61,6 +65,7 @@ const SettingsPage = () => {
           email: currentUser?.email || '',
           phone_number: currentUser?.phone_number || '',
           department_id: currentUser?.department?.department_id || '',
+          profile_picture_url: currentUser?.profile_picture_url || '',
         });
 
         setNotifications({
@@ -92,25 +97,72 @@ const SettingsPage = () => {
     window.setTimeout(() => setSuccess(''), 3000);
   };
 
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!String(file.type || '').startsWith('image/')) {
+      setError('Please select a valid image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Profile picture must be smaller than 5MB.');
+      return;
+    }
+
+    setError('');
+    setProfilePictureFile(file);
+    setProfilePicturePreview(URL.createObjectURL(file));
+    setRemoveProfilePicture(false);
+  };
+
+  const handleRemoveProfilePicture = () => {
+    setProfilePictureFile(null);
+    setProfilePicturePreview('');
+    setRemoveProfilePicture(true);
+    setProfile((current) => ({ ...current, profile_picture_url: '' }));
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setSavingAction('profile');
     setSuccess('');
     setError('');
     try {
-      await usersAPI.updateCurrentUser({
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        email: profile.email,
-        phone_number: profile.phone_number,
-        department_id: profile.department_id || null,
-      });
+      const payload = new FormData();
+      payload.append('first_name', profile.first_name);
+      payload.append('last_name', profile.last_name);
+      payload.append('email', profile.email);
+      payload.append('phone_number', profile.phone_number);
+      payload.append('department_id', profile.department_id || '');
+
+      if (profilePictureFile) {
+        payload.append('profile_picture', profilePictureFile);
+      } else if (removeProfilePicture) {
+        payload.append('remove_profile_picture', 'true');
+      }
+
+      const updatedUser = await usersAPI.updateCurrentUser(payload);
+
+      setProfile((current) => ({
+        ...current,
+        first_name: updatedUser?.first_name || current.first_name,
+        last_name: updatedUser?.last_name || current.last_name,
+        email: updatedUser?.email || current.email,
+        phone_number: updatedUser?.phone_number || current.phone_number,
+        department_id: updatedUser?.department?.department_id || '',
+        profile_picture_url: updatedUser?.profile_picture_url || '',
+      }));
+      setProfilePictureFile(null);
+      setProfilePicturePreview('');
+      setRemoveProfilePicture(false);
       await refreshUser?.();
       setSuccess('Profile updated successfully!');
       clearFeedbackLater();
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError(error?.response?.data?.detail || 'Failed to update profile.');
+      setError(error?.response?.data?.error || error?.response?.data?.detail || 'Failed to update profile.');
     } finally {
       setSavingAction('');
     }
@@ -249,6 +301,13 @@ const SettingsPage = () => {
     { id: 'privacy',       label: 'Privacy',        icon: '🛡️' },
   ];
 
+  const profileInitials = [profile.first_name, profile.last_name]
+    .filter(Boolean)
+    .map((name) => name[0]?.toUpperCase())
+    .join('') || 'U';
+
+  const profilePictureSrc = profilePicturePreview || profile.profile_picture_url;
+
   return (
     <div className="settings-page">
       <div className="settings-header">
@@ -288,6 +347,39 @@ const SettingsPage = () => {
             <form onSubmit={handleProfileUpdate} className="settings-form">
               <h2>Profile Information</h2>
               <p className="form-description">Update your personal details below</p>
+
+              <div className="profile-picture-section">
+                <div className="profile-picture-preview">
+                  {profilePictureSrc ? (
+                    <img src={profilePictureSrc} alt="Profile" className="profile-picture-image" />
+                  ) : (
+                    <span className="profile-picture-fallback">{profileInitials}</span>
+                  )}
+                </div>
+
+                <div className="profile-picture-actions">
+                  <label className="btn-save btn-upload" htmlFor="profile-picture-input">
+                    Choose Picture
+                  </label>
+                  <input
+                    id="profile-picture-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePictureChange}
+                    className="profile-picture-input"
+                  />
+                  {profilePictureSrc && (
+                    <button
+                      type="button"
+                      className="btn-remove-picture"
+                      onClick={handleRemoveProfilePicture}
+                    >
+                      Remove picture
+                    </button>
+                  )}
+                  <small className="field-hint">Accepted: JPG, PNG, WEBP, GIF (max 5MB)</small>
+                </div>
+              </div>
 
               <div className="form-row">
                 <div className="form-group">
