@@ -35,9 +35,9 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await login(formData.email, formData.password);
+      await login(formData.email, formData.password, rememberMe);
 
-      // ── Remember Me logic ────────────────────────────────────────────────
+      // ── Remember Me: persist email for next visit ────────────────────────
       if (rememberMe) {
         localStorage.setItem(REMEMBER_ME_KEY, formData.email);
       } else {
