@@ -21,15 +21,25 @@ class DepartmentSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     role = RoleSerializer(read_only=True)
     department = DepartmentSerializer(read_only=True)
+    profile_picture = serializers.FileField(required=False, allow_null=True, write_only=True)
+    profile_picture_url = serializers.SerializerMethodField()
     role_id = serializers.PrimaryKeyRelatedField(source='role', queryset=Role.objects.all(), write_only=True, required=False)
     department_id = serializers.PrimaryKeyRelatedField(source='department', queryset=Department.objects.all(), write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
+        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'profile_picture', 'profile_picture_url', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
         extra_kwargs = {
             'password': {'write_only': True}
         }
+
+    def get_profile_picture_url(self, obj):
+        if not obj.profile_picture:
+            return None
+        request = self.context.get('request')
+        if request is not None:
+            return request.build_absolute_uri(obj.profile_picture.url)
+        return obj.profile_picture.url
 
     def update(self, instance, validated_data):
         role = validated_data.pop('role', None)
