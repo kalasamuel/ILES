@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from django.core.validators import FileExtensionValidator
 
 from django.contrib.auth.models import BaseUserManager
 
@@ -54,6 +55,12 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=30)
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=15, blank=True)
+    profile_picture = models.FileField(
+        upload_to='profile_pictures/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp', 'gif'])],
+    )
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
