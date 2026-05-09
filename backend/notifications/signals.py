@@ -49,6 +49,9 @@ def send_notification_email(sender, instance, created, **kwargs):
     if not created:
         return
 
+    if instance.notification_type == 'login_alert':
+        return
+
     recipient = (instance.user.email or '').strip()
     
     send_to_user = bool(recipient and _can_email_notification(instance))
