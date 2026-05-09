@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models.signals import post_save
@@ -5,6 +7,9 @@ from django.dispatch import receiver
 from accounts.models import UserSettings
 
 from .models import Notification
+
+
+logger = logging.getLogger(__name__)
 
 
 REVIEW_ALERT_TYPES = {
@@ -70,13 +75,16 @@ def send_notification_email(sender, instance, created, **kwargs):
             f"View it here: {notifications_url}\n\n"
             "— ILES Support Team"
         )
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[recipient],
-            fail_silently=True,
-        )
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[recipient],
+                fail_silently=False,
+            )
+        except Exception:
+            logger.exception('Failed to send notification email to %s for notification %s', recipient, instance.notification_id)
 
     admin_recipients = [email for email in admin_emails if email and email != recipient]
     
@@ -89,10 +97,13 @@ def send_notification_email(sender, instance, created, **kwargs):
             f"View it here: {notifications_url}\n\n"
             "— ILES System"
         )
-        send_mail(
-            subject=f"[Admin Copy] {subject}",
-            message=admin_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=admin_recipients,
-            fail_silently=True,
-        )
+        try:
+            send_mail(
+                subject=f"[Admin Copy] {subject}",
+                message=admin_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=admin_recipients,
+                fail_silently=False,
+            )
+        except Exception:
+            logger.exception('Failed to send admin notification email for notification %s', instance.notification_id)
