@@ -27,6 +27,7 @@ const SettingsPage = () => {
   const [profilePictureFile, setProfilePictureFile] = useState(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState('');
   const [removeProfilePicture, setRemoveProfilePicture] = useState(false);
+  const [isRemovingPicture, setIsRemovingPicture] = useState(false);
 
   const [notifications, setNotifications] = useState({
     email_notifications: true,
@@ -125,12 +126,42 @@ const SettingsPage = () => {
     setRemoveProfilePicture(false);
   };
 
-  const handleRemoveProfilePicture = () => {
+  const handleRemoveProfilePicture = async () => {
+    // If the user only selected a new file locally, just clear local state.
+    if (profilePictureFile && !profile.profile_picture_url) {
+      setProfilePictureError('');
+      setProfilePictureFile(null);
+      setProfilePicturePreview('');
+      setRemoveProfilePicture(false);
+      return;
+    }
+
     setProfilePictureError('');
-    setProfilePictureFile(null);
-    setProfilePicturePreview('');
-    setRemoveProfilePicture(true);
-    setProfile((current) => ({ ...current, profile_picture_url: '' }));
+    setError('');
+    setSuccess('');
+    setIsRemovingPicture(true);
+
+    try {
+      const payload = new FormData();
+      payload.append('remove_profile_picture', 'true');
+      const updatedUser = await usersAPI.updateCurrentUser(payload);
+
+      setProfilePictureFile(null);
+      setProfilePicturePreview('');
+      setRemoveProfilePicture(false);
+      setProfile((current) => ({
+        ...current,
+        profile_picture_url: updatedUser?.profile_picture_url || '',
+      }));
+      await refreshUser?.();
+      setSuccess('Profile picture removed successfully!');
+      clearFeedbackLater();
+    } catch (removeError) {
+      console.error('Error removing profile picture:', removeError);
+      setProfilePictureError('Failed to remove profile picture. Please try again.');
+    } finally {
+      setIsRemovingPicture(false);
+    }
   };
 
   const handleProfileUpdate = async (e) => {
@@ -400,8 +431,9 @@ const SettingsPage = () => {
                       type="button"
                       className="btn-remove-picture"
                       onClick={handleRemoveProfilePicture}
+                      disabled={isRemovingPicture}
                     >
-                      Remove picture
+                      {isRemovingPicture ? 'Removing...' : 'Remove picture'}
                     </button>
                   )}
                   <small className="field-hint">Accepted: JPG, PNG, WEBP, GIF (max 5MB)</small>

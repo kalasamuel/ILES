@@ -13,6 +13,8 @@ function RegisterPage() {
     confirmPassword: '',
     role: 'student',
     institutionName: '',
+    institutionEmail: '',
+    institutionVerificationCode: '',
     organizationName: '',
     organizationId: '',
   });
@@ -21,6 +23,8 @@ function RegisterPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -35,6 +39,9 @@ function RegisterPage() {
       if (event.target.name === 'role') {
         if (event.target.value === 'workplace_supervisor') {
           next.institutionName = '';
+          next.institutionEmail = '';
+          next.institutionVerificationCode = '';
+          setCodeSent(false);
         } else {
           next.organizationName = '';
           next.organizationId = '';
@@ -79,6 +86,33 @@ function RegisterPage() {
     setShowOrgDropdown(false);
   };
 
+  const handleSendInstitutionCode = async () => {
+    setError('');
+    setSuccess('');
+
+    const institutionEmail = (formData.institutionEmail || '').trim();
+    if (!institutionEmail) {
+      setError('Please enter institution email first.');
+      return;
+    }
+
+    setIsSendingCode(true);
+    try {
+      await authAPI.sendInstitutionVerificationCode(institutionEmail);
+      setCodeSent(true);
+      setSuccess('Verification code sent to institution email.');
+    } catch (err) {
+      const apiError = err?.response?.data;
+      if (typeof apiError === 'string') {
+        setError(apiError);
+      } else {
+        setError(apiError?.error || 'Failed to send verification code.');
+      }
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -99,6 +133,16 @@ function RegisterPage() {
       return;
     }
 
+    if ((formData.role === 'student' || formData.role === 'academic_supervisor') && !(formData.institutionEmail || '').trim()) {
+      setError('Institution email is required for students and academic supervisors.');
+      return;
+    }
+
+    if ((formData.role === 'student' || formData.role === 'academic_supervisor') && !(formData.institutionVerificationCode || '').trim()) {
+      setError('Institution verification code is required.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -115,6 +159,8 @@ function RegisterPage() {
         password: formData.password,
         role: roleMap[formData.role] || 'Student',
         institution_name: formData.institutionName || undefined,
+        institution_email: formData.institutionEmail || undefined,
+        institution_verification_code: formData.institutionVerificationCode || undefined,
         organization_name: formData.organizationName || undefined,
         organization_id: formData.organizationId || undefined,
       };
@@ -135,6 +181,10 @@ function RegisterPage() {
         setError(apiError.role[0]);
       } else if (apiError?.institution_name?.length) {
         setError(apiError.institution_name[0]);
+      } else if (apiError?.institution_email?.length) {
+        setError(apiError.institution_email[0]);
+      } else if (apiError?.institution_verification_code?.length) {
+        setError(apiError.institution_verification_code[0]);
       } else if (apiError?.organization_name?.length) {
         setError(apiError.organization_name[0]);
       } else {
@@ -255,19 +305,59 @@ function RegisterPage() {
               )}
 
               {(formData.role === 'student' || formData.role === 'academic_supervisor') && (
-                <div className="form-group">
-                  <label htmlFor="institutionName">Institution</label>
-                  <input
-                    type="text"
-                    id="institutionName"
-                    name="institutionName"
-                    value={formData.institutionName}
-                    onChange={handleChange}
-                    required
-                    className="no-icon"
-                    placeholder="e.g. Makerere University"
-                  />
-                </div>
+                <>
+                  <div className="form-group">
+                    <label htmlFor="institutionName">Institution</label>
+                    <input
+                      type="text"
+                      id="institutionName"
+                      name="institutionName"
+                      value={formData.institutionName}
+                      onChange={handleChange}
+                      required
+                      className="no-icon"
+                      placeholder="e.g. Makerere University"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="institutionEmail">Institution Email</label>
+                    <div className="verification-row">
+                      <input
+                        type="email"
+                        id="institutionEmail"
+                        name="institutionEmail"
+                        value={formData.institutionEmail}
+                        onChange={handleChange}
+                        required
+                        className="no-icon"
+                        placeholder="you@institution.edu"
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={handleSendInstitutionCode}
+                        disabled={isSendingCode}
+                      >
+                        {isSendingCode ? 'Sending...' : (codeSent ? 'Resend Code' : 'Send Code')}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="institutionVerificationCode">Verification Code</label>
+                    <input
+                      type="text"
+                      id="institutionVerificationCode"
+                      name="institutionVerificationCode"
+                      value={formData.institutionVerificationCode}
+                      onChange={handleChange}
+                      required
+                      className="no-icon"
+                      placeholder="Enter 6-digit code"
+                    />
+                  </div>
+                </>
               )}
 
               <div className="form-group">

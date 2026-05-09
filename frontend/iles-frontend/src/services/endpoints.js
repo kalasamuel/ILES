@@ -16,6 +16,12 @@ export const authAPI = {
     });
     return response.data;
   },
+  sendInstitutionVerificationCode: async (institutionEmail) => {
+    const response = await api.post('/accounts/users/send-institution-verification-code/', {
+      institution_email: institutionEmail,
+    });
+    return response.data;
+  },
   forgotPassword: async (email) => {
     const response = await api.post('/accounts/users/forgot-password/', { email });
     return response.data;

@@ -733,6 +733,28 @@ body {
   text-align: center;
 }
 
+.verification-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.verification-row input {
+  flex: 1;
+}
+
+.btn-secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-200);
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--gray-200);
+}
+
 .register-links a,
 .register-links span {
   font-size: 0.825rem;
