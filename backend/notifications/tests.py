@@ -30,17 +30,14 @@ class NotificationEmailTests(TestCase):
 		self.assertEqual(mail.outbox[0].to, [self.user.email])
 
 	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
-	def test_login_alert_email_sent_when_notification_created(self):
+	def test_login_alert_notification_does_not_send_email_from_signal(self):
 		Notification.objects.create(
 			user=self.user,
 			message='New login detected on Chrome for Windows.',
 			notification_type='login_alert',
 		)
 
-		self.assertEqual(len(mail.outbox), 1)
-		self.assertIn('Login Alert', mail.outbox[0].subject)
-		self.assertIn('New login detected on Chrome for Windows.', mail.outbox[0].body)
-		self.assertEqual(mail.outbox[0].to, [self.user.email])
+		self.assertEqual(len(mail.outbox), 0)
 
 	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 	def test_email_not_sent_when_email_notifications_disabled(self):
