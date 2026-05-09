@@ -34,6 +34,7 @@ function Navbar({ user, onMenuClick }) {
     .filter(Boolean)
     .map((n) => n[0].toUpperCase())
     .join('') || 'U';
+  const avatarUrl = user?.profile_picture_url || '';
 
   const normalizeRole = (rawRole) => {
     const normalized = String(rawRole || '')
@@ -99,7 +100,13 @@ function Navbar({ user, onMenuClick }) {
 
         {/* User menu */}
         <div className="user-menu" onClick={() => setProfileOpen(!profileOpen)}>
-          <div className="user-avatar">{initials}</div>
+          <div className="user-avatar">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Profile" className="user-avatar-image" />
+            ) : (
+              initials
+            )}
+          </div>
           <span>{user?.first_name} {user?.last_name}</span>
           <FiChevronDown size={14} color="#9a4f1c" />
 
