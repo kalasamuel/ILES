@@ -321,3 +321,39 @@ class LoginNotificationWorkflowTests(APITestCase):
 		self.assertIn('New ILES Login Alert', mail.outbox[0].subject)
 		self.assertEqual(mail.outbox[0].to, [self.user.email])
 		self.assertIn('A new sign-in to your ILES account was detected.', mail.outbox[0].body)
+
+
+class RegistrationAffiliationWorkflowTests(APITestCase):
+	def test_student_registration_requires_institution(self):
+		response = self.client.post(
+			'/api/accounts/users/register/',
+			{
+				'first_name': 'Sam',
+				'last_name': 'Student',
+				'email': 'sam.student@example.com',
+				'password': 'StrongPassword123',
+				'role': 'Student',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('institution_name', response.data)
+
+	def test_academic_registration_saves_institution(self):
+		response = self.client.post(
+			'/api/accounts/users/register/',
+			{
+				'first_name': 'Ann',
+				'last_name': 'Academic',
+				'email': 'ann.academic@example.com',
+				'password': 'StrongPassword123',
+				'role': 'Academic Supervisor',
+				'institution_name': 'Makerere University',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		user = User.objects.get(email='ann.academic@example.com')
+		self.assertEqual(user.institution_name, 'Makerere University')
