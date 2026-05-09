@@ -1,9 +1,15 @@
 from rest_framework import serializers
+from PIL import Image, UnidentifiedImageError
 from .models import Role, Department, User, Student, Supervisor, UserSettings
 from datetime import timedelta
 from django.utils import timezone
 import uuid
 from organizations.models import Organization
+
+
+MAX_PROFILE_IMAGE_BYTES = 5 * 1024 * 1024
+MIN_PROFILE_IMAGE_DIMENSION = 64
+MAX_PROFILE_IMAGE_DIMENSION = 4096
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -40,6 +46,37 @@ class UserSerializer(serializers.ModelSerializer):
         if request is not None:
             return request.build_absolute_uri(obj.profile_picture.url)
         return obj.profile_picture.url
+
+    def validate_profile_picture(self, file_obj):
+        if not file_obj:
+            return file_obj
+
+        if file_obj.size > MAX_PROFILE_IMAGE_BYTES:
+            raise serializers.ValidationError('Profile picture must be 5MB or smaller.')
+
+        try:
+            if hasattr(file_obj, 'seek'):
+                file_obj.seek(0)
+            image = Image.open(file_obj)
+            width, height = image.size
+            image.verify()
+        except (UnidentifiedImageError, OSError):
+            raise serializers.ValidationError('Upload a valid image file.')
+        finally:
+            if hasattr(file_obj, 'seek'):
+                file_obj.seek(0)
+
+        if width < MIN_PROFILE_IMAGE_DIMENSION or height < MIN_PROFILE_IMAGE_DIMENSION:
+            raise serializers.ValidationError(
+                f'Image is too small. Minimum size is {MIN_PROFILE_IMAGE_DIMENSION}x{MIN_PROFILE_IMAGE_DIMENSION}px.'
+            )
+
+        if width > MAX_PROFILE_IMAGE_DIMENSION or height > MAX_PROFILE_IMAGE_DIMENSION:
+            raise serializers.ValidationError(
+                f'Image is too large. Maximum size is {MAX_PROFILE_IMAGE_DIMENSION}x{MAX_PROFILE_IMAGE_DIMENSION}px.'
+            )
+
+        return file_obj
 
     def update(self, instance, validated_data):
         role = validated_data.pop('role', None)
