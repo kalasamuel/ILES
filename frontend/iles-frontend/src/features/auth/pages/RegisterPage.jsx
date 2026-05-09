@@ -12,6 +12,7 @@ function RegisterPage() {
     password: '',
     confirmPassword: '',
     role: 'student',
+    institutionName: '',
     organizationName: '',
     organizationId: '',
   });
@@ -25,10 +26,23 @@ function RegisterPage() {
   const { login } = useAuth();
 
   const handleChange = (event) => {
-    setFormData((current) => ({
-      ...current,
-      [event.target.name]: event.target.value,
-    }));
+    setFormData((current) => {
+      const next = {
+        ...current,
+        [event.target.name]: event.target.value,
+      };
+
+      if (event.target.name === 'role') {
+        if (event.target.value === 'workplace_supervisor') {
+          next.institutionName = '';
+        } else {
+          next.organizationName = '';
+          next.organizationId = '';
+        }
+      }
+
+      return next;
+    });
 
     if (event.target.name === 'organizationName') {
       setFormData((current) => ({ ...current, organizationId: '' }));
@@ -80,6 +94,11 @@ function RegisterPage() {
       return;
     }
 
+    if ((formData.role === 'student' || formData.role === 'academic_supervisor') && !(formData.institutionName || '').trim()) {
+      setError('Institution is required for students and academic supervisors.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -95,6 +114,7 @@ function RegisterPage() {
         email: formData.email,
         password: formData.password,
         role: roleMap[formData.role] || 'Student',
+        institution_name: formData.institutionName || undefined,
         organization_name: formData.organizationName || undefined,
         organization_id: formData.organizationId || undefined,
       };
@@ -113,6 +133,10 @@ function RegisterPage() {
         setError(apiError.password[0]);
       } else if (apiError?.role?.length) {
         setError(apiError.role[0]);
+      } else if (apiError?.institution_name?.length) {
+        setError(apiError.institution_name[0]);
+      } else if (apiError?.organization_name?.length) {
+        setError(apiError.organization_name[0]);
       } else {
         setError('Registration failed. Please check your inputs and try again.');
       }
@@ -227,6 +251,22 @@ function RegisterPage() {
                   <small className="org-help-text">
                     If no existing result matches, keep typing and it will be created as a new organization.
                   </small>
+                </div>
+              )}
+
+              {(formData.role === 'student' || formData.role === 'academic_supervisor') && (
+                <div className="form-group">
+                  <label htmlFor="institutionName">Institution</label>
+                  <input
+                    type="text"
+                    id="institutionName"
+                    name="institutionName"
+                    value={formData.institutionName}
+                    onChange={handleChange}
+                    required
+                    className="no-icon"
+                    placeholder="e.g. Makerere University"
+                  />
                 </div>
               )}
 

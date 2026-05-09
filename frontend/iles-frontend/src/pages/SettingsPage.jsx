@@ -18,6 +18,9 @@ const SettingsPage = () => {
     last_name: '',
     email: '',
     phone_number: '',
+    institution_name: '',
+    affiliation_type: '',
+    affiliation_name: '',
     department_id: '',
     profile_picture_url: '',
   });
@@ -65,6 +68,9 @@ const SettingsPage = () => {
           last_name: currentUser?.last_name || '',
           email: currentUser?.email || '',
           phone_number: currentUser?.phone_number || '',
+          institution_name: currentUser?.institution_name || '',
+          affiliation_type: currentUser?.affiliation_type || '',
+          affiliation_name: currentUser?.affiliation_name || '',
           department_id: currentUser?.department?.department_id || '',
           profile_picture_url: currentUser?.profile_picture_url || '',
         });
@@ -139,6 +145,7 @@ const SettingsPage = () => {
       payload.append('last_name', profile.last_name);
       payload.append('email', profile.email);
       payload.append('phone_number', profile.phone_number);
+      payload.append('institution_name', profile.institution_name || '');
       payload.append('department_id', profile.department_id || '');
 
       if (profilePictureFile) {
@@ -155,6 +162,9 @@ const SettingsPage = () => {
         last_name: updatedUser?.last_name || current.last_name,
         email: updatedUser?.email || current.email,
         phone_number: updatedUser?.phone_number || current.phone_number,
+        institution_name: updatedUser?.institution_name || '',
+        affiliation_type: updatedUser?.affiliation_type || '',
+        affiliation_name: updatedUser?.affiliation_name || '',
         department_id: updatedUser?.department?.department_id || '',
         profile_picture_url: updatedUser?.profile_picture_url || '',
       }));
@@ -322,6 +332,8 @@ const SettingsPage = () => {
     .join('') || 'U';
 
   const profilePictureSrc = profilePicturePreview || profile.profile_picture_url;
+  const isWorkplaceSupervisor = profile.affiliation_type === 'organization';
+  const institutionOrOrganizationLabel = profile.affiliation_type === 'organization' ? 'Organization' : 'Institution';
 
   return (
     <div className="settings-page">
@@ -436,6 +448,31 @@ const SettingsPage = () => {
                   onChange={(e) => setProfile({ ...profile, phone_number: e.target.value })}
                   placeholder="+256 700 000 000"
                 />
+              </div>
+
+              <div className="form-group">
+                <label>{institutionOrOrganizationLabel}</label>
+                {isWorkplaceSupervisor ? (
+                  <input
+                    type="text"
+                    value={profile.affiliation_name || 'Not set'}
+                    readOnly
+                    disabled
+                    placeholder="Organization is set during registration"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={profile.institution_name}
+                    onChange={(e) => setProfile({ ...profile, institution_name: e.target.value })}
+                    placeholder="Enter your institution"
+                  />
+                )}
+                <small className="field-hint">
+                  {isWorkplaceSupervisor
+                    ? 'Organization is captured from workplace supervisor registration.'
+                    : 'Institution is used for student and academic supervisor profiles.'}
+                </small>
               </div>
 
               <div className="form-group">
