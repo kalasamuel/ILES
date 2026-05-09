@@ -452,3 +452,100 @@
     gap: 0.25rem;
   }
 }
+/* ── Back Button (matches Login page style) ─────────────── */
+.notif-back-container {
+  margin-bottom: 1.75rem;
+}
+
+.notif-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.85rem 1.1rem;
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-card);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.notif-back-btn:hover {
+  border-color: var(--clr-border-hover);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+
+.notif-back-btn:active {
+  transform: translateY(0);
+}
+
+.notif-back-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.back-arrow-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--clr-text-primary);
+  color: var(--clr-bg);
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+
+.notif-back-btn:hover .back-arrow-circle {
+  background: var(--clr-accent);
+}
+
+.back-btn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  text-align: left;
+}
+
+.back-btn-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--clr-text-primary);
+  line-height: 1.2;
+}
+
+.back-btn-sub {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--clr-text-muted);
+  line-height: 1.2;
+}
+
+.back-btn-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-pill);
+  background: var(--clr-surface-alt);
+  color: var(--clr-text-secondary);
+  border: 1px solid var(--clr-border);
+  transition: background var(--transition), color var(--transition);
+}
+
+.notif-back-btn:hover .back-btn-badge {
+  background: var(--clr-accent-light);
+  color: var(--clr-accent);
+  border-color: var(--clr-accent);
+}
