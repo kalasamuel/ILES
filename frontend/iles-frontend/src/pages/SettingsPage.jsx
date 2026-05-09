@@ -10,6 +10,7 @@ const SettingsPage = () => {
   const [savingAction, setSavingAction] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [profilePictureError, setProfilePictureError] = useState('');
   const [departments, setDepartments] = useState([]);
 
   const [profile, setProfile] = useState({
@@ -102,15 +103,16 @@ const SettingsPage = () => {
     if (!file) return;
 
     if (!String(file.type || '').startsWith('image/')) {
-      setError('Please select a valid image file.');
+      setProfilePictureError('Please select a valid image file.');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('Profile picture must be smaller than 5MB.');
+      setProfilePictureError('Profile picture must be smaller than 5MB.');
       return;
     }
 
+    setProfilePictureError('');
     setError('');
     setProfilePictureFile(file);
     setProfilePicturePreview(URL.createObjectURL(file));
@@ -118,6 +120,7 @@ const SettingsPage = () => {
   };
 
   const handleRemoveProfilePicture = () => {
+    setProfilePictureError('');
     setProfilePictureFile(null);
     setProfilePicturePreview('');
     setRemoveProfilePicture(true);
@@ -129,6 +132,7 @@ const SettingsPage = () => {
     setSavingAction('profile');
     setSuccess('');
     setError('');
+    setProfilePictureError('');
     try {
       const payload = new FormData();
       payload.append('first_name', profile.first_name);
@@ -157,12 +161,23 @@ const SettingsPage = () => {
       setProfilePictureFile(null);
       setProfilePicturePreview('');
       setRemoveProfilePicture(false);
+      setProfilePictureError('');
       await refreshUser?.();
       setSuccess('Profile updated successfully!');
       clearFeedbackLater();
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError(error?.response?.data?.error || error?.response?.data?.detail || 'Failed to update profile.');
+      const data = error?.response?.data || {};
+      const profilePictureApiError = Array.isArray(data.profile_picture)
+        ? data.profile_picture[0]
+        : data.profile_picture;
+
+      if (profilePictureApiError) {
+        setProfilePictureError(String(profilePictureApiError));
+      }
+
+      const genericError = data?.error || data?.detail || (!profilePictureApiError ? 'Failed to update profile.' : '');
+      setError(genericError);
     } finally {
       setSavingAction('');
     }
@@ -378,6 +393,7 @@ const SettingsPage = () => {
                     </button>
                   )}
                   <small className="field-hint">Accepted: JPG, PNG, WEBP, GIF (max 5MB)</small>
+                  {profilePictureError && <small className="field-error">{profilePictureError}</small>}
                 </div>
               </div>
 

@@ -1,5 +1,6 @@
 from unittest.mock import patch
 from io import BytesIO
+import os
 
 from django.core import mail
 from django.core.cache import cache
@@ -119,6 +120,13 @@ class UserSettingsWorkflowTests(APITestCase):
 		Image.new('RGB', size=size, color=(30, 144, 255)).save(buffer, format=image_format)
 		return SimpleUploadedFile(name, buffer.getvalue(), content_type=f'image/{image_format.lower()}')
 
+	def _make_large_image_upload(self, name='large.png', size=(2200, 2200)):
+		width, height = size
+		raw = os.urandom(width * height * 3)
+		buffer = BytesIO()
+		Image.frombytes('RGB', size, raw).save(buffer, format='PNG')
+		return SimpleUploadedFile(name, buffer.getvalue(), content_type='image/png')
+
 	def test_me_settings_get_creates_default_settings(self):
 		response = self.client.get('/api/accounts/users/me/settings/')
 
@@ -205,8 +213,8 @@ class UserSettingsWorkflowTests(APITestCase):
 		self.assertIn('too small', str(response.data['profile_picture'][0]).lower())
 
 	def test_profile_picture_rejects_file_larger_than_5mb(self):
-		upload = self._make_image_upload(name='large.png', size=(512, 512), image_format='PNG')
-		upload.size = 5 * 1024 * 1024 + 1
+		upload = self._make_large_image_upload()
+		self.assertGreater(upload.size, 5 * 1024 * 1024)
 
 		response = self.client.patch(
 			'/api/accounts/users/me/',
