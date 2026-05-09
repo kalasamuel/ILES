@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { FiArrowLeft } from 'react-icons/fi';
 import { notificationsAPI } from '../services/endpoints';
 import { useAuth } from '../hooks/AuthContext';
 import './NotificationsPage.css';
@@ -121,7 +122,6 @@ function NotificationsPage() {
   };
 
   const handleNotificationClick = async (notification) => {
-    // Mark as read
     await markAsRead(notification.notification_id);
 
     if (isAdmin && isAdminSystemType(notification.notification_type)) {
@@ -129,20 +129,15 @@ function NotificationsPage() {
       return;
     }
 
-    // If it's a feedback notification, navigate to the log
     if (notification.notification_type === 'feedback_added' && notification.log_review_details?.log_id) {
       navigate(`/app/logs/${notification.log_review_details.log_id}`);
-    }
-    // If it's a log submission notification, navigate to the log
-    else if (notification.notification_type === 'log_submitted' && notification.log_details?.log_id) {
+    } else if (notification.notification_type === 'log_submitted' && notification.log_details?.log_id) {
       navigate(`/app/logs/${notification.log_details.log_id}`);
     }
   };
 
   const selectedNotification = useMemo(() => {
-    if (!notificationId) {
-      return null;
-    }
+    if (!notificationId) return null;
     return notifications.find((item) => String(item.notification_id) === String(notificationId)) || null;
   }, [notificationId, notifications]);
 
@@ -156,6 +151,53 @@ function NotificationsPage() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '980px', margin: '0 auto' }}>
+
+      {/* ── Back Button ── */}
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '1.5rem',
+          background: 'transparent',
+          border: '1.5px solid #e4ddd5',
+          borderRadius: '999px',
+          padding: '0.4rem 1rem 0.4rem 0.5rem',
+          cursor: 'pointer',
+          fontSize: '0.82rem',
+          fontWeight: '500',
+          color: '#6b5f55',
+          transition: 'all 220ms ease',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = '#f5f2ee';
+          e.currentTarget.style.borderColor = '#c9bfb3';
+          e.currentTarget.style.color = '#1c1916';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.borderColor = '#e4ddd5';
+          e.currentTarget.style.color = '#6b5f55';
+        }}
+      >
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          background: '#1c1916',
+          color: '#fff',
+          flexShrink: 0,
+        }}>
+          <FiArrowLeft size={13} />
+        </span>
+        Back
+      </button>
+
+      {/* ── Page Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h2 style={{ margin: 0 }}>Notifications</h2>
@@ -263,8 +305,7 @@ function NotificationsPage() {
                     <span style={{ fontSize: '0.75rem', color: '#999' }}>{getRelativeTime(notification.created_at)}</span>
                   </div>
                   <p style={{ margin: '0 0 0.5rem 0', color: '#666', lineHeight: '1.4' }}>{notification.message}</p>
-                  
-                  {/* Show feedback details if available */}
+
                   {notification.log_review_details && (
                     <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'rgba(0,0,0,0.03)', borderLeft: `3px solid ${getTypeColor(notification.notification_type)}`, borderRadius: '4px' }}>
                       <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#555', fontWeight: '500' }}>
@@ -286,7 +327,6 @@ function NotificationsPage() {
                     </div>
                   )}
 
-                  {/* Show log submission details if available */}
                   {notification.log_details && (
                     <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'rgba(25, 118, 210, 0.04)', borderLeft: `3px solid ${getTypeColor(notification.notification_type)}`, borderRadius: '4px' }}>
                       <div style={{ marginBottom: '0.5rem' }}>
@@ -335,10 +375,7 @@ function NotificationsPage() {
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem' }}>
                     {!notification.is_read && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markAsRead(notification.notification_id);
-                        }}
+                        onClick={(e) => { e.stopPropagation(); markAsRead(notification.notification_id); }}
                         style={{ padding: '0.25rem 0.75rem', backgroundColor: 'transparent', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                       >
                         Mark as read
@@ -346,10 +383,7 @@ function NotificationsPage() {
                     )}
                     {notification.notification_type === 'feedback_added' && notification.log_review_details && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/app/logs/${notification.log_review_details.log_id}`);
-                        }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/app/logs/${notification.log_review_details.log_id}`); }}
                         style={{ padding: '0.25rem 0.75rem', backgroundColor: '#9c27b0', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                       >
                         View Feedback
@@ -357,10 +391,7 @@ function NotificationsPage() {
                     )}
                     {notification.notification_type === 'log_submitted' && notification.log_details && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/app/logs/${notification.log_details.log_id}`);
-                        }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/app/logs/${notification.log_details.log_id}`); }}
                         style={{ padding: '0.25rem 0.75rem', backgroundColor: '#1976d2', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                       >
                         Review Log
@@ -368,20 +399,14 @@ function NotificationsPage() {
                     )}
                     {isAdmin && isAdminSystemType(notification.notification_type) && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/app/notifications/${notification.notification_id}`);
-                        }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/app/notifications/${notification.notification_id}`); }}
                         style={{ padding: '0.25rem 0.75rem', backgroundColor: getTypeColor(notification.notification_type), color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                       >
                         View Details
                       </button>
                     )}
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteNotification(notification.notification_id);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); deleteNotification(notification.notification_id); }}
                       style={{ padding: '0.25rem 0.75rem', backgroundColor: 'transparent', border: '1px solid #ff4444', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', color: '#ff4444' }}
                     >
                       Delete
