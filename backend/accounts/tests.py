@@ -1,9 +1,11 @@
 from unittest.mock import patch
+from io import BytesIO
 
 from django.core import mail
 from django.core.cache import cache
 from django.test import override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -112,6 +114,11 @@ class UserSettingsWorkflowTests(APITestCase):
 		)
 		self.client.force_authenticate(user=self.user)
 
+	def _make_image_upload(self, name='avatar.png', size=(256, 256), image_format='PNG'):
+		buffer = BytesIO()
+		Image.new('RGB', size=size, color=(30, 144, 255)).save(buffer, format=image_format)
+		return SimpleUploadedFile(name, buffer.getvalue(), content_type=f'image/{image_format.lower()}')
+
 	def test_me_settings_get_creates_default_settings(self):
 		response = self.client.get('/api/accounts/users/me/settings/')
 
@@ -159,7 +166,7 @@ class UserSettingsWorkflowTests(APITestCase):
 		self.assertEqual(response.data['error'], 'That email is already in use.')
 
 	def test_profile_picture_upload_and_remove(self):
-		upload = SimpleUploadedFile('avatar.jpg', b'fake-image-content', content_type='image/jpeg')
+		upload = self._make_image_upload(name='avatar.png', size=(300, 300), image_format='PNG')
 
 		upload_response = self.client.patch(
 			'/api/accounts/users/me/',
@@ -183,6 +190,33 @@ class UserSettingsWorkflowTests(APITestCase):
 		self.user.refresh_from_db()
 		self.assertFalse(bool(self.user.profile_picture))
 		self.assertIsNone(remove_response.data.get('profile_picture_url'))
+
+	def test_profile_picture_rejects_too_small_dimensions(self):
+		upload = self._make_image_upload(name='tiny.png', size=(32, 32), image_format='PNG')
+
+		response = self.client.patch(
+			'/api/accounts/users/me/',
+			{'profile_picture': upload},
+			format='multipart',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('profile_picture', response.data)
+		self.assertIn('too small', str(response.data['profile_picture'][0]).lower())
+
+	def test_profile_picture_rejects_file_larger_than_5mb(self):
+		upload = self._make_image_upload(name='large.png', size=(512, 512), image_format='PNG')
+		upload.size = 5 * 1024 * 1024 + 1
+
+		response = self.client.patch(
+			'/api/accounts/users/me/',
+			{'profile_picture': upload},
+			format='multipart',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('profile_picture', response.data)
+		self.assertIn('5mb', str(response.data['profile_picture'][0]).lower())
 
 	def test_settings_update_persists_notification_and_privacy_preferences(self):
 		response = self.client.patch(
