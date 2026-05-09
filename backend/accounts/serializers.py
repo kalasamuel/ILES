@@ -113,6 +113,7 @@ class UserSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         role = validated_data.pop('role', None)
         department = validated_data.pop('department', None)
+        old_profile_picture = instance.profile_picture
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -124,6 +125,12 @@ class UserSerializer(serializers.ModelSerializer):
             instance.department = department
 
         instance.save()
+
+        if 'profile_picture' in validated_data:
+            new_profile_picture = validated_data.get('profile_picture')
+            if old_profile_picture and (new_profile_picture is None or old_profile_picture.name != getattr(instance.profile_picture, 'name', None)):
+                old_profile_picture.delete(save=False)
+
         return instance
 
 

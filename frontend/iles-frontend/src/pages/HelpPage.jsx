@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiAward, FiCheckCircle, FiChevronDown, FiFileText, FiSearch, FiSettings } from 'react-icons/fi';
+import { FiAward, FiCheckCircle, FiChevronDown, FiFileText, FiSearch, FiSettings, FiMail } from 'react-icons/fi';
 import './HelpPage.css';
 
 const FAQ_DATA = [
@@ -127,7 +127,7 @@ function HelpPage() {
           <p>Our support team is available during working hours to assist you.</p>
         </div>
         <div className="hp-contact-actions">
-          <a href="mailto:support@iles.ac.ug" className="hp-btn-primary">✉ Email Support</a>
+          <a href="mailto:support@iles.ac.ug" className="hp-btn-primary"><FiMail aria-hidden="true" /> Email Support</a>
           <a href="/contact" className="hp-btn-secondary">Contact Us</a>
         </div>
       </div>

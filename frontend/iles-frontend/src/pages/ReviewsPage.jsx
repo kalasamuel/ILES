@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FiClipboard } from 'react-icons/fi';
+import { FiClipboard, FiStar } from 'react-icons/fi';
 import { reviewsAPI } from '../services/endpoints';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './ReviewsPage.css';
@@ -12,7 +12,9 @@ function Stars({ rating }) {
   return (
     <div className="rv-rating" title={`${rating || 0} / ${max}`}>
       {Array.from({ length: max }).map((_, i) => (
-        <span key={i} className={`rv-star ${i < filled ? 'filled' : 'empty'}`}>★</span>
+        <span key={i} className={`rv-star ${i < filled ? 'filled' : 'empty'}`}>
+          <FiStar aria-hidden="true" />
+        </span>
       ))}
     </div>
   );

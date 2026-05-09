@@ -352,6 +352,24 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response({'message': 'Verification code sent to institution email.'}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['post'], permission_classes=[], url_path='verify-institution-verification-code')
+    def verify_institution_verification_code(self, request):
+        institution_email = (request.data.get('institution_email') or '').strip().lower()
+        verification_code = (request.data.get('institution_verification_code') or '').strip()
+
+        if not institution_email:
+            return Response({'error': 'Institution email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not verification_code:
+            return Response({'error': 'Institution verification code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_key = _institution_verification_cache_key(institution_email)
+        expected_code = cache.get(cache_key)
+        if not expected_code or str(expected_code).strip() != verification_code:
+            return Response({'error': 'Institution verification code is invalid or expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'verified': True, 'message': 'Institution email verified.'}, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['get'], permission_classes=[], url_path='organization-suggestions')
     def organization_suggestions(self, request):
         """Public search endpoint used by registration typeahead for workplace organizations."""

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FiClipboard, FiEdit3, FiCamera, FiZap, FiSave, FiInfo } from 'react-icons/fi';
 import { useParams, useNavigate } from 'react-router-dom';
 import { logbooksAPI, placementsAPI } from '../services/endpoints';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -247,10 +248,10 @@ const WeeklyLogForm = () => {
             <div className="wl-side-body">
               <div style={{ display: 'grid', gap: 8 }}>
                 {[
-                  { icon: '📋', title: 'Log every week', desc: 'Submit a log for each week of your placement without gaps.' },
-                  { icon: '✏️', title: 'Be specific', desc: 'Describe tasks in detail — vague entries get less useful feedback.' },
-                  { icon: '📸', title: 'Add evidence', desc: 'Photos or screenshots make your log more compelling.' },
-                  { icon: '🚀', title: 'Submit on time', desc: 'Logs are reviewed regularly by your supervisor.' },
+                  { icon: <FiClipboard aria-hidden="true" />, title: 'Log every week', desc: 'Submit a log for each week of your placement without gaps.' },
+                  { icon: <FiEdit3 aria-hidden="true" />, title: 'Be specific', desc: 'Describe tasks in detail — vague entries get less useful feedback.' },
+                  { icon: <FiCamera aria-hidden="true" />, title: 'Add evidence', desc: 'Photos or screenshots make your log more compelling.' },
+                  { icon: <FiZap aria-hidden="true" />, title: 'Submit on time', desc: 'Logs are reviewed regularly by your supervisor.' },
                 ].map(({ icon, title, desc }) => (
                   <div key={title} className="wl-tip-card">
                     <div className="wl-tip-icon">{icon}</div>
@@ -447,7 +448,7 @@ const WeeklyLogForm = () => {
 
             <div className="wl-actions">
               <button type="submit" className="wl-btn-primary" disabled={saving}>
-                {saving ? 'Saving…' : '💾 Save Draft'}
+                {saving ? 'Saving…' : <><FiSave aria-hidden="true" /> Save Draft</>}
               </button>
               {existingLog?.status === 'draft' && (
                 <button type="button" onClick={handleSubmitForReview} className="wl-btn-secondary">
@@ -493,7 +494,7 @@ const WeeklyLogForm = () => {
             </div>
 
             <div className="wl-side-note">
-              <span className="wl-side-note-icon">💡</span>
+              <span className="wl-side-note-icon"><FiInfo aria-hidden="true" /></span>
               <span>
                 Save as a draft first. Once the week is complete, submit for
                 supervisor review.
