@@ -143,7 +143,7 @@ class UserViewSet(viewsets.ModelViewSet):
         _ensure_role_profile(request.user)
         if request.method.lower() == 'patch':
             update_data = {}
-            for field in ['first_name', 'last_name', 'phone_number']:
+            for field in ['first_name', 'last_name', 'phone_number', 'institution_name']:
                 if field in request.data:
                     value = request.data.get(field)
                     if isinstance(value, str):
