@@ -77,6 +77,12 @@ def _is_rate_limited(key, limit, ttl_seconds):
     return False
 
 
+def _as_bool(value):
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
 def _generate_registration_number():
     while True:
         value = f"TEMP-{uuid.uuid4().hex[:8].upper()}"
@@ -167,6 +173,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
             if 'department_id' in request.data:
                 update_data['department_id'] = request.data.get('department_id') or None
+
+            if 'profile_picture' in request.FILES:
+                update_data['profile_picture'] = request.FILES.get('profile_picture')
+
+            if _as_bool(request.data.get('remove_profile_picture', False)):
+                update_data['profile_picture'] = None
 
             serializer = self.get_serializer(request.user, data=update_data, partial=True)
             serializer.is_valid(raise_exception=True)

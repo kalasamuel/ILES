@@ -3,6 +3,7 @@ from unittest.mock import patch
 from django.core import mail
 from django.core.cache import cache
 from django.test import override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -156,6 +157,32 @@ class UserSettingsWorkflowTests(APITestCase):
 
 		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 		self.assertEqual(response.data['error'], 'That email is already in use.')
+
+	def test_profile_picture_upload_and_remove(self):
+		upload = SimpleUploadedFile('avatar.jpg', b'fake-image-content', content_type='image/jpeg')
+
+		upload_response = self.client.patch(
+			'/api/accounts/users/me/',
+			{'profile_picture': upload},
+			format='multipart',
+		)
+
+		self.assertEqual(upload_response.status_code, status.HTTP_200_OK)
+		self.user.refresh_from_db()
+		self.assertTrue(bool(self.user.profile_picture))
+		self.assertIn('profile_pictures/', self.user.profile_picture.name)
+		self.assertIsNotNone(upload_response.data.get('profile_picture_url'))
+
+		remove_response = self.client.patch(
+			'/api/accounts/users/me/',
+			{'remove_profile_picture': 'true'},
+			format='multipart',
+		)
+
+		self.assertEqual(remove_response.status_code, status.HTTP_200_OK)
+		self.user.refresh_from_db()
+		self.assertFalse(bool(self.user.profile_picture))
+		self.assertIsNone(remove_response.data.get('profile_picture_url'))
 
 	def test_settings_update_persists_notification_and_privacy_preferences(self):
 		response = self.client.patch(
