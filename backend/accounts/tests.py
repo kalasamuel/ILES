@@ -340,8 +340,35 @@ class RegistrationAffiliationWorkflowTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 		self.assertIn('institution_name', response.data)
 
-	def test_academic_registration_saves_institution(self):
+	def test_student_registration_requires_institution_email_and_code(self):
 		response = self.client.post(
+			'/api/accounts/users/register/',
+			{
+				'first_name': 'Sam',
+				'last_name': 'Student',
+				'email': 'sam.student2@example.com',
+				'password': 'StrongPassword123',
+				'role': 'Student',
+				'institution_name': 'Makerere University',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('institution_email', response.data)
+
+	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+	def test_academic_registration_requires_valid_institution_verification_code(self):
+		send_code_response = self.client.post(
+			'/api/accounts/users/send-institution-verification-code/',
+			{'institution_email': 'staff@makerere.ac.ug'},
+			format='json',
+		)
+
+		self.assertEqual(send_code_response.status_code, status.HTTP_200_OK)
+		self.assertEqual(len(mail.outbox), 1)
+
+		invalid_register = self.client.post(
 			'/api/accounts/users/register/',
 			{
 				'first_name': 'Ann',
@@ -350,10 +377,43 @@ class RegistrationAffiliationWorkflowTests(APITestCase):
 				'password': 'StrongPassword123',
 				'role': 'Academic Supervisor',
 				'institution_name': 'Makerere University',
+				'institution_email': 'staff@makerere.ac.ug',
+				'institution_verification_code': '000000',
 			},
 			format='json',
 		)
 
-		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		self.assertEqual(invalid_register.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('institution_verification_code', invalid_register.data)
+
+		valid_code = ''.join([char for char in mail.outbox[0].body if char.isdigit()][:6])
+		valid_register = self.client.post(
+			'/api/accounts/users/register/',
+			{
+				'first_name': 'Ann',
+				'last_name': 'Academic',
+				'email': 'ann.academic@example.com',
+				'password': 'StrongPassword123',
+				'role': 'Academic Supervisor',
+				'institution_name': 'Makerere University',
+				'institution_email': 'staff@makerere.ac.ug',
+				'institution_verification_code': valid_code,
+			},
+			format='json',
+		)
+
+		self.assertEqual(valid_register.status_code, status.HTTP_201_CREATED)
 		user = User.objects.get(email='ann.academic@example.com')
 		self.assertEqual(user.institution_name, 'Makerere University')
+		self.assertEqual(user.institution_email, 'staff@makerere.ac.ug')
+
+	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+	def test_send_institution_verification_code_requires_email(self):
+		response = self.client.post(
+			'/api/accounts/users/send-institution-verification-code/',
+			{'institution_email': ''},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('error', response.data)

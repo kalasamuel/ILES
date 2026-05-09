@@ -83,6 +83,10 @@ def _as_bool(value):
     return str(value).strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
+def _institution_verification_cache_key(email):
+    return f"institution_verification:{(email or '').strip().lower()}"
+
+
 def _generate_registration_number():
     while True:
         value = f"TEMP-{uuid.uuid4().hex[:8].upper()}"
@@ -311,6 +315,42 @@ class UserViewSet(viewsets.ModelViewSet):
                 'user': UserSerializer(user).data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], permission_classes=[], url_path='send-institution-verification-code')
+    def send_institution_verification_code(self, request):
+        institution_email = (request.data.get('institution_email') or '').strip().lower()
+
+        if not institution_email:
+            return Response({'error': 'Institution email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ip = get_client_ip(request)
+        throttle_key = f"rate_limit:institution_verify:{ip}"
+        if _is_rate_limited(throttle_key, limit=5, ttl_seconds=60):
+            return Response(
+                {'error': 'Too many verification requests. Please wait and try again.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        verification_code = get_random_string(6, allowed_chars='0123456789')
+        cache_key = _institution_verification_cache_key(institution_email)
+        cache.set(cache_key, verification_code, timeout=600)
+
+        send_mail(
+            subject='Your ILES Institution Verification Code',
+            message=(
+                'Hello,\n\n'
+                'A registration on ILES requires verification of this institution email address.\n\n'
+                f'Your verification code is: {verification_code}\n\n'
+                'This code expires in 10 minutes.\n\n'
+                'If you did not request this code, you can ignore this message.\n\n'
+                '— ILES Support Team'
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[institution_email],
+            fail_silently=False,
+        )
+
+        return Response({'message': 'Verification code sent to institution email.'}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], permission_classes=[], url_path='organization-suggestions')
     def organization_suggestions(self, request):

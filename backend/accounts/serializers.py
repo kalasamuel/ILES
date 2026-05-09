@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from PIL import Image, UnidentifiedImageError
+from django.core.cache import cache
 from .models import Role, Department, User, Student, Supervisor, UserSettings
 from datetime import timedelta
 from django.utils import timezone
@@ -10,6 +11,10 @@ from organizations.models import Organization
 MAX_PROFILE_IMAGE_BYTES = 5 * 1024 * 1024
 MIN_PROFILE_IMAGE_DIMENSION = 64
 MAX_PROFILE_IMAGE_DIMENSION = 4096
+
+
+def _institution_verification_cache_key(email):
+    return f"institution_verification:{(email or '').strip().lower()}"
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -36,7 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'institution_name', 'profile_picture', 'profile_picture_url', 'affiliation_type', 'affiliation_name', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
+        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'institution_name', 'institution_email', 'profile_picture', 'profile_picture_url', 'affiliation_type', 'affiliation_name', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -128,14 +133,18 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     organization_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     organization_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     institution_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    institution_email = serializers.EmailField(write_only=True, required=False, allow_blank=True)
+    institution_verification_code = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'password', 'role', 'organization_id', 'organization_name', 'institution_name']
+        fields = ['first_name', 'last_name', 'email', 'password', 'role', 'organization_id', 'organization_name', 'institution_name', 'institution_email', 'institution_verification_code']
 
     def validate(self, attrs):
         role_name = str(attrs.get('role', '')).strip().lower().replace('-', ' ').replace('_', ' ')
         institution_name = (attrs.get('institution_name') or '').strip()
+        institution_email = (attrs.get('institution_email') or '').strip().lower()
+        institution_verification_code = (attrs.get('institution_verification_code') or '').strip()
         organization_name = (attrs.get('organization_name') or '').strip()
         organization_id = attrs.get('organization_id')
 
@@ -144,6 +153,18 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
         if ('student' in role_name or 'academic' in role_name) and not institution_name:
             raise serializers.ValidationError({'institution_name': 'Institution is required for students and academic supervisors.'})
+
+        if 'student' in role_name or 'academic' in role_name:
+            if not institution_email:
+                raise serializers.ValidationError({'institution_email': 'Institution email is required for students and academic supervisors.'})
+
+            if not institution_verification_code:
+                raise serializers.ValidationError({'institution_verification_code': 'Institution verification code is required.'})
+
+            cache_key = _institution_verification_cache_key(institution_email)
+            expected_code = cache.get(cache_key)
+            if not expected_code or str(expected_code).strip() != institution_verification_code:
+                raise serializers.ValidationError({'institution_verification_code': 'Institution verification code is invalid or expired.'})
 
         return attrs
 
@@ -213,6 +234,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         organization_id = validated_data.pop('organization_id', None)
         organization_name = validated_data.pop('organization_name', '')
         institution_name = (validated_data.pop('institution_name', '') or '').strip()
+        institution_email = (validated_data.pop('institution_email', '') or '').strip().lower()
+        institution_verification_code = (validated_data.pop('institution_verification_code', '') or '').strip()
 
         # Get or create the role
         role, created = Role.objects.get_or_create(role_name=role_name)
@@ -222,6 +245,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             password=password,
             role=role,
             institution_name=institution_name,
+            institution_email=institution_email,
             **{k: v for k, v in validated_data.items() if k != 'email'}
         )
 
@@ -229,6 +253,9 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         workplace_org = None
         if 'workplace' in normalized:
             workplace_org = self._resolve_workplace_organization(organization_id, organization_name)
+
+        if ('student' in normalized or 'academic' in normalized) and institution_email and institution_verification_code:
+            cache.delete(_institution_verification_cache_key(institution_email))
 
         self._ensure_role_profile(user, role_name, organization=workplace_org)
         return user
