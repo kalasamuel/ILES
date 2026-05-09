@@ -29,12 +29,14 @@ class UserSerializer(serializers.ModelSerializer):
     department = DepartmentSerializer(read_only=True)
     profile_picture = serializers.FileField(required=False, allow_null=True, write_only=True)
     profile_picture_url = serializers.SerializerMethodField()
+    affiliation_type = serializers.SerializerMethodField()
+    affiliation_name = serializers.SerializerMethodField()
     role_id = serializers.PrimaryKeyRelatedField(source='role', queryset=Role.objects.all(), write_only=True, required=False)
     department_id = serializers.PrimaryKeyRelatedField(source='department', queryset=Department.objects.all(), write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'profile_picture', 'profile_picture_url', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
+        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'institution_name', 'profile_picture', 'profile_picture_url', 'affiliation_type', 'affiliation_name', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -46,6 +48,31 @@ class UserSerializer(serializers.ModelSerializer):
         if request is not None:
             return request.build_absolute_uri(obj.profile_picture.url)
         return obj.profile_picture.url
+
+    def _role_slug(self, obj):
+        return str(getattr(obj.role, 'role_name', '')).strip().lower().replace('-', ' ').replace('_', ' ')
+
+    def get_affiliation_type(self, obj):
+        role_slug = self._role_slug(obj)
+        if 'workplace' in role_slug:
+            return 'organization'
+        if 'student' in role_slug or 'academic' in role_slug:
+            return 'institution'
+        return None
+
+    def get_affiliation_name(self, obj):
+        role_slug = self._role_slug(obj)
+
+        if 'workplace' in role_slug:
+            supervisor = getattr(obj, 'supervisor', None)
+            if supervisor and supervisor.organization:
+                return supervisor.organization.name
+            return None
+
+        if 'student' in role_slug or 'academic' in role_slug:
+            return (obj.institution_name or '').strip() or None
+
+        return None
 
     def validate_profile_picture(self, file_obj):
         if not file_obj:
@@ -100,10 +127,25 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     role = serializers.CharField(write_only=True, required=True)  # Accept role name as string
     organization_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     organization_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    institution_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'password', 'role', 'organization_id', 'organization_name']
+        fields = ['first_name', 'last_name', 'email', 'password', 'role', 'organization_id', 'organization_name', 'institution_name']
+
+    def validate(self, attrs):
+        role_name = str(attrs.get('role', '')).strip().lower().replace('-', ' ').replace('_', ' ')
+        institution_name = (attrs.get('institution_name') or '').strip()
+        organization_name = (attrs.get('organization_name') or '').strip()
+        organization_id = attrs.get('organization_id')
+
+        if 'workplace' in role_name and not (organization_id or organization_name):
+            raise serializers.ValidationError({'organization_name': 'Organization name is required for workplace supervisors.'})
+
+        if ('student' in role_name or 'academic' in role_name) and not institution_name:
+            raise serializers.ValidationError({'institution_name': 'Institution is required for students and academic supervisors.'})
+
+        return attrs
 
     def _generate_registration_number(self):
         while True:
@@ -170,6 +212,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         organization_id = validated_data.pop('organization_id', None)
         organization_name = validated_data.pop('organization_name', '')
+        institution_name = (validated_data.pop('institution_name', '') or '').strip()
 
         # Get or create the role
         role, created = Role.objects.get_or_create(role_name=role_name)
@@ -178,6 +221,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             password=password,
             role=role,
+            institution_name=institution_name,
             **{k: v for k, v in validated_data.items() if k != 'email'}
         )
 
