@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { notificationsAPI } from '../services/endpoints';
@@ -9,6 +9,8 @@ function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [deleteNotificationId, setDeleteNotificationId] = useState(null);
+  const filterInitializedRef = useRef(false);
   const navigate = useNavigate();
   const { notificationId } = useParams();
   const { user } = useAuth();
@@ -36,6 +38,15 @@ function NotificationsPage() {
 
     fetchNotifications();
   }, [isAdmin]);
+
+  // Initialize filter based on unread count on first load
+  useEffect(() => {
+    if (!loading && notifications.length > 0 && !filterInitializedRef.current) {
+      const unreadCount = notifications.filter((item) => !item.is_read).length;
+      setFilter(unreadCount > 0 ? 'unread' : 'all');
+      filterInitializedRef.current = true;
+    }
+  }, [loading, notifications]);
 
   const getRelativeTime = (dateString) => {
     if (!dateString) return 'Unknown time';
@@ -150,30 +161,13 @@ function NotificationsPage() {
   const unreadCount = notifications.filter((item) => !item.is_read).length;
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '980px', margin: '0 auto' }}>
-
-      {/* ── Back Button ── */}
-      <div className="notif-back-container">
-        <button onClick={() => navigate(-1)} className="notif-back-btn">
-          <div className="notif-back-left">
-            <div className="back-arrow-circle">
-              <FiArrowLeft size={15} />
-            </div>
-            <div className="back-btn-text">
-              <span className="back-btn-label">Go Back</span>
-              <span className="back-btn-sub">Return to previous page</span>
-            </div>
-          </div>
-          <span className="back-btn-badge">Back</span>
-        </button>
-      </div>
-
-      {/* ── Page Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Notifications</h2>
+    <div className="notifications-page">
+      {/* Header Section */}
+      <div className="notifications-header">
+        <div className="notifications-title-block">
+          <h1 className="notifications-title">Notifications</h1>
           {unreadCount > 0 && (
-            <p style={{ margin: '0.5rem 0 0', color: '#666' }}>
+            <p className="notifications-subtitle">
               You have {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
             </p>
           )}
@@ -181,218 +175,418 @@ function NotificationsPage() {
         {unreadCount > 0 && (
           <button
             onClick={markAllAsRead}
-            style={{ padding: '0.5rem 1rem', backgroundColor: '#1a73e8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+            className="btn-mark-all"
+            title="Mark all notifications as read"
           >
-            Mark all as read
+            ✓ Mark all as read
           </button>
         )}
       </div>
 
-      {loading && <p style={{ marginBottom: '1rem', color: '#666' }}>Loading notifications...</p>}
+      {/* Loading State */}
+      {loading && (
+        <div className="notifications-loading">
+          <div className="loading-dot"></div>
+          <div className="loading-dot"></div>
+          <div className="loading-dot"></div>
+          <span>Loading notifications…</span>
+        </div>
+      )}
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '2px solid #e0e0e0' }}>
-        <button onClick={() => setFilter('all')} style={{ padding: '0.5rem 1rem', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: filter === 'all' ? '#1a73e8' : '#666', borderBottom: filter === 'all' ? '2px solid #1a73e8' : 'none', fontWeight: filter === 'all' ? 'bold' : 'normal' }}>
-          All ({notifications.length})
-        </button>
-        <button onClick={() => setFilter('unread')} style={{ padding: '0.5rem 1rem', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: filter === 'unread' ? '#1a73e8' : '#666', borderBottom: filter === 'unread' ? '2px solid #1a73e8' : 'none', fontWeight: filter === 'unread' ? 'bold' : 'normal' }}>
-          Unread ({unreadCount})
-        </button>
-        <button onClick={() => setFilter('read')} style={{ padding: '0.5rem 1rem', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: filter === 'read' ? '#1a73e8' : '#666', borderBottom: filter === 'read' ? '2px solid #1a73e8' : 'none', fontWeight: filter === 'read' ? 'bold' : 'normal' }}>
-          Read ({notifications.filter((item) => item.is_read).length})
-        </button>
-      </div>
+      {/* Filter Tabs */}
+      {!loading && (
+        <div className="notifications-tabs">
+          {['all', 'unread', 'read'].map((filterType) => {
+            const count =
+              filterType === 'all'
+                ? notifications.length
+                : filterType === 'unread'
+                ? unreadCount
+                : notifications.filter((n) => n.is_read).length;
 
+            return (
+              <button
+                key={filterType}
+                className={`tab-btn${filter === filterType ? ' active' : ''}`}
+                onClick={() => setFilter(filterType)}
+              >
+                {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
+                <span className="tab-count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Selected Notification Details (Admin) */}
       {selectedNotification && isAdmin && isAdminSystemType(selectedNotification.notification_type) && (
-        <div style={{ marginBottom: '1.25rem', padding: '1rem', border: `2px solid ${getTypeColor(selectedNotification.notification_type)}`, borderRadius: '8px', backgroundColor: '#ffffff' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-            <h3 style={{ margin: 0, color: '#1f2937' }}>Notification Details</h3>
+        <div
+          className="notification-details-panel"
+          style={{ '--type-color': getTypeColor(selectedNotification.notification_type) }}
+        >
+          <div className="notification-details-header">
+            <h3>Notification Details</h3>
             <button
               onClick={() => navigate('/app/notifications')}
-              style={{ padding: '0.3rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: '#fff', cursor: 'pointer' }}
+              className="btn-close-details"
+              title="Close details panel"
             >
-              Close
+              ✕
             </button>
           </div>
-          <p style={{ margin: '0 0 0.5rem 0', color: '#374151' }}>{selectedNotification.message}</p>
-          <div style={{ margin: 0, color: '#6b7280', fontSize: '0.85rem' }}>
-            {selectedNotification.created_at ? new Date(selectedNotification.created_at).toLocaleString() : 'Date unavailable'}
+          <p className="notification-details-message">
+            {selectedNotification.message}
+          </p>
+          <div className="notification-details-timestamp">
+            {selectedNotification.created_at
+              ? new Date(selectedNotification.created_at).toLocaleString()
+              : 'Date unavailable'}
           </div>
           {selectedNotification.admin_details && (
-            <div style={{ marginTop: '0.8rem', padding: '0.75rem', borderRadius: '6px', backgroundColor: '#f8fafc', border: '1px solid #e5e7eb' }}>
-              {Object.entries(selectedNotification.admin_details).map(([key, value]) => (
-                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', borderBottom: '1px dashed #e5e7eb', padding: '0.25rem 0' }}>
-                  <span style={{ fontWeight: 600, color: '#374151', textTransform: 'capitalize' }}>{key.replace(/_/g, ' ')}</span>
-                  <span style={{ color: '#111827' }}>{String(value)}</span>
-                </div>
-              ))}
+            <div className="notification-details-table">
+              {Object.entries(selectedNotification.admin_details).map(
+                ([key, value]) => (
+                  <div key={key} className="details-row">
+                    <span className="details-key">
+                      {key.replace(/_/g, ' ')}
+                    </span>
+                    <span className="details-value">{String(value)}</span>
+                  </div>
+                )
+              )}
             </div>
           )}
         </div>
       )}
 
-      {filteredNotifications.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#f9f9f9', borderRadius: '8px', color: '#666' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔔</div>
-          <p>No notifications to show</p>
+      {/* Notifications List */}
+      {!loading && filteredNotifications.length === 0 ? (
+        <div className="notifications-empty">
+          <span className="empty-icon">🔔</span>
+          <p className="empty-text">No notifications to show</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {filteredNotifications.map((notification) => (
-            <div
+        <div className="notifications-list">
+          {filteredNotifications.map((notification, index) => (
+            <NotificationCard
               key={notification.notification_id}
+              notification={notification}
+              isSelected={
+                notificationId &&
+                String(notification.notification_id) === String(notificationId)
+              }
+              isAdmin={isAdmin}
+              getTypeColor={getTypeColor}
+              getTypeIcon={getTypeIcon}
+              getRelativeTime={getRelativeTime}
+              isAdminSystemType={isAdminSystemType}
+              onMarkAsRead={markAsRead}
+              onDelete={deleteNotification}
+              onNavigate={navigate}
               style={{
-                padding: '1rem',
-                backgroundColor: notification.is_read ? '#fff' : '#f0f7ff',
-                border: `2px solid ${notification.is_read ? '#e0e0e0' : getTypeColor(notification.notification_type)}`,
-                borderRadius: '8px',
-                transition: 'all 0.2s',
-                cursor: (
-                  notification.notification_type === 'feedback_added'
-                  || notification.notification_type === 'log_submitted'
-                  || (isAdmin && isAdminSystemType(notification.notification_type))
-                ) ? 'pointer' : 'default',
-                position: 'relative',
-                opacity: notification.is_read ? 0.85 : 1,
-                boxShadow: notificationId && String(notification.notification_id) === String(notificationId)
-                  ? `0 0 0 2px ${getTypeColor(notification.notification_type)}33`
-                  : 'none',
+                '--type-color': getTypeColor(notification.notification_type),
               }}
-              onClick={() => handleNotificationClick(notification)}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                <div style={{ fontSize: '2rem' }}>
-                  {getTypeIcon(notification.notification_type)}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1rem', color: '#333' }}>
-                      {notification.notification_type?.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                      {!notification.is_read && (
-                        <span style={{ marginLeft: '0.5rem', padding: '0.125rem 0.375rem', backgroundColor: '#1a73e8', color: 'white', fontSize: '0.75rem', borderRadius: '12px' }}>
-                          New
-                        </span>
-                      )}
-                    </h3>
-                    <span style={{ fontSize: '0.75rem', color: '#999' }}>{getRelativeTime(notification.created_at)}</span>
-                  </div>
-                  <p style={{ margin: '0 0 0.5rem 0', color: '#666', lineHeight: '1.4' }}>{notification.message}</p>
-
-                  {notification.log_review_details && (
-                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'rgba(0,0,0,0.03)', borderLeft: `3px solid ${getTypeColor(notification.notification_type)}`, borderRadius: '4px' }}>
-                      <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#555', fontWeight: '500' }}>
-                        Week {notification.log_review_details.week_number} Feedback from {notification.log_review_details.supervisor_name}
-                      </p>
-                      <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#666' }}>
-                        Status: <span style={{ fontWeight: 'bold', color: getTypeColor(notification.log_review_details.status) }}>
-                          {notification.log_review_details.status.charAt(0).toUpperCase() + notification.log_review_details.status.slice(1)}
-                        </span>
-                      </p>
-                      {notification.log_review_details.rating && (
-                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: '#666' }}>
-                          Rating: {'⭐'.repeat(Math.round(notification.log_review_details.rating))} ({notification.log_review_details.rating}/5)
-                        </p>
-                      )}
-                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: '#555', fontStyle: 'italic' }}>
-                        Click to view feedback →
-                      </p>
-                    </div>
-                  )}
-
-                  {notification.log_details && (
-                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'rgba(25, 118, 210, 0.04)', borderLeft: `3px solid ${getTypeColor(notification.notification_type)}`, borderRadius: '4px' }}>
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#555', fontWeight: '600' }}>
-                          📚 {notification.log_details.student_name}
-                        </p>
-                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.8rem', color: '#777' }}>
-                          {notification.log_details.student_email}
-                        </p>
-                        {notification.log_details.student_registration_number && (
-                          <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.8rem', color: '#777' }}>
-                            Reg: {notification.log_details.student_registration_number}
-                          </p>
-                        )}
-                      </div>
-                      <hr style={{ margin: '0.5rem 0', border: 'none', borderTop: '1px solid #ddd' }} />
-                      <div>
-                        <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.875rem', color: '#555', fontWeight: '500' }}>
-                          Week {notification.log_details.week_number} - {notification.log_details.hours_worked} hours
-                        </p>
-                        {notification.log_details.organization_name && (
-                          <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.8rem', color: '#777' }}>
-                            @ {notification.log_details.organization_name}
-                          </p>
-                        )}
-                        {notification.log_details.activities_summary && (
-                          <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
-                            "{notification.log_details.activities_summary}..."
-                          </p>
-                        )}
-                      </div>
-                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: '#555', fontStyle: 'italic' }}>
-                        Click to review log →
-                      </p>
-                    </div>
-                  )}
-
-                  {isAdminSystemType(notification.notification_type) && notification.admin_details && (
-                    <div style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: 'rgba(2, 6, 23, 0.03)', borderLeft: `3px solid ${getTypeColor(notification.notification_type)}`, borderRadius: '4px' }}>
-                      <p style={{ margin: 0, color: '#475569', fontSize: '0.86rem' }}>
-                        Tap to open full notification details.
-                      </p>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem' }}>
-                    {!notification.is_read && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); markAsRead(notification.notification_id); }}
-                        style={{ padding: '0.25rem 0.75rem', backgroundColor: 'transparent', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                      >
-                        Mark as read
-                      </button>
-                    )}
-                    {notification.notification_type === 'feedback_added' && notification.log_review_details && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/app/logs/${notification.log_review_details.log_id}`); }}
-                        style={{ padding: '0.25rem 0.75rem', backgroundColor: '#9c27b0', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                      >
-                        View Feedback
-                      </button>
-                    )}
-                    {notification.notification_type === 'log_submitted' && notification.log_details && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/app/logs/${notification.log_details.log_id}`); }}
-                        style={{ padding: '0.25rem 0.75rem', backgroundColor: '#1976d2', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                      >
-                        Review Log
-                      </button>
-                    )}
-                    {isAdmin && isAdminSystemType(notification.notification_type) && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/app/notifications/${notification.notification_id}`); }}
-                        style={{ padding: '0.25rem 0.75rem', backgroundColor: getTypeColor(notification.notification_type), color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                      >
-                        View Details
-                      </button>
-                    )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteNotification(notification.notification_id); }}
-                      style={{ padding: '0.25rem 0.75rem', backgroundColor: 'transparent', border: '1px solid #ff4444', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', color: '#ff4444' }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            />
           ))}
         </div>
       )}
 
-      <div style={{ marginTop: '2rem', padding: '1rem', textAlign: 'center', borderTop: '1px solid #e0e0e0', color: '#999', fontSize: '0.875rem' }}>
-        <p>Stay updated with log submissions, feedback, and internship progress</p>
+      {/* Footer */}
+      {!loading && filteredNotifications.length > 0 && (
+        <div className="notifications-footer">
+          <p>Stay updated with log submissions, feedback, and internship progress</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Notification Card Component ────────────────────────────────────────
+function NotificationCard({
+  notification,
+  isSelected,
+  isAdmin,
+  getTypeColor,
+  getTypeIcon,
+  getRelativeTime,
+  isAdminSystemType,
+  onMarkAsRead,
+  onDelete,
+  onNavigate,
+  style,
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const cardClass = `notification-card${notification.is_read ? '' : ' unread'}${isSelected ? ' selected' : ''}`;
+
+  const handleCardClick = async () => {
+    if (!notification.is_read) {
+      await onMarkAsRead(notification.notification_id);
+    }
+
+    if (isAdmin && isAdminSystemType(notification.notification_type)) {
+      onNavigate(`/app/notifications/${notification.notification_id}`);
+      return;
+    }
+
+    if (
+      notification.notification_type === 'feedback_added' &&
+      notification.log_review_details?.log_id
+    ) {
+      onNavigate(`/app/logs/${notification.log_review_details.log_id}`);
+    } else if (
+      notification.notification_type === 'log_submitted' &&
+      notification.log_details?.log_id
+    ) {
+      onNavigate(`/app/logs/${notification.log_details.log_id}`);
+    }
+  };
+
+  const isClickable =
+    notification.notification_type === 'feedback_added' ||
+    notification.notification_type === 'log_submitted' ||
+    (isAdmin && isAdminSystemType(notification.notification_type));
+
+  return (
+    <div
+      className={cardClass}
+      style={style}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={isClickable ? handleCardClick : undefined}
+      role={isClickable ? 'button' : 'article'}
+      tabIndex={isClickable ? 0 : -1}
+      onKeyDown={isClickable ? (e) => e.key === 'Enter' && handleCardClick() : undefined}
+    >
+      <div className="notification-body">
+        <div className="notification-icon">
+          {getTypeIcon(notification.notification_type)}
+        </div>
+
+        <div className="notification-content">
+          {/* Card Header */}
+          <div className="notification-card-header">
+            <div>
+              <span className="notification-type-label">
+                {notification.notification_type
+                  ?.replace(/_/g, ' ')
+                  .split(' ')
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ')}
+              </span>
+              {!notification.is_read && (
+                <span className="notification-badge-new">New</span>
+              )}
+            </div>
+            <span className="notification-time">
+              {getRelativeTime(notification.created_at)}
+            </span>
+          </div>
+
+          {/* Message */}
+          <p className="notification-message">{notification.message}</p>
+
+          {/* Feedback Details */}
+          {notification.log_review_details && (
+            <FeedbackDetailsBox
+              details={notification.log_review_details}
+              typeColor={getTypeColor(notification.notification_type)}
+            />
+          )}
+
+          {/* Log Submission Details */}
+          {notification.log_details && (
+            <LogSubmissionDetailsBox
+              details={notification.log_details}
+              typeColor={getTypeColor(notification.notification_type)}
+            />
+          )}
+
+          {/* Admin Details */}
+          {isAdminSystemType(notification.notification_type) &&
+            notification.admin_details && (
+              <AdminDetailsBox
+                typeColor={getTypeColor(notification.notification_type)}
+              />
+            )}
+
+          {/* Action Buttons */}
+          <div className="notification-actions">
+            {!notification.is_read && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkAsRead(notification.notification_id);
+                }}
+                className="btn-action btn-mark-read"
+                title="Mark this notification as read"
+              >
+                ✓ Mark as read
+              </button>
+            )}
+
+            {notification.notification_type === 'feedback_added' &&
+              notification.log_review_details && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigate(
+                      `/app/logs/${notification.log_review_details.log_id}`
+                    );
+                  }}
+                  className="btn-action btn-primary"
+                  style={{
+                    '--btn-color': getTypeColor(notification.notification_type),
+                  }}
+                  title="View feedback on log"
+                >
+                  💬 View Feedback
+                </button>
+              )}
+
+            {notification.notification_type === 'log_submitted' &&
+              notification.log_details && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigate(`/app/logs/${notification.log_details.log_id}`);
+                  }}
+                  className="btn-action btn-primary"
+                  style={{
+                    '--btn-color': getTypeColor(notification.notification_type),
+                  }}
+                  title="Review submitted log"
+                >
+                  📝 Review Log
+                </button>
+              )}
+
+            {isAdmin && isAdminSystemType(notification.notification_type) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate(`/app/notifications/${notification.notification_id}`);
+                }}
+                className="btn-action btn-primary"
+                style={{
+                  '--btn-color': getTypeColor(notification.notification_type),
+                }}
+                title="View full notification details"
+              >
+                🔍 Details
+              </button>
+            )}
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(notification.notification_id);
+              }}
+              className="btn-action btn-delete"
+              title="Delete this notification"
+            >
+              🗑 Delete
+            </button>
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+// ── Feedback Details Box Component ─────────────────────────────────────
+function FeedbackDetailsBox({ details, typeColor }) {
+  return (
+    <div className="notification-detail-box" style={{ '--type-color': typeColor }}>
+      <div className="detail-box-header">
+        <span className="detail-box-title">💬 Feedback from Supervisor</span>
+      </div>
+      <div className="detail-box-content">
+        <div className="detail-row-inline">
+          <span className="detail-label">Week:</span>
+          <span className="detail-value">{details.week_number}</span>
+        </div>
+        <div className="detail-row-inline">
+          <span className="detail-label">Supervisor:</span>
+          <span className="detail-value">{details.supervisor_name}</span>
+        </div>
+        <div className="detail-row-inline">
+          <span className="detail-label">Status:</span>
+          <span
+            className="detail-badge"
+            style={{ '--badge-color': typeColor }}
+          >
+            {details.status.charAt(0).toUpperCase() + details.status.slice(1)}
+          </span>
+        </div>
+        {details.rating && (
+          <div className="detail-row-inline">
+            <span className="detail-label">Rating:</span>
+            <span className="detail-value detail-rating">
+              {'⭐'.repeat(Math.round(details.rating))} ({details.rating}/5)
+            </span>
+          </div>
+        )}
+        <p className="detail-hint">← Click card to view full feedback</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Log Submission Details Box Component ───────────────────────────────
+function LogSubmissionDetailsBox({ details, typeColor }) {
+  return (
+    <div className="notification-detail-box" style={{ '--type-color': typeColor }}>
+      <div className="detail-box-header">
+        <span className="detail-box-title">📚 Log Submission</span>
+      </div>
+      <div className="detail-box-content">
+        <div className="detail-student-info">
+          <p className="detail-student-name">{details.student_name}</p>
+          <p className="detail-student-email">{details.student_email}</p>
+          {details.student_registration_number && (
+            <p className="detail-student-reg">
+              Reg: {details.student_registration_number}
+            </p>
+          )}
+        </div>
+        <div className="detail-log-info">
+          <div className="detail-row-inline">
+            <span className="detail-label">Week:</span>
+            <span className="detail-value">{details.week_number}</span>
+          </div>
+          <div className="detail-row-inline">
+            <span className="detail-label">Hours:</span>
+            <span className="detail-value">{details.hours_worked} hrs</span>
+          </div>
+          {details.organization_name && (
+            <div className="detail-row-inline">
+              <span className="detail-label">Organization:</span>
+              <span className="detail-value">{details.organization_name}</span>
+            </div>
+          )}
+          {details.activities_summary && (
+            <p className="detail-activities">
+              "{details.activities_summary}…"
+            </p>
+          )}
+        </div>
+        <p className="detail-hint">← Click card to review the full log</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Admin Details Box Component ────────────────────────────────────────
+function AdminDetailsBox({ typeColor }) {
+  return (
+    <div
+      className="notification-detail-box notification-detail-box--admin"
+      style={{ '--type-color': typeColor }}
+    >
+      <div className="detail-box-header">
+        <span className="detail-box-title">🔧 System Information</span>
+      </div>
+      <p className="detail-hint">← Click card to view full system details</p>
     </div>
   );
 }

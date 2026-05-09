@@ -452,100 +452,269 @@
     gap: 0.25rem;
   }
 }
-/* ── Back Button (matches Login page style) ─────────────── */
-.notif-back-container {
+
+/* ── Notification Details Panel ────────────────────────── */
+.notification-details-panel {
   margin-bottom: 1.75rem;
-}
-
-.notif-back-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0.85rem 1.1rem;
-  background: var(--clr-surface);
-  border: 1.5px solid var(--clr-border);
+  padding: 1.5rem;
+  border: 2px solid;
+  border-color: var(--type-color, var(--clr-border));
   border-radius: var(--radius-lg);
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
+  background: var(--clr-surface);
   box-shadow: var(--shadow-card);
-  transition:
-    border-color var(--transition),
-    box-shadow var(--transition),
-    transform var(--transition);
-  font-family: 'DM Sans', sans-serif;
+  animation: slideUp 0.3s ease;
 }
 
-.notif-back-btn:hover {
-  border-color: var(--clr-border-hover);
-  box-shadow: var(--shadow-hover);
-  transform: translateY(-1px);
-}
-
-.notif-back-btn:active {
-  transform: translateY(0);
-}
-
-.notif-back-left {
+.notification-details-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  margin-bottom: 1rem;
+  gap: 1rem;
 }
 
-.back-arrow-circle {
+.notification-details-header h3 {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--clr-text-primary);
+}
+
+.btn-close-details {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--clr-text-primary);
-  color: var(--clr-bg);
-  flex-shrink: 0;
-  transition: background var(--transition);
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1.5px solid var(--clr-border);
+  background: transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--clr-text-muted);
+  font-size: 1.2rem;
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
 }
 
-.notif-back-btn:hover .back-arrow-circle {
-  background: var(--clr-accent);
+.btn-close-details:hover {
+  border-color: var(--clr-border-hover);
+  color: var(--clr-text-secondary);
+  background: var(--clr-surface-alt);
 }
 
-.back-btn-text {
+.notification-details-message {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--clr-text-secondary);
+  line-height: 1.6;
+}
+
+.notification-details-timestamp {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+  font-weight: 500;
+}
+
+.notification-details-table {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--clr-surface-alt);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--clr-border);
+}
+
+.details-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  text-align: left;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed var(--clr-border);
 }
 
-.back-btn-label {
-  font-size: 0.875rem;
+.details-row:last-child {
+  border-bottom: none;
+}
+
+.details-key {
   font-weight: 600;
   color: var(--clr-text-primary);
-  line-height: 1.2;
+  text-transform: capitalize;
+  font-size: 0.8rem;
 }
 
-.back-btn-sub {
+.details-value {
+  color: var(--clr-text-secondary);
+  font-size: 0.8rem;
+  text-align: right;
+  word-break: break-word;
+}
+
+/* ── Detail Box (Feedback/Log/Admin) ───────────────────── */
+.notification-detail-box {
+  position: relative;
+  margin-top: 1rem;
+  padding: 0.875rem;
+  background: var(--clr-surface-alt);
+  border-radius: var(--radius-md);
+  border-left: 3px solid;
+  border-left-color: var(--type-color, var(--clr-border));
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.notification-detail-box:hover {
+  background: rgba(28, 25, 22, 0.04);
+}
+
+.detail-box-header {
+  margin-bottom: 0.6rem;
+}
+
+.detail-box-title {
+  font-weight: 600;
+  color: var(--clr-text-primary);
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+}
+
+.detail-box-content {
+  font-size: 0.8rem;
+  color: var(--clr-text-secondary);
+}
+
+.detail-row-inline {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: var(--clr-text-secondary);
   font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--clr-text-muted);
-  line-height: 1.2;
 }
 
-.back-btn-badge {
+.detail-value {
+  color: var(--clr-text-primary);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.detail-rating {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.detail-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: var(--badge-color, var(--clr-accent));
+  color: #fff;
   font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 0.2rem 0.65rem;
   border-radius: var(--radius-pill);
-  background: var(--clr-surface-alt);
-  color: var(--clr-text-secondary);
-  border: 1px solid var(--clr-border);
-  transition: background var(--transition), color var(--transition);
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
 }
 
-.notif-back-btn:hover .back-btn-badge {
-  background: var(--clr-accent-light);
-  color: var(--clr-accent);
-  border-color: var(--clr-accent);
+.detail-student-info {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.detail-student-name {
+  margin: 0;
+  font-weight: 600;
+  color: var(--clr-text-primary);
+  font-size: 0.85rem;
+}
+
+.detail-student-email {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+}
+
+.detail-student-reg {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+}
+
+.detail-log-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.detail-activities {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--clr-text-secondary);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.detail-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+.notification-detail-box--admin {
+  padding: 0.75rem;
+}
+
+.notification-detail-box--admin .detail-hint {
+  margin: 0;
+}
+
+/* ── Primary Button Style ──────────────────────────────── */
+.btn-primary {
+  background: var(--btn-color, var(--clr-accent));
+  color: #fff;
+  border-color: transparent;
+}
+
+.btn-primary:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ── Notification Card Selected State ──────────────────── */
+.notification-card.selected {
+  border-color: var(--type-color, var(--clr-accent));
+  box-shadow: 
+    var(--shadow-hover),
+    0 0 0 2px var(--clr-surface),
+    0 0 0 4px var(--type-color, var(--clr-accent));
+}
+
+/* ── Focus States for Accessibility ────────────────────── */
+.notification-card:focus-visible {
+  outline: none;
+  border-color: var(--type-color, var(--clr-accent));
+  box-shadow: 0 0 0 3px rgba(217, 123, 24, 0.1);
+}
+
+.btn-action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--clr-surface), 0 0 0 4px var(--clr-accent);
+}
+
+.btn-mark-all:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--clr-surface), 0 0 0 4px var(--clr-text-primary);
 }
