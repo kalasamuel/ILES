@@ -119,6 +119,7 @@ const Login = () => {
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
+                autoComplete="current-password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
