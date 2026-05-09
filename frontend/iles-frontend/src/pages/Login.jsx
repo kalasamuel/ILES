@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FiArrowLeft, FiAward, FiEye, FiEyeOff, FiLock, FiMail } from 'react-icons/fi';
 import { useAuth } from '../hooks/AuthContext';
 import './Login.css';
+
+const REMEMBER_ME_KEY = 'iles_remembered_email';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -14,6 +16,15 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // ── On mount: restore remembered email ──────────────────────────────────
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(REMEMBER_ME_KEY);
+    if (savedEmail) {
+      setFormData((prev) => ({ ...prev, email: savedEmail }));
+      setRememberMe(true);
+    }
+  }, []);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -22,8 +33,17 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
     try {
       await login(formData.email, formData.password);
+
+      // ── Remember Me logic ────────────────────────────────────────────────
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_ME_KEY, formData.email);
+      } else {
+        localStorage.removeItem(REMEMBER_ME_KEY);
+      }
+
       navigate('/app/dashboard');
     } catch (err) {
       console.error('Login error details:', err);
@@ -109,11 +129,7 @@ const Login = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? (
-                  <FiEyeOff size={16} />
-                ) : (
-                  <FiEye size={16} />
-                )}
+                {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
               </button>
             </div>
           </div>
@@ -148,7 +164,7 @@ const Login = () => {
 
         </form>
 
-        {/* ── Back to Home — same styled button as ForgotPassword ── */}
+        {/* ── Back to Home ── */}
         <div className="back-to-home-container">
           <Link to="/" className="back-to-home">
             <div className="back-btn-left">
