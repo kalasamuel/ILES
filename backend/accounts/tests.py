@@ -6,6 +6,8 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from notifications.models import Notification
+
 from .models import Department, Role, User
 
 
@@ -203,3 +205,50 @@ class UserSettingsWorkflowTests(APITestCase):
 		self.assertEqual(valid_response.status_code, status.HTTP_200_OK)
 		self.user.refresh_from_db()
 		self.assertTrue(self.user.check_password('ValidNewPassword123'))
+
+
+class LoginNotificationWorkflowTests(APITestCase):
+	def setUp(self):
+		self.role = Role.objects.create(role_name='Student')
+		self.user = User.objects.create_user(
+			email='login-user@example.com',
+			password='StrongPassword123',
+			first_name='Login',
+			last_name='User',
+			role=self.role,
+		)
+
+	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+	@patch('accounts.views.get_location_from_ip')
+	@patch('accounts.views.extract_device_info')
+	def test_login_sends_email_and_creates_notification(self, mock_device_info, mock_location_info):
+		mock_device_info.return_value = {
+			'device_name': 'Chrome on Windows',
+			'device_type': 'desktop',
+			'browser': 'Chrome',
+			'operating_system': 'Windows',
+		}
+		mock_location_info.return_value = {
+			'location': 'Kampala, UG',
+			'country': 'Uganda',
+			'city': 'Kampala',
+			'latitude': None,
+			'longitude': None,
+		}
+
+		response = self.client.post(
+			'/api/accounts/users/login/',
+			{
+				'email': self.user.email,
+				'password': 'StrongPassword123',
+			},
+			format='json',
+			HTTP_USER_AGENT='Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(Notification.objects.filter(user=self.user, notification_type='login_alert').count(), 1)
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertIn('New ILES Login Alert', mail.outbox[0].subject)
+		self.assertEqual(mail.outbox[0].to, [self.user.email])
+		self.assertIn('A new sign-in to your ILES account was detected.', mail.outbox[0].body)
