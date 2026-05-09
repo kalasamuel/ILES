@@ -187,18 +187,24 @@ SIMPLE_JWT = {
 }
 # ── Email ──────────────────────────────────────────────
 EMAIL_HOST = env('EMAIL_HOST', default='').strip()
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='').strip()
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='').strip()
+
+if not EMAIL_HOST and (EMAIL_HOST_USER or EMAIL_HOST_PASSWORD):
+    EMAIL_HOST = 'smtp.gmail.com' if EMAIL_HOST_USER.lower().endswith('@gmail.com') else ''
+
+_smtp_configured = bool(EMAIL_HOST or (EMAIL_HOST_USER and EMAIL_HOST_PASSWORD))
+
 EMAIL_BACKEND = env(
     'EMAIL_BACKEND',
-    default='django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST else 'django.core.mail.backends.console.EmailBackend',
+    default='django.core.mail.backends.smtp.EmailBackend' if _smtp_configured else 'django.core.mail.backends.console.EmailBackend',
 )
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='').strip()
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='').strip()
 EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=10)
 
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='ILES Support <noreply@iles.edu>')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER or 'ILES Support <noreply@iles.edu>')
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:5173')
 
 # ── Cache (required for reset tokens) ──────────────────
