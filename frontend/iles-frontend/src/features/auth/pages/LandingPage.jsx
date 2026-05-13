@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiBarChart2, FiFileText, FiTrendingUp, FiUser } from 'react-icons/fi';
+import { FiBarChart2, FiFileText, FiUser } from 'react-icons/fi';
 import { dashboardsAPI } from '../../../services/endpoints';
 import landingPageImage from '../../../assets/landingpage.png';
 import './LandingPage.css';
@@ -131,11 +131,6 @@ function LandingPage() {
               <div className="feature-card-icon"><FiBarChart2 size={20} /></div>
               <h3>Evaluations</h3>
               <p>Comprehensive evaluation system for fair and consistent internship grading.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-card-icon"><FiTrendingUp size={20} /></div>
-              <h3>Reports</h3>
-              <p>Generate detailed reports and analytics across all departments.</p>
             </div>
           </div>
 
