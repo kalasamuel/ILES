@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FiBarChart2, FiFileText, FiUser, FiTrendingUp } from 'react-icons/fi';
 import { dashboardsAPI } from '../../../services/endpoints';
 import landingPageImage from '../../../assets/landingpage.png';
+import ilesLogo from '../../../assets/iles_logo.png';
 import './LandingPage.css';
 
 function LandingPage() {
@@ -51,9 +52,10 @@ function LandingPage() {
 
       {/* ── Navbar ── */}
       <nav className="landing-navbar">
-        <Link to="/" className="navbar-logo">
-          <div className="navbar-logo-icon">IL</div>
-          ILES Internship System
+        <Link to="/" className="navbar-logo" aria-label="ILES Internship System">
+          <div className="navbar-logo-icon">
+            <img src={ilesLogo} alt="ILES logo" className="navbar-logo-image" />
+          </div>
         </Link>
         <div className="navbar-actions">
           <Link to="/login" className="btn-nav-login">Login</Link>
@@ -159,9 +161,10 @@ function LandingPage() {
       <footer className="landing-footer">
         <div className="footer-grid">
           <div className="footer-brand">
-            <Link to="/" className="navbar-logo">
-              <div className="navbar-logo-icon">IL</div>
-              ILES
+            <Link to="/" className="navbar-logo" aria-label="ILES">
+              <div className="navbar-logo-icon">
+                <img src={ilesLogo} alt="ILES logo" className="navbar-logo-image" />
+              </div>
             </Link>
             <p>
               Empowering students and educational institutions with structured

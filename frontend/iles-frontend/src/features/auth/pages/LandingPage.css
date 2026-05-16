@@ -78,15 +78,23 @@ body {
 }
 
 .navbar-logo-icon {
-  width: 30px;
   height: 30px;
-  background: var(--orange);
+  padding: 0 6px;
+  background: transparent;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--white);
   font-size: 0.8rem;
+  overflow: visible;
+}
+
+.navbar-logo-image {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .navbar-actions {
