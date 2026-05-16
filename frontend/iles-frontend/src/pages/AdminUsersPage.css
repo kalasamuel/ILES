@@ -535,14 +535,16 @@
 }
 
 .admin-button-secondary {
-  background: var(--surface-warm);
-  border-color: var(--accent-border);
-  color: var(--accent-dark);
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+  transition: background 0.15s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .admin-button-secondary:hover {
-  background: #ffe8d6;
-  border-color: var(--accent);
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28);
 }
 
 .admin-button-ghost {
