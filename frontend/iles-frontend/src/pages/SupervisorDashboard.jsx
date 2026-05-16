@@ -1,6 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import {
+  ResponsiveContainer,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  Legend,
+} from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
 import { dashboardsAPI, reviewsAPI, placementsAPI, logbooksAPI, evaluationsAPI } from '../services/endpoints';
 import './SupervisorDashboard.css';
@@ -313,6 +331,76 @@ function SupervisorDashboard() {
       .reverse();
   }, [completedScoreBreakdowns, completedEvaluations, placementsById]);
 
+  // Chart colors (use project orange palette)
+  const primaryColor = '#ff7a00';
+  const primaryShade = '#ff7a00';
+  const neutralBg = '#ffffff';
+
+  function CustomChartTooltip({ active, payload, label }) {
+    if (!active || !payload || payload.length === 0) return null;
+    const p = payload[0];
+    return (
+      <div className="custom-tooltip" style={{ padding: 10, background: '#fff', border: '1px solid #eee', borderRadius: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{label}</div>
+        <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>{p.name || p.dataKey}: <strong style={{ color: primaryColor }}>{p.value}{p.unit || ''}</strong></div>
+      </div>
+    );
+  }
+
+  function ScoreTrendArea({ data }) {
+    if (!data || data.length === 0) return <div className="no-data">No trend data</div>;
+    return (
+      <ResponsiveContainer width="100%" height={180}>
+        <AreaChart data={data} margin={{ left: 0, right: 12 }}>
+          <defs>
+            <linearGradient id="gradScore" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={primaryShade} stopOpacity={0.9} />
+              <stop offset="100%" stopColor={primaryShade} stopOpacity={0.08} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+          <XAxis dataKey="label" tick={{ fill: '#6b7280' }} />
+          <YAxis domain={[0, 100]} tick={{ fill: '#6b7280' }} />
+          <Tooltip content={<CustomChartTooltip />} />
+          <Area type="monotone" dataKey="score" stroke={primaryColor} fill="url(#gradScore)" strokeWidth={2} />
+        </AreaChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  function CriteriaRadar({ data }) {
+    if (!data || data.length === 0) return <div className="no-data">No criteria data</div>;
+    // Radar needs value name and subject
+    const radarData = data.map((d) => ({ subject: d.criteria, A: d.avgPercentage }));
+    return (
+      <ResponsiveContainer width="100%" height={180}>
+        <RadarChart data={radarData} outerRadius={70} margin={{ top: 10, right: 8, left: 8, bottom: 10 }}>
+          <PolarGrid />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 11 }} />
+          <Radar name="Avg" dataKey="A" stroke={primaryColor} fill={primaryColor} fillOpacity={0.18} />
+          <Legend />
+        </RadarChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  function GradePie({ data }) {
+    if (!data || data.length === 0) return <div className="no-data">No grade distribution</div>;
+    const colors = ['#ff7a00', '#ff7a00', '#ff7a00', '#ff7a00', '#ff7a00'];
+    return (
+      <ResponsiveContainer width="100%" height={180}>
+        <PieChart>
+          <Pie data={data} dataKey="count" nameKey="grade" cx="50%" cy="50%" innerRadius={46} outerRadius={70} paddingAngle={4} label={({ grade, percent }) => `${grade} (${Math.round(percent * 100)}%)`}>
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomChartTooltip />} />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  }
+
   const gradeDistribution = useMemo(() => {
     const buckets = [
       { grade: 'A', count: 0 },
@@ -582,40 +670,23 @@ function SupervisorDashboard() {
             </div>
           </div>
 
-          <h4 className="chart-subtitle">Completed Evaluation Scores</h4>
-          {criteriaChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={criteriaChartData} layout="vertical" margin={{ left: 12, right: 16 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" domain={[0, 100]} unit="%" />
-                <YAxis dataKey="criteria" type="category" width={130} />
-                <Tooltip />
-                <Bar dataKey="avgPercentage" fill="#f97316" radius={[4, 4, 4, 4]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : completedScoreTrend.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={completedScoreTrend} margin={{ left: 8, right: 12 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" />
-                <YAxis allowDecimals={false} domain={[0, 100]} unit="%" />
-                <Tooltip />
-                <Bar dataKey="score" fill="#f97316" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : gradeDistribution.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={gradeDistribution} margin={{ left: 8, right: 12 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="grade" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="no-data">No completed evaluation data available</p>
-          )}
+          <h4 className="chart-subtitle">Evaluation Analytics</h4>
+          <div className="advanced-charts-grid">
+            <div className="chart-panel chart-panel--trend">
+              <h5 className="small-title">Score Trend</h5>
+              <ScoreTrendArea data={completedScoreTrend} />
+            </div>
+
+            <div className="chart-panel chart-panel--radar">
+              <h5 className="small-title">Criteria Averages</h5>
+              <CriteriaRadar data={criteriaChartData} />
+            </div>
+
+            <div className="chart-panel chart-panel--pie">
+              <h5 className="small-title">Grade Distribution</h5>
+              <GradePie data={gradeDistribution} />
+            </div>
+          </div>
 
           {completedEvaluationRows.length > 0 && (
             <div className="completed-evaluations-list">

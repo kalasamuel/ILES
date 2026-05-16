@@ -31,7 +31,7 @@
   transition: color 0.15s;
 }
 
-.contact-inner .sp-back-link:hover { color: #f97316; }
+.contact-inner .sp-back-link:hover { color: #ff7a00; }
 
 .contact-header {
   margin-bottom: 32px;
@@ -75,7 +75,7 @@
   align-items: center;
   justify-content: center;
   background: #fff7ed;
-  color: #f97316;
+  color: #ff7a00;
 }
 
 .contact-card h3 { font-size: 15px; font-weight: 700; color: #111827; }
@@ -87,7 +87,7 @@
 }
 
 .contact-card a {
-  color: #f97316;
+  color: #ff7a00;
   font-weight: 600;
   font-size: 13px;
   text-decoration: none;
@@ -144,7 +144,7 @@
 .cf-field input:focus,
 .cf-field select:focus,
 .cf-field textarea:focus {
-  border-color: #f97316;
+  border-color: #ff7a00;
   box-shadow: 0 0 0 3px rgba(249,115,22,0.1);
 }
 
@@ -152,7 +152,7 @@
 
 .cf-submit {
   padding: 11px 24px;
-  background: #f97316;
+  background: #ff7a00;
   color: #fff;
   border: none;
   border-radius: 8px;

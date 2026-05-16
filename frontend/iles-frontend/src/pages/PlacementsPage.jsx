@@ -9,7 +9,7 @@ const STATUS_FILTERS = ['All', 'Pending', 'Approved', 'Rejected', 'Completed'];
 
 const STATUS_META = {
   approved:  { color: '#10b981', bg: 'rgba(16,185,129,0.10)',  label: 'Approved',  icon: <FiCheck aria-hidden="true" /> },
-  pending:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.10)',  label: 'Pending',   icon: <FiClock aria-hidden="true" /> },
+  pending:   { color: '#ff7a00', bg: 'rgba(255,122,0,0.10)',  label: 'Pending',   icon: <FiClock aria-hidden="true" /> },
   rejected:  { color: '#ef4444', bg: 'rgba(239,68,68,0.10)',   label: 'Rejected',  icon: <FiXCircle aria-hidden="true" /> },
   completed: { color: '#6366f1', bg: 'rgba(99,102,241,0.10)', label: 'Completed', icon: <FiCheckSquare aria-hidden="true" /> },
   active:    { color: '#10b981', bg: 'rgba(16,185,129,0.10)',  label: 'Active',    icon: <FiCheckSquare aria-hidden="true" /> },

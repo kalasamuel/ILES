@@ -45,7 +45,7 @@
 
 .rp-btn-primary {
   border: none;
-  background: #f97316;
+  background: #ff7a00;
   color: #fff;
   border-radius: 10px;
   padding: 10px 16px;
@@ -134,8 +134,8 @@
 
 .rp-tab.active,
 .rp-tab:hover {
-  color: #f97316;
-  border-bottom-color: #f97316;
+  color: #ff7a00;
+  border-bottom-color: #ff7a00;
 }
 
 .rp-content {
