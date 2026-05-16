@@ -171,58 +171,47 @@
 .departments-button-primary {
   background: #ff7a00;
   color: #fff;
-  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.28);
-  transition: background 0.15s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
-.departments-button-primary:hover:not(:disabled) {
+.departments-button-primary:hover {
   background: #ea6c0a;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.36);
 }
 
 .departments-button-primary:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
 .departments-button-secondary {
-  background: #fff7ed;
-  border-color: #fed7aa;
-  color: #9a3412;
-  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+  transition: background 0.15s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .departments-button-secondary:hover {
-  background: #ffedd5;
+  background: #15803d;
   transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(249, 115, 22, 0.15);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28);
 }
 
 .departments-button-danger {
-  background: #fff;
-  border-color: #fecaca;
-  color: #b91c1c;
-  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+  transition: background 0.15s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .departments-button-danger:hover {
-  background: #fff1f2;
+  background: #b91c1c;
   transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(185, 28, 28, 0.12);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.28);
 }
 
 .departments-button-ghost {
   background: #fff;
   border-color: #e5e7eb;
   color: #374151;
-  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-}
-
-.departments-button-ghost:hover {
-  background: #f9fafb;
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
 }
 
 .departments-modal-backdrop {
