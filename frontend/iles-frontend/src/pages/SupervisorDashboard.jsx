@@ -251,9 +251,47 @@ function SupervisorDashboard() {
     [placements]
   );
 
+  // Helper: determine if a placement belongs to the current active tab (academic/workplace)
+  function placementMatchesTab(placement, tab) {
+    if (!placement) return false;
+    try {
+      const acad = placement?.academic_supervisor_details || placement?.academic_supervisor || placement?.academic_supervisor_id || null;
+      const work = placement?.workplace_supervisor_details || placement?.workplace_supervisor || placement?.workplace_supervisor_id || null;
+
+      const userId = user?.user_id || user?.id || null;
+
+      if (tab === 'academic') {
+        if (!acad) return false;
+        // acad may be an object with user_details.user_id or supervisor_id
+        if (typeof acad === 'object') {
+          const aUserId = acad?.user_details?.user_id || acad?.user?.user_id || acad?.user_id || acad?.supervisor_id || acad?.id || null;
+          return String(aUserId) === String(userId);
+        }
+        return String(acad) === String(userId) || String(acad) === String(user?.supervisor?.supervisor_id || user?.supervisor_id || user?.id);
+      }
+
+      if (tab === 'workplace') {
+        if (!work) return false;
+        if (typeof work === 'object') {
+          const wUserId = work?.user_details?.user_id || work?.user?.user_id || work?.user_id || work?.supervisor_id || work?.id || null;
+          return String(wUserId) === String(userId);
+        }
+        return String(work) === String(userId) || String(work) === String(user?.supervisor?.supervisor_id || user?.supervisor_id || user?.id);
+      }
+
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  const visiblePlacements = useMemo(() => placements.filter((p) => placementMatchesTab(p, activeTab)), [placements, activeTab, user]);
+
+  const visiblePlacementIds = useMemo(() => new Set(visiblePlacements.map((p) => getPlacementId(p) || p?.placement_id)), [visiblePlacements]);
+
   const activeStudents = useMemo(() => {
     const uniqueStudents = new Map();
-    placements.forEach((placement) => {
+    visiblePlacements.forEach((placement) => {
       const studentId = placement?.student_details?.student_id || placement?.student || placement?.student_details?.user_details?.user_id;
       if (studentId && !uniqueStudents.has(String(studentId))) {
         uniqueStudents.set(String(studentId), placement);
@@ -262,30 +300,43 @@ function SupervisorDashboard() {
 
     return Array.from(uniqueStudents.values())
       .sort((left, right) => sortByDateDesc(getPlacementDate(left), getPlacementDate(right)));
-  }, [placements]);
+  }, [visiblePlacements]);
 
   const assignedStudents = activeStudents.slice(0, 5);
 
   const pendingReviews = useMemo(() => {
     return [...logs]
       .filter((log) => String(log?.status || '').toLowerCase() === 'submitted')
+      .filter((log) => {
+        const pid = getPlacementIdFromLog(log);
+        if (!pid) return true;
+        return visiblePlacementIds.size === 0 || visiblePlacementIds.has(String(pid));
+      })
       .sort((left, right) => sortByDateDesc(getReviewDate(left), getReviewDate(right)));
-  }, [logs]);
+  }, [logs, visiblePlacementIds]);
 
   const recentPendingReviews = pendingReviews.slice(0, 5);
 
   const completedEvaluations = useMemo(() => {
     return [...evaluations].filter((evaluation) => {
-      return evaluation && (evaluation.total_score !== null || evaluation.grade || evaluation.evaluation_date || Array.isArray(evaluation.scores));
+      const ok = evaluation && (evaluation.total_score !== null || evaluation.grade || evaluation.evaluation_date || Array.isArray(evaluation.scores));
+      if (!ok) return false;
+      const pid = getPlacementId(evaluation?.placement);
+      if (!pid) return ok;
+      return visiblePlacementIds.size === 0 || visiblePlacementIds.has(String(pid));
     });
-  }, [evaluations]);
+  }, [evaluations, visiblePlacementIds]);
 
   const completedScoreBreakdowns = useMemo(() => {
     return [...scoreBreakdowns].filter((breakdown) => {
       const score = Number(breakdown?.final_score);
-      return Number.isFinite(score) || breakdown?.grade;
+      const ok = Number.isFinite(score) || breakdown?.grade;
+      if (!ok) return false;
+      const pid = getPlacementId(breakdown?.placement);
+      if (!pid) return ok;
+      return visiblePlacementIds.size === 0 || visiblePlacementIds.has(String(pid));
     });
-  }, [scoreBreakdowns]);
+  }, [scoreBreakdowns, visiblePlacementIds]);
 
   const completedEvaluationCount = completedScoreBreakdowns.length || completedEvaluations.length;
 
@@ -343,6 +394,8 @@ function SupervisorDashboard() {
   const trendRef = useRef(null);
   const radarRef = useRef(null);
   const pieRef = useRef(null);
+  const heatmapRef = useRef(null);
+  const histRef = useRef(null);
 
   // Filters state
   const [filterStart, setFilterStart] = useState('');
@@ -510,7 +563,7 @@ function SupervisorDashboard() {
     });
 
     // Map to the same format as completedScoreTrend
-    const mapped = (filtered.length > 0
+    const base = filtered.length > 0
       ? filtered.map((breakdown) => {
           const placementId = getPlacementId(breakdown?.placement);
           const placement = placementsById.get(placementId) || {};
@@ -522,7 +575,13 @@ function SupervisorDashboard() {
             grade: breakdown?.grade || getGradeBucket(normalized),
           };
         })
-      : []).sort((left, right) => sortByDateDesc(left?.evaluation_date, right?.evaluation_date)).slice(0, 6).map((evaluation, index) => ({ label: `#${index + 1}`, score: Number(evaluation.score || 0), grade: evaluation?.grade || getGradeBucket(Number(evaluation.score || 0)) })).reverse());
+      : [];
+
+    const mapped = base
+      .sort((left, right) => sortByDateDesc(left?.evaluation_date, right?.evaluation_date))
+      .slice(0, 6)
+      .map((evaluation, index) => ({ label: `#${index + 1}`, score: Number(evaluation.score || 0), grade: evaluation?.grade || getGradeBucket(Number(evaluation.score || 0)) }))
+      .reverse();
 
     return mapped;
   }, [completedScoreBreakdowns, completedEvaluations, placementsById, filterStart, filterEnd, filterStudent]);
@@ -572,6 +631,85 @@ function SupervisorDashboard() {
       { name: 'F (<60)', value: buckets[4] },
     ];
   }, [completedScoreBreakdowns, completedEvaluations]);
+
+  // Activity heatmap: weekday (0 Sun - 6 Sat) by hour (0-23)
+  const activityHeatmap = useMemo(() => {
+    const matrix = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
+    const sources = [ ...logs || [], ...reviews || [], ...(completedEvaluations || []), ...(completedScoreBreakdowns || []) ];
+    sources.forEach((item) => {
+      const dateStr = item?.submitted_at || item?.reviewed_at || item?.evaluation_date || item?.created_at || item?.timestamp || null;
+      const d = toDate(dateStr);
+      if (!d) return;
+      const day = d.getDay();
+      const hour = d.getHours();
+      matrix[day][hour] = (matrix[day][hour] || 0) + 1;
+    });
+    let max = 0;
+    matrix.forEach((row) => row.forEach((v) => { if (v > max) max = v; }));
+    return { matrix, max };
+  }, [logs, reviews, completedEvaluations, completedScoreBreakdowns]);
+
+  // Score distribution histogram (10 buckets)
+  const scoreHistogram = useMemo(() => {
+    const bins = Array.from({ length: 10 }, () => 0);
+    const source = completedScoreBreakdowns.length > 0 ? completedScoreBreakdowns : completedEvaluations;
+    source.forEach((item) => {
+      const score = Number(item?.final_score ?? getEvaluationDisplayScore(item)) || 0;
+      const idx = Math.min(9, Math.floor(score / 10));
+      bins[idx] += 1;
+    });
+    return bins.map((count, i) => ({ range: `${i*10}-${i===9?100:i*10+9}`, count }));
+  }, [completedScoreBreakdowns, completedEvaluations]);
+
+  function Heatmap({ data }) {
+    if (!data) return <div className="no-data">No activity data</div>;
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const { matrix, max } = data;
+    return (
+      <div className="heatmap-shell" ref={heatmapRef}>
+        <div className="heatmap-grid">
+          {days.map((day, r) => (
+            <div key={day} className="heatmap-row" aria-label={day}>
+              <div className="heatmap-day-label">{day}</div>
+              <div className="heatmap-cells">
+                {matrix[r].map((val, h) => {
+                  const intensity = max > 0 ? (val / max) : 0;
+                  const bg = `rgba(255,122,0,${0.06 + intensity * 0.9})`;
+                  return (
+                    <div
+                      key={`${r}-${h}`}
+                      role="button"
+                      tabIndex={0}
+                      className="heatmap-cell"
+                      title={`${day} ${h}:00 — ${val} events`}
+                      style={{ background: bg }}
+                      onClick={() => navigate(`/app/reports?weekday=${r}&hour=${h}`)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="heatmap-legend">Low <span className="legend-scale" /> High</div>
+      </div>
+    );
+  }
+
+  function ScoreHistogram({ data }) {
+    if (!data || data.length === 0) return <div className="no-data">No scores</div>;
+    return (
+      <ResponsiveContainer width="100%" height={160} ref={histRef}>
+        <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 6 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+          <XAxis dataKey="range" tick={{ fill: '#6b7280' }} />
+          <YAxis allowDecimals={false} tick={{ fill: '#6b7280' }} />
+          <Tooltip />
+          <Bar dataKey="count" fill={primaryColor} />
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  }
 
   const averageEvaluationPercentage = useMemo(() => {
     const percentages = completedScoreBreakdowns.length > 0
@@ -887,6 +1025,26 @@ function SupervisorDashboard() {
                   <Bar dataKey="count" fill={primaryColor} />
                 </BarChart>
               </ResponsiveContainer>
+            </div>
+
+            <div className="chart-panel chart-panel--heatmap" style={{gridColumn: '1 / 3'}}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <h5 className="small-title">Activity Heatmap</h5>
+                <div className="panel-actions">
+                  <button className="btn btn-secondary" onClick={() => exportChartRefAsPNG(heatmapRef, 'activity-heatmap.png')}>Export PNG</button>
+                </div>
+              </div>
+              <Heatmap data={activityHeatmap} />
+            </div>
+
+            <div className="chart-panel chart-panel--hist" style={{gridColumn: '3 / -1'}}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <h5 className="small-title">Score Distribution</h5>
+                <div className="panel-actions">
+                  <button className="btn btn-secondary" onClick={() => exportChartRefAsPNG(histRef, 'score-distribution.png')}>Export PNG</button>
+                </div>
+              </div>
+              <ScoreHistogram data={scoreHistogram} />
             </div>
           </div>
 
