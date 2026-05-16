@@ -127,7 +127,7 @@ function AcademicDashboard() {
   const statusChartData = useMemo(() => {
     return [
       { name: 'Completed', value: dashboardStats.completed, color: '#10b981' },
-      { name: 'Pending', value: dashboardStats.pending, color: '#f97316' },
+      { name: 'Pending', value: dashboardStats.pending, color: '#ff7a00' },
       { name: 'Overdue', value: dashboardStats.overdue, color: '#ef4444' },
     ].filter((entry) => entry.value > 0);
   }, [dashboardStats]);
@@ -382,7 +382,7 @@ function AcademicDashboard() {
                   <XAxis dataKey="month" />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#f97316" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="count" fill="#ff7a00" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

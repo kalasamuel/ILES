@@ -149,7 +149,7 @@ function SystemStatusPage() {
               <XAxis dataKey="name" />
               <YAxis allowDecimals={false} />
               <Tooltip />
-              <Bar dataKey="value" fill="#f97316" />
+              <Bar dataKey="value" fill="#ff7a00" />
             </BarChart>
           </ResponsiveContainer>
         </div>
