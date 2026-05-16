@@ -116,21 +116,6 @@ function AcademicDashboard() {
     };
   }, [evaluations]);
 
-  const assignedStudents = useMemo(() => {
-    const uniqueStudents = new Map();
-
-    placements.forEach((placement) => {
-      const studentId = placement?.student_details?.student_id || placement?.student?.student_id || placement?.student || placement?.student_details?.user_details?.user_id;
-      const key = String(studentId || getPlacementKey(placement));
-
-      if (!uniqueStudents.has(key)) {
-        uniqueStudents.set(key, placement);
-      }
-    });
-
-    return Array.from(uniqueStudents.values());
-  }, [placements]);
-
   const statusChartData = useMemo(() => {
     return [
       { name: 'Completed', value: dashboardStats.completed, color: '#10b981' },
@@ -361,10 +346,12 @@ function AcademicDashboard() {
       </div>
 
       <div className="dashboard-section dashboard-section--overview">
-        <div className="dashboard-card chart-card full-width">
-          <div className="card-header">
-            <div className="card-icon"><FiTrendingUp aria-hidden="true" /></div>
-            <h3>Evaluation Status Overview</h3>
+        <div className="dashboard-card chart-card dashboard-card--overview-main">
+          <div className="card-header card-header--split">
+            <div className="card-header-main">
+              <div className="card-icon"><FiTrendingUp aria-hidden="true" /></div>
+              <h3>Evaluation Status Overview</h3>
+            </div>
           </div>
           <div className="chart-container">
             {statusChartData.length > 0 ? (
@@ -372,12 +359,13 @@ function AcademicDashboard() {
                 <PieChart>
                   <Pie
                     data={statusChartData}
+                    dataKey="value"
+                    nameKey="name"
                     cx="50%"
                     cy="50%"
+                    outerRadius={100}
                     labelLine={false}
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={104}
-                    dataKey="value"
                   >
                     {statusChartData.map((entry) => (
                       <Cell key={entry.name} fill={entry.color} />
@@ -388,29 +376,12 @@ function AcademicDashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="no-data">No evaluation data available yet.</p>
+              <p className="no-data">No evaluation status data available.</p>
             )}
           </div>
-
-          <div className="evaluation-overview">
-            <div className="overview-pill">
-              <span>Students in scope</span>
-              <strong>{assignedStudents.length}</strong>
-            </div>
-            <div className="overview-pill">
-              <span>Completion rate</span>
-              <strong>{dashboardStats.completionRate}%</strong>
-            </div>
-            <div className="overview-pill">
-              <span>Overdue</span>
-              <strong>{dashboardStats.overdue}</strong>
-            </div>
-          </div>
         </div>
-      </div>
 
-      <div className="dashboard-section dashboard-section--two-up">
-        <div className="dashboard-card half-width dashboard-card--priority">
+        <div className="dashboard-card dashboard-card--overview-side">
           <div className="card-header">
             <div className="card-icon"><FiFileText aria-hidden="true" /></div>
             <h3>Pending Evaluations</h3>
@@ -438,8 +409,10 @@ function AcademicDashboard() {
             </Link>
           </div>
         </div>
+      </div>
 
-        <div className="dashboard-card half-width dashboard-card--priority">
+      <div className="dashboard-section dashboard-section--activity">
+        <div className="dashboard-card dashboard-card--priority">
           <div className="card-header">
             <div className="card-icon"><FiClock aria-hidden="true" /></div>
             <h3>Recent Evaluation Activity</h3>
@@ -507,7 +480,7 @@ function AcademicDashboard() {
       </div>
 
       <div className="dashboard-section dashboard-section--insight">
-        <div className="dashboard-card chart-card full-width dashboard-card--insight">
+        <div className="dashboard-card chart-card dashboard-card--insight">
           <div className="card-header card-header--split">
             <div className="card-header-main">
               <div className="card-icon"><FiBarChart2 aria-hidden="true" /></div>
@@ -526,7 +499,7 @@ function AcademicDashboard() {
           </div>
         </div>
 
-        <div className="dashboard-card dashboard-card--actions full-width">
+        <div className="dashboard-card dashboard-card--actions">
           <div className="card-header">
             <div className="card-icon"><FiZap aria-hidden="true" /></div>
             <h3>Quick Actions</h3>

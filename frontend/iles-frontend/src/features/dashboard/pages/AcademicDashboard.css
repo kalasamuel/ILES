@@ -177,6 +177,9 @@
 }
 
 .dashboard-section--overview {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  gap: 18px;
   margin-top: 22px;
 }
 
@@ -187,12 +190,16 @@
 }
 
 .dashboard-section--two-up,
-.dashboard-section--insight {
+.dashboard-section--insight,
+.dashboard-section--activity {
   display: flex;
   flex-direction: column;
 }
 
 .dashboard-section--insight {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
   margin-top: 22px;
 }
 
@@ -215,6 +222,11 @@
 
 .dashboard-card--priority {
   min-height: 100%;
+}
+
+.dashboard-card--overview-main,
+.dashboard-card--overview-side {
+  min-width: 0;
 }
 
 .dashboard-card--analytics,
@@ -535,6 +547,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .dashboard-section--overview,
   .dashboard-section--analytics {
     grid-template-columns: 1fr;
   }
@@ -557,7 +570,8 @@
   .dashboard-grid,
   .dashboard-section--two-up,
   .dashboard-section--analytics,
-  .dashboard-section--insight {
+  .dashboard-section--insight,
+  .dashboard-section--activity {
     grid-template-columns: 1fr;
   }
 
@@ -580,6 +594,10 @@
   }
 
   .dashboard-section {
+    gap: 14px;
+  }
+
+  .dashboard-section--overview {
     gap: 14px;
   }
 
