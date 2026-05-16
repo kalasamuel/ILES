@@ -120,6 +120,14 @@
   border-color: rgba(249, 115, 22, 0.24);
 }
 
+.stat-card:hover .stat-info h3 {
+  color: var(--brand);
+}
+
+.stat-info h3 {
+  transition: color 0.2s ease;
+}
+
 .stat-icon,
 .card-icon {
   width: 46px;
