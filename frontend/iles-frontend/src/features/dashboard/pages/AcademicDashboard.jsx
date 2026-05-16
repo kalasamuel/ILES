@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiBarChart2, FiClock, FiStar, FiTrendingUp, FiFileText, FiCalendar, FiZap, FiCheck } from 'react-icons/fi';
 import {
@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { useAuth } from '../../../hooks/AuthContext';
 import { evaluationsAPI, placementsAPI } from '../../../services/endpoints';
+import { exportChartRefAsPNG } from '../../../utils/chartExport';
 import './AcademicDashboard.css';
 
 function toDate(value) {
@@ -55,8 +56,14 @@ function getEvaluationDate(evaluation) {
   return evaluation?.evaluation_date || evaluation?.submitted_at || evaluation?.created_at || null;
 }
 
+function getEvaluationScore(evaluation) {
+  const score = Number(evaluation?.total_score);
+  return Number.isFinite(score) ? score : null;
+}
+
 function AcademicDashboard() {
   const { user } = useAuth();
+  const histogramRef = useRef(null);
   const [evaluations, setEvaluations] = useState([]);
   const [placements, setPlacements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -156,6 +163,42 @@ function AcademicDashboard() {
       .map(({ month, count }) => ({ month, count }));
   }, [evaluations]);
 
+  const activityHeatmap = useMemo(() => {
+    const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const heatmap = weekdayLabels.map((day, dayIndex) => ({
+      day,
+      dayIndex,
+      hours: Array.from({ length: 24 }, (_, hour) => ({ hour, value: 0 })),
+    }));
+
+    evaluations.forEach((evaluation) => {
+      const date = toDate(getEvaluationDate(evaluation));
+      if (!date) return;
+      heatmap[date.getDay()].hours[date.getHours()].value += 1;
+    });
+
+    return heatmap;
+  }, [evaluations]);
+
+  const scoreHistogram = useMemo(() => {
+    const scores = evaluations.map(getEvaluationScore).filter((score) => Number.isFinite(score));
+    const buckets = Array.from({ length: 10 }, (_, index) => ({
+      label: `${index * 10}-${index === 9 ? '100' : `${index * 10 + 9}`}`,
+      count: 0,
+    }));
+
+    scores.forEach((score) => {
+      const bucketIndex = Math.min(9, Math.floor(score / 10));
+      buckets[bucketIndex].count += 1;
+    });
+
+    return buckets;
+  }, [evaluations]);
+
+  const histogramMax = useMemo(() => {
+    return scoreHistogram.reduce((max, bucket) => Math.max(max, bucket.count), 0) || 1;
+  }, [scoreHistogram]);
+
   const pendingEvaluations = useMemo(() => {
     return [...evaluations]
       .filter((evaluation) => evaluation.total_score == null && !evaluation.is_overdue)
@@ -189,6 +232,63 @@ function AcademicDashboard() {
         };
       });
   }, [evaluations, placementsById]);
+
+  function Heatmap({ data }) {
+    const maxValue = data.reduce(
+      (max, row) => Math.max(max, ...row.hours.map((cell) => cell.value)),
+      0,
+    ) || 1;
+
+    return (
+      <div className="heatmap-shell">
+        <div className="heatmap-grid">
+          {data.map((row) => (
+            <div key={row.day} className="heatmap-row" aria-label={row.day}>
+              <div className="heatmap-day-label">{row.day}</div>
+              <div className="heatmap-cells">
+                {row.hours.map((cell) => {
+                  const intensity = cell.value / maxValue;
+                  return (
+                    <div
+                      key={`${row.day}-${cell.hour}`}
+                      className="heatmap-cell"
+                      title={`${row.day} ${cell.hour}:00 - ${cell.value} evaluations`}
+                      style={{
+                        backgroundColor: `rgba(255, 122, 0, ${0.06 + intensity * 0.9})`,
+                        borderColor: `rgba(255, 122, 0, ${0.12 + intensity * 0.3})`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="heatmap-legend">Low <span className="legend-scale" /> High</div>
+      </div>
+    );
+  }
+
+  function ScoreHistogram({ data }) {
+    return (
+      <div className="score-histogram-shell" ref={histogramRef}>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="label" tickMargin={8} />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+              {data.map((entry) => {
+                const opacity = Math.max(0.2, Math.min(1, entry.count / histogramMax));
+                return <Cell key={entry.label} fill={`rgba(255, 122, 0, ${opacity})`} />;
+              })}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
 
   if (loading) {
     return <div className="academic-dashboard"><div className="loading-container">Loading dashboard...</div></div>;
@@ -387,6 +487,35 @@ function AcademicDashboard() {
               </ResponsiveContainer>
             ) : (
               <p className="no-data">No monthly trend data available.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="dashboard-card chart-card full-width">
+          <div className="card-header">
+            <div className="card-icon"><FiTrendingUp aria-hidden="true" /></div>
+            <h3>Activity Heatmap</h3>
+          </div>
+          <div className="chart-container">
+            <Heatmap data={activityHeatmap} />
+          </div>
+        </div>
+
+        <div className="dashboard-card chart-card half-width">
+          <div className="card-header card-header--split">
+            <div className="card-header-main">
+              <div className="card-icon"><FiBarChart2 aria-hidden="true" /></div>
+              <h3>Score Distribution</h3>
+            </div>
+            <button type="button" className="btn btn-secondary" onClick={() => exportChartRefAsPNG(histogramRef, 'score-distribution.png')}>
+              Export PNG
+            </button>
+          </div>
+          <div className="chart-container">
+            {scoreHistogram.some((bucket) => bucket.count > 0) ? (
+              <ScoreHistogram data={scoreHistogram} />
+            ) : (
+              <p className="no-data">No scored evaluations available yet.</p>
             )}
           </div>
         </div>
