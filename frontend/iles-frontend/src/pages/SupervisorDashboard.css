@@ -412,6 +412,36 @@ ul {
   font-weight: 700;
 }
 
+.filter-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
+.filter-row input[type="date"], .filter-row select {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 13px;
+}
+
+.panel-actions { display: inline-flex; gap: 8px; }
+
+.chart-panel .btn-secondary { padding: 6px 8px; font-size: 12px; }
+
+.tabs-row { display:flex; gap:8px; align-items:center; }
+.tabs-row .btn { padding: 8px 12px; }
+
+.chart-panel--stacked { padding: 12px 14px; }
+
+/* improve small-screen stacking for the new stacked panel */
+@media (max-width: 900px) {
+  .advanced-charts-grid { grid-template-columns: 1fr; }
+  .chart-panel--radar, .chart-panel--pie { min-height: 220px; }
+}
+
 .chart-panel--radar,
 .chart-panel--pie {
   display: flex;

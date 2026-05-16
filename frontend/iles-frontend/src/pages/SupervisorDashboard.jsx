@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ResponsiveContainer,
   Tooltip,
@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
 import { dashboardsAPI, reviewsAPI, placementsAPI, logbooksAPI, evaluationsAPI } from '../services/endpoints';
+import { exportChartRefAsPNG } from '../utils/chartExport';
 import './SupervisorDashboard.css';
 
 function toDate(value) {
@@ -336,6 +337,19 @@ function SupervisorDashboard() {
   const primaryShade = '#ff7a00';
   const neutralBg = '#ffffff';
 
+  const navigate = useNavigate();
+
+  // Refs for exporting charts
+  const trendRef = useRef(null);
+  const radarRef = useRef(null);
+  const pieRef = useRef(null);
+
+  // Filters state
+  const [filterStart, setFilterStart] = useState('');
+  const [filterEnd, setFilterEnd] = useState('');
+  const [filterStudent, setFilterStudent] = useState('');
+  const [activeTab, setActiveTab] = useState('academic');
+
   function CustomChartTooltip({ active, payload, label }) {
     if (!active || !payload || payload.length === 0) return null;
     const p = payload[0];
@@ -351,7 +365,7 @@ function SupervisorDashboard() {
     if (!data || data.length === 0) return <div className="no-data">No trend data</div>;
     return (
       <ResponsiveContainer width="100%" height={180}>
-        <AreaChart data={data} margin={{ left: 0, right: 12 }}>
+        <AreaChart data={data} margin={{ left: 0, right: 12 }} onClick={(e) => handleTrendClick(e)}>
           <defs>
             <linearGradient id="gradScore" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={primaryShade} stopOpacity={0.9} />
@@ -368,13 +382,24 @@ function SupervisorDashboard() {
     );
   }
 
+  function handleTrendClick(e) {
+    try {
+      const payload = e?.activePayload && e.activePayload[0] && e.activePayload[0].payload;
+      if (payload && payload.label) {
+        navigate(`/app/reports?label=${encodeURIComponent(String(payload.label))}`);
+      }
+    } catch (err) {
+      // no-op
+    }
+  }
+
   function CriteriaRadar({ data }) {
     if (!data || data.length === 0) return <div className="no-data">No criteria data</div>;
     // Radar needs value name and subject
     const radarData = data.map((d) => ({ subject: d.criteria, A: d.avgPercentage }));
     return (
       <ResponsiveContainer width="100%" height={180}>
-        <RadarChart data={radarData} outerRadius={70} margin={{ top: 10, right: 8, left: 8, bottom: 10 }}>
+        <RadarChart data={radarData} outerRadius={70} margin={{ top: 10, right: 8, left: 8, bottom: 10 }} onClick={(e) => handleRadarClick(e)}>
           <PolarGrid />
           <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 11 }} />
           <Radar name="Avg" dataKey="A" stroke={primaryColor} fill={primaryColor} fillOpacity={0.18} />
@@ -384,13 +409,25 @@ function SupervisorDashboard() {
     );
   }
 
+  function handleRadarClick(e) {
+    try {
+      const payload = e?.activePayload && e.activePayload[0] && e.activePayload[0].payload;
+      if (payload && (payload.subject || payload.criteria)) {
+        const subject = payload.subject || payload.criteria;
+        navigate(`/app/reports?criteria=${encodeURIComponent(String(subject))}`);
+      }
+    } catch (err) {
+      // no-op
+    }
+  }
+
   function GradePie({ data }) {
     if (!data || data.length === 0) return <div className="no-data">No grade distribution</div>;
     const colors = ['#ff7a00', '#ff7a00', '#ff7a00', '#ff7a00', '#ff7a00'];
     return (
       <ResponsiveContainer width="100%" height={180}>
         <PieChart>
-          <Pie data={data} dataKey="count" nameKey="grade" cx="50%" cy="50%" innerRadius={46} outerRadius={70} paddingAngle={4} label={({ grade, percent }) => `${grade} (${Math.round(percent * 100)}%)`}>
+          <Pie data={data} dataKey="count" nameKey="grade" cx="50%" cy="50%" innerRadius={46} outerRadius={70} paddingAngle={4} label={({ grade, percent }) => `${grade} (${Math.round(percent * 100)}%)`} onClick={(entry, index) => handlePieClick(entry, index)}>
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
             ))}
@@ -399,6 +436,15 @@ function SupervisorDashboard() {
         </PieChart>
       </ResponsiveContainer>
     );
+  }
+
+  function handlePieClick(entry) {
+    try {
+      const grade = entry && (entry.grade || entry.payload?.grade);
+      if (grade) navigate(`/app/reports?grade=${encodeURIComponent(String(grade))}`);
+    } catch (err) {
+      // no-op
+    }
   }
 
   const gradeDistribution = useMemo(() => {
@@ -428,6 +474,103 @@ function SupervisorDashboard() {
     });
 
     return buckets.filter((item) => item.count > 0);
+  }, [completedScoreBreakdowns, completedEvaluations]);
+
+  // Apply UI filters to chart datasets
+  const filteredScoreTrend = useMemo(() => {
+    const source = completedScoreBreakdowns.length > 0 ? completedScoreBreakdowns : completedEvaluations;
+    const filtered = source.filter((item) => {
+      try {
+        const placementId = getPlacementId(item?.placement);
+        const placement = placementsById.get(placementId) || {};
+
+        if (filterStudent) {
+          const sid = placement?.student_details?.student_id || placement?.student || placement?.student_details?.user_details?.user_id;
+          if (!sid || String(sid) !== String(filterStudent)) return false;
+        }
+
+        if (filterStart || filterEnd) {
+          const dateStr = item?.evaluation_date || placement?.end_date || placement?.start_date || item?.submitted_at || null;
+          const d = toDate(dateStr);
+          if (!d) return false;
+          if (filterStart) {
+            const s = new Date(filterStart);
+            if (d < s) return false;
+          }
+          if (filterEnd) {
+            const e = new Date(filterEnd);
+            if (d > e) return false;
+          }
+        }
+
+        return true;
+      } catch (err) {
+        return true;
+      }
+    });
+
+    // Map to the same format as completedScoreTrend
+    const mapped = (filtered.length > 0
+      ? filtered.map((breakdown) => {
+          const placementId = getPlacementId(breakdown?.placement);
+          const placement = placementsById.get(placementId) || {};
+          const score = Number(breakdown?.final_score) || getEvaluationDisplayScore(breakdown) || 0;
+          const normalized = Number.isFinite(score) ? score : 0;
+          return {
+            evaluation_date: placement?.end_date || placement?.start_date || breakdown?.evaluation_date || null,
+            score: Number(normalized.toFixed(1)),
+            grade: breakdown?.grade || getGradeBucket(normalized),
+          };
+        })
+      : []).sort((left, right) => sortByDateDesc(left?.evaluation_date, right?.evaluation_date)).slice(0, 6).map((evaluation, index) => ({ label: `#${index + 1}`, score: Number(evaluation.score || 0), grade: evaluation?.grade || getGradeBucket(Number(evaluation.score || 0)) })).reverse());
+
+    return mapped;
+  }, [completedScoreBreakdowns, completedEvaluations, placementsById, filterStart, filterEnd, filterStudent]);
+
+  const filteredCriteriaChartData = useMemo(() => {
+    if (!criteriaChartData || criteriaChartData.length === 0) return criteriaChartData;
+    // criteria averages are less affected by student/date filters here; return as-is for now
+    return criteriaChartData;
+  }, [criteriaChartData, filterStart, filterEnd, filterStudent]);
+
+  const filteredGradeDistribution = useMemo(() => {
+    if (!gradeDistribution || gradeDistribution.length === 0) return gradeDistribution;
+    // simple student/date filtering not applied to aggregated buckets here
+    return gradeDistribution;
+  }, [gradeDistribution, filterStart, filterEnd, filterStudent]);
+
+  // Extra charts: counts per placement (stacked/columns) and score buckets
+  const placementCounts = useMemo(() => {
+    const map = new Map();
+    const source = completedScoreBreakdowns.length > 0 ? completedScoreBreakdowns : completedEvaluations;
+    source.forEach((item) => {
+      const pid = getPlacementId(item?.placement) || 'unknown';
+      const placement = placementsById.get(pid) || { placement_id: pid, position_title: 'Unknown' };
+      const title = placement.position_title || String(pid).slice(0, 8);
+      const entry = map.get(title) || 0;
+      map.set(title, entry + 1);
+    });
+    return Array.from(map.entries()).map(([placementTitle, count]) => ({ placementTitle, count })).sort((a, b) => b.count - a.count).slice(0, 8);
+  }, [completedScoreBreakdowns, completedEvaluations, placementsById]);
+
+  const scoreBuckets = useMemo(() => {
+    const buckets = [0,0,0,0,0];
+    const source = completedScoreBreakdowns.length > 0 ? completedScoreBreakdowns : completedEvaluations;
+    source.forEach((item) => {
+      const score = Number(item?.final_score ?? getEvaluationDisplayScore(item)) || 0;
+      if (score >= 90) buckets[0] += 1;
+      else if (score >= 80) buckets[1] += 1;
+      else if (score >= 70) buckets[2] += 1;
+      else if (score >= 60) buckets[3] += 1;
+      else buckets[4] += 1;
+    });
+    return [
+      { name: 'A (90+)', value: buckets[0] },
+      { name: 'B (80-89)', value: buckets[1] },
+      { name: 'C (70-79)', value: buckets[2] },
+      { name: 'D (60-69)', value: buckets[3] },
+      { name: 'F (<60)', value: buckets[4] },
+    ];
   }, [completedScoreBreakdowns, completedEvaluations]);
 
   const averageEvaluationPercentage = useMemo(() => {
@@ -671,20 +814,79 @@ function SupervisorDashboard() {
           </div>
 
           <h4 className="chart-subtitle">Evaluation Analytics</h4>
+          <div className="filter-row">
+            <label style={{fontSize:12, color:'#6b7280'}}>From</label>
+            <input type="date" value={filterStart} onChange={(e) => setFilterStart(e.target.value)} />
+            <label style={{fontSize:12, color:'#6b7280'}}>To</label>
+            <input type="date" value={filterEnd} onChange={(e) => setFilterEnd(e.target.value)} />
+            <label style={{fontSize:12, color:'#6b7280'}}>Student</label>
+            <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
+              <option value="">All students</option>
+              {activeStudents.map((pl) => {
+                const sid = pl?.student_details?.student_id || pl?.student || pl?.student_details?.user_details?.user_id;
+                return <option key={sid} value={sid}>{getStudentLabel(pl)}</option>;
+              })}
+            </select>
+            <button className="btn btn-secondary" onClick={() => { setFilterStart(''); setFilterEnd(''); setFilterStudent(''); }}>Reset</button>
+          </div>
+
           <div className="advanced-charts-grid">
-            <div className="chart-panel chart-panel--trend">
-              <h5 className="small-title">Score Trend</h5>
-              <ScoreTrendArea data={completedScoreTrend} />
+            <div style={{gridColumn: '1 / -1', display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between'}}>
+              <div style={{display:'flex', gap:8}}>
+                <button className={`btn ${activeTab==='academic' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('academic')}>Academic Supervisor</button>
+                <button className={`btn ${activeTab==='workplace' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('workplace')}>Workplace Supervisor</button>
+              </div>
+              <div style={{display:'flex', gap:8}}>
+                <button className="btn btn-secondary" onClick={() => exportChartRefAsPNG(null, 'dashboard-snapshot.png')}>Export Dashboard</button>
+              </div>
             </div>
 
-            <div className="chart-panel chart-panel--radar">
-              <h5 className="small-title">Criteria Averages</h5>
-              <CriteriaRadar data={criteriaChartData} />
+            <div className="chart-panel chart-panel--trend" ref={trendRef}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
+                <h5 className="small-title">Score Trend</h5>
+                <div className="panel-actions">
+                  <button className="btn btn-secondary" onClick={() => exportChartRefAsPNG(trendRef, 'score-trend.png')}>Export PNG</button>
+                </div>
+              </div>
+              <ScoreTrendArea data={filteredScoreTrend.length>0 ? filteredScoreTrend : completedScoreTrend} />
             </div>
 
-            <div className="chart-panel chart-panel--pie">
-              <h5 className="small-title">Grade Distribution</h5>
-              <GradePie data={gradeDistribution} />
+            <div className="chart-panel chart-panel--radar" ref={radarRef}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
+                <h5 className="small-title">Criteria Averages</h5>
+                <div className="panel-actions">
+                  <button className="btn btn-secondary" onClick={() => exportChartRefAsPNG(radarRef, 'criteria-averages.png')}>Export PNG</button>
+                </div>
+              </div>
+              <CriteriaRadar data={filteredCriteriaChartData} />
+            </div>
+
+            <div className="chart-panel chart-panel--pie" ref={pieRef}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8}}>
+                <h5 className="small-title">Grade Distribution</h5>
+                <div className="panel-actions">
+                  <button className="btn btn-secondary" onClick={() => exportChartRefAsPNG(pieRef, 'grade-distribution.png')}>Export PNG</button>
+                </div>
+              </div>
+              <GradePie data={filteredGradeDistribution} />
+            </div>
+
+            <div className="chart-panel chart-panel--stacked" style={{gridColumn: '1 / -1'}}>
+              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                <h5 className="small-title">Top Placements (by evaluations)</h5>
+                <div className="panel-actions">
+                  <button className="btn btn-secondary" onClick={() => exportChartRefAsPNG(null, 'placements-counts.png')}>Export PNG</button>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={140}>
+                <BarChart data={placementCounts} layout="vertical" margin={{left:10}}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis type="number" tick={{ fill: '#6b7280' }} />
+                  <YAxis dataKey="placementTitle" type="category" width={200} tick={{ fill: '#6b7280' }} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill={primaryColor} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
