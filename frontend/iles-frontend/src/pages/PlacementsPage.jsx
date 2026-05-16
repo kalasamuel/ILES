@@ -79,9 +79,14 @@ function PlacementList() {
           <h1>Placements</h1>
           <p>Manage internship placements and their approval status</p>
         </div>
-        <Link to="create" className="lp-btn-primary">
-          + New Placement
-        </Link>
+        <div className="pl-header-actions">
+          <Link to="create" className="lp-btn-primary">
+            + New Placement
+          </Link>
+          <Link to="/app/dashboard" className="lp-btn-back">
+            ← Back to Dashboard
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
