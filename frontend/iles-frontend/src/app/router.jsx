@@ -26,6 +26,7 @@ import ReviewsPage from '../pages/ReviewsPage';
 import EvaluationsPage from '../pages/EvaluationsPage';
 import ReportsPage from '../pages/ReportsPage';
 import ActivitiesPage from '../pages/ActivitiesPage';
+import ActivityPage from '../pages/ActivityPage';
 import AdminUsersPage from '../pages/AdminUsersPage';
 import DepartmentsPage from '../pages/DepartmentsPage';
 import OrganizationsPage from '../pages/OrganizationsPage';
@@ -121,6 +122,7 @@ function Router() {
         <Route path="reports/*" element={<ReportsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="notifications/:notificationId" element={<NotificationsPage />} />
+        <Route path="activity" element={<ActivityPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="help" element={<HelpPage />} />
 

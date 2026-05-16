@@ -71,6 +71,7 @@ function NotificationsPage() {
       case 'pending_updates': return '#f59e0b';
       case 'system_alert': return '#dc2626';
       case 'new_company_added': return '#4f46e5';
+      case 'login_alert': return '#ff6b6b';
       default: return '#666';
     }
   };
@@ -88,6 +89,7 @@ function NotificationsPage() {
       case 'pending_updates': return <FiClock aria-hidden="true" />;
       case 'system_alert': return <FiAlertCircle aria-hidden="true" />;
       case 'new_company_added': return <FiBriefcase aria-hidden="true" />;
+      case 'login_alert': return <FiMonitor aria-hidden="true" />;
       default: return <FiBell aria-hidden="true" />;
     }
   };
