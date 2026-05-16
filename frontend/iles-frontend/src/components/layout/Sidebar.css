@@ -29,7 +29,7 @@
   justify-content: space-between;
   padding: 0 1.5rem;
   border-bottom: 1.5px solid #fed7aa;
-  background: linear-gradient(135deg, #ea580c, #f97316);
+  background: linear-gradient(135deg, #ff7a00, #ff7a00);
   flex-shrink: 0;
 }
 
@@ -92,7 +92,7 @@
 
 .sidebar-nav li a:hover {
   background: #fff0e4;
-  color: #ea580c;
+  color: #ff7a00;
   padding-left: 1.3rem;
 }
 
@@ -100,7 +100,7 @@
   background: linear-gradient(135deg, #fff0e4, #ffe4cc);
   color: #c2410c;
   font-weight: 700;
-  border-left: 3px solid #ea580c;
+  border-left: 3px solid #ff7a00;
   padding-left: calc(1rem - 3px);
 }
 
@@ -123,7 +123,7 @@
 
 .sidebar-footer a:hover {
   background: #fff0e4;
-  color: #ea580c;
+  color: #ff7a00;
 }
 /* Nav icon alignment */
 .sidebar-nav li a {

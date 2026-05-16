@@ -54,7 +54,7 @@
 
 .toast.success::before { background: #10b981; }
 .toast.error::before   { background: #ef4444; }
-.toast.warning::before { background: #f59e0b; }
+  .toast.warning::before { background: #ff7a00; }
 .toast.info::before    { background: #06b6d4; }
 
 .toast-icon {
@@ -66,7 +66,7 @@
 
 .toast.success .toast-icon { color: #10b981; }
 .toast.error   .toast-icon { color: #ef4444; }
-.toast.warning .toast-icon { color: #f59e0b; }
+  .toast.warning .toast-icon { color: #ff7a00; }
 .toast.info    .toast-icon { color: #06b6d4; }
 
 .toast-body {

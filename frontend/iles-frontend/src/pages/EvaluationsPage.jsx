@@ -18,7 +18,7 @@ function gradeClass(grade) {
 function scoreColor(score) {
   if (!score) return '#e5e7eb';
   if (score >= 70) return '#10b981';
-  if (score >= 50) return '#f59e0b';
+  if (score >= 50) return '#ff7a00';
   return '#ef4444';
 }
 

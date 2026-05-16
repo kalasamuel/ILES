@@ -57,7 +57,9 @@
 .ep-stat-card:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   transform: translateY(-2px);
-  border-color: rgba(249,115,22,0.3);
+  border-color: rgba(255,122,0,0.3);
+.ep-stat-card:hover .ep-stat-value { color: #f97316; }
+  .ep-stat-card:hover .ep-stat-value { color: #ff7a00; }
 }
 
 .ep-stat-label {
@@ -103,8 +105,8 @@
 
 .ep-filter-chip.active,
 .ep-filter-chip:hover {
-  background: #f97316;
-  border-color: #f97316;
+  background: #ff7a00;
+  border-color: #ff7a00;
   color: #fff;
 }
 
