@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowLeft, FiAward, FiMail } from 'react-icons/fi';
+import { FiArrowLeft, FiMail } from 'react-icons/fi';
 import { authAPI } from '../../../services/endpoints'; 
+import ilesLogo from '../../../assets/iles_logo.png';
 import './ForgotPasswordPage.css';
 
 function ForgotPasswordPage() {
@@ -34,7 +35,7 @@ function ForgotPasswordPage() {
       <nav className="navbar">
         <Link to="/" className="navbar-brand">
           <div className="navbar-logo">
-            <FiAward size={20} />
+            <img src={ilesLogo} alt="ILES logo" className="navbar-logo-image" />
           </div>
           <span className="navbar-title">ILES</span>
         </Link>
@@ -50,7 +51,7 @@ function ForgotPasswordPage() {
         {/* Hero */}
         <div className="forgot-password-hero">
           <div className="hero-icon">
-            <FiAward size={30} />
+            <img src={ilesLogo} alt="ILES logo" className="hero-logo-image" />
           </div>
           <h1 className="hero-title">Internship Logging &amp; Evaluation</h1>
           <p className="hero-subtitle">Password Recovery Portal</p>
