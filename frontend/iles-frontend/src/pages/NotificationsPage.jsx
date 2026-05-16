@@ -59,21 +59,9 @@ function NotificationsPage() {
   };
 
   const getTypeColor = (type) => {
-    switch(type) {
-      case 'submission_deadline': return '#ff9800';
-      case 'log_review_pending': return '#4caf50';
-      case 'placement_rejected': return '#f44336';
-      case 'evaluation_completed': return '#2196f3';
-      case 'feedback_added': return '#9c27b0';
-      case 'log_submitted': return '#1976d2';
-      case 'system_health_update': return '#0ea5e9';
-      case 'server_status_update': return '#16a34a';
-      case 'pending_updates': return '#f59e0b';
-      case 'system_alert': return '#dc2626';
-      case 'new_company_added': return '#4f46e5';
-      case 'login_alert': return '#ff6b6b';
-      default: return '#666';
-    }
+    // Use project primary orange, with black/white only elsewhere
+    // All notification types use the project's orange palette to stay consistent
+    return '#ff7a00';
   };
 
   const getTypeIcon = (type) => {
