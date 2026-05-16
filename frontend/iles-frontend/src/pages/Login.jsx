@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiArrowLeft, FiAward, FiEye, FiEyeOff, FiLock, FiMail } from 'react-icons/fi';
+import { FiArrowLeft, FiEye, FiEyeOff, FiLock, FiMail } from 'react-icons/fi';
 import { useAuth } from '../hooks/AuthContext';
+import ilesLogo from '../assets/iles_logo.png';
 import './Login.css';
 
 const REMEMBER_ME_KEY = 'iles_remembered_email';
@@ -66,11 +67,10 @@ const Login = () => {
       {/* ── Hero / Header ── */}
       <div className="login-header">
         <Link to="/" className="login-logo-link">
-          <div className="login-logo">
+          <div className="login-logo" aria-label="ILES">
             <div className="login-logo-icon">
-              <FiAward />
+              <img src={ilesLogo} alt="ILES logo" className="login-logo-image" />
             </div>
-            <span className="login-logo-text">ILES</span>
           </div>
         </Link>
         <h1 className="login-title">Welcome Back</h1>
