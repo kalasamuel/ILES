@@ -37,7 +37,6 @@ function ForgotPasswordPage() {
           <div className="navbar-logo">
             <img src={ilesLogo} alt="ILES logo" className="navbar-logo-image" />
           </div>
-          <span className="navbar-title">ILES</span>
         </Link>
         <div className="navbar-actions">
           <Link to="/login" className="btn-ghost">Login</Link>
