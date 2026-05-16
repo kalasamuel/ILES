@@ -90,6 +90,15 @@
   border-color: rgba(249, 115, 22, 0.34);
 }
 
+.rp-stat-card:hover .rp-stat-value {
+  color: #ff7a00;
+  transition: color 0.2s ease;
+}
+
+.rp-stat-value {
+  transition: color 0.2s ease;
+}
+
 .rp-stat-label {
   display: block;
   color: #6b7280;
@@ -163,6 +172,13 @@
   border-radius: 10px;
   background: #f9fafb;
   padding: 12px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.rp-kpi-box:hover {
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.09);
+  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, 0.34);
 }
 
 .rp-kpi-box span {
@@ -176,6 +192,11 @@
   font-size: 24px;
   letter-spacing: -0.5px;
   color: #111827;
+  transition: color 0.2s ease;
+}
+
+.rp-kpi-box:hover strong {
+  color: #ff7a00;
 }
 
 .rp-analytics-grid {
@@ -189,6 +210,13 @@
   border-radius: 12px;
   padding: 16px;
   background: linear-gradient(155deg, #fff9f4 0%, #ffffff 65%);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.rp-analytics-card:hover {
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.09);
+  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, 0.34);
 }
 
 .rp-analytics-card h3 {
@@ -207,6 +235,11 @@
   font-weight: 700;
   letter-spacing: -0.6px;
   line-height: 1.1;
+  transition: color 0.2s ease;
+}
+
+.rp-analytics-card:hover p {
+  color: #ff7a00;
 }
 
 .rp-table-wrap {
