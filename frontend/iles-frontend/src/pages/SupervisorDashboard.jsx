@@ -1037,15 +1037,7 @@ function SupervisorDashboard() {
               <Heatmap data={activityHeatmap} />
             </div>
 
-            <div className="chart-panel chart-panel--hist" style={{gridColumn: '3 / -1'}}>
-              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-                <h5 className="small-title">Score Distribution</h5>
-                <div className="panel-actions">
-                  <button className="btn btn-secondary" onClick={() => exportChartRefAsPNG(histRef, 'score-distribution.png')}>Export PNG</button>
-                </div>
-              </div>
-              <ScoreHistogram data={scoreHistogram} />
-            </div>
+            {/* Score distribution moved out of the chart grid to sit as its own dashboard card */}
           </div>
 
           {completedEvaluationRows.length > 0 && (
@@ -1098,6 +1090,17 @@ function SupervisorDashboard() {
           <Link to="/app/activities" className="btn-link">
             View All Activities →
           </Link>
+        </div>
+        {/* Score Distribution as its own card so it can sit beside Quick Actions */}
+        <div className="dashboard-card">
+          <h3>Score Distribution</h3>
+          <div style={{marginTop:8}}>
+            <ScoreHistogram data={scoreHistogram} />
+          </div>
+          <div style={{marginTop:10}}>
+            <button className="btn btn-secondary" onClick={() => exportChartRefAsPNG(histRef, 'score-distribution.png')}>Export PNG</button>
+            <Link to="/app/reports" className="btn-link" style={{marginLeft:8}}>View Full Report →</Link>
+          </div>
         </div>
 
         <div className="dashboard-card">

@@ -158,7 +158,7 @@ ul {
 
 /* Completed evaluations analytics */
 .dashboard-card.chart-card {
-  grid-column: span 4;
+  grid-column: span 2;
 }
 
 /* Recent activity + quick actions */
