@@ -7,6 +7,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     log_review_details = serializers.SerializerMethodField(read_only=True)
     log_details = serializers.SerializerMethodField(read_only=True)
     admin_details = serializers.SerializerMethodField(read_only=True)
+    login_alert_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Notification
@@ -53,6 +54,12 @@ class NotificationSerializer(serializers.ModelSerializer):
             'system_alert',
             'new_company_added',
         }:
+            return obj.details or {}
+        return None
+
+    def get_login_alert_details(self, obj):
+        """Return login alert details from the notification's details JSON field"""
+        if obj.notification_type == 'login_alert':
             return obj.details or {}
         return None
 
