@@ -335,6 +335,14 @@ export const notificationsAPI = {
     const response = await api.delete(`/notifications/deadlines/${id}/`);
     return response.data;
   },
+  getLoginHistory: async () => {
+    const response = await api.get('/notifications/login-history/');
+    return response.data;
+  },
+  getRecentLoginHistory: async () => {
+    const response = await api.get('/notifications/login-history/recent/');
+    return response.data;
+  },
 };
 
 // Contact

@@ -338,12 +338,15 @@ function NotificationCard({
       notification.log_details?.log_id
     ) {
       onNavigate(`/app/logs/${notification.log_details.log_id}`);
+    } else if (notification.notification_type === 'login_alert') {
+      onNavigate(`/app/activity`);
     }
   };
 
   const isClickable =
     notification.notification_type === 'feedback_added' ||
     notification.notification_type === 'log_submitted' ||
+    notification.notification_type === 'login_alert' ||
     (isAdmin && isAdminSystemType(notification.notification_type));
 
   return (
@@ -405,6 +408,15 @@ function NotificationCard({
           {isAdminSystemType(notification.notification_type) &&
             notification.admin_details && (
               <AdminDetailsBox
+                typeColor={getTypeColor(notification.notification_type)}
+              />
+            )}
+
+          {/* Login Alert Details */}
+          {notification.notification_type === 'login_alert' &&
+            notification.login_alert_details && (
+              <LoginAlertDetailsBox
+                details={notification.login_alert_details}
                 typeColor={getTypeColor(notification.notification_type)}
               />
             )}
@@ -474,6 +486,22 @@ function NotificationCard({
                 >
                 <FiSearch aria-hidden="true" /> Details
                 </button>
+            )}
+
+            {notification.notification_type === 'login_alert' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate(`/app/activity`);
+                }}
+                className="btn-action btn-primary"
+                style={{
+                  '--btn-color': getTypeColor(notification.notification_type),
+                }}
+                title="View your login activity"
+              >
+                <FiMonitor aria-hidden="true" /> View Activity
+              </button>
             )}
 
             <button
@@ -589,6 +617,53 @@ function AdminDetailsBox({ typeColor }) {
         <span className="detail-box-title"><FiSettings aria-hidden="true" /> System Information</span>
       </div>
       <p className="detail-hint">← Click card to view full system details</p>
+    </div>
+  );
+}
+
+// ── Login Alert Details Box Component ──────────────────────────────────
+function LoginAlertDetailsBox({ details, typeColor }) {
+  return (
+    <div className="notification-detail-box" style={{ '--type-color': typeColor }}>
+      <div className="detail-box-header">
+        <span className="detail-box-title"><FiMonitor aria-hidden="true" /> Login Details</span>
+      </div>
+      <div className="detail-box-content">
+        {details.device_name && (
+          <div className="detail-row-inline">
+            <span className="detail-label">Device:</span>
+            <span className="detail-value">{details.device_name}</span>
+          </div>
+        )}
+        {details.browser && (
+          <div className="detail-row-inline">
+            <span className="detail-label">Browser:</span>
+            <span className="detail-value">{details.browser}</span>
+          </div>
+        )}
+        {details.operating_system && (
+          <div className="detail-row-inline">
+            <span className="detail-label">OS:</span>
+            <span className="detail-value">{details.operating_system}</span>
+          </div>
+        )}
+        {details.location && (
+          <div className="detail-row-inline">
+            <span className="detail-label">Location:</span>
+            <span className="detail-value">
+              {details.location}
+              {details.country && ` (${details.country})`}
+            </span>
+          </div>
+        )}
+        {details.ip_address && (
+          <div className="detail-row-inline">
+            <span className="detail-label">IP Address:</span>
+            <span className="detail-value">{details.ip_address}</span>
+          </div>
+        )}
+        <p className="detail-hint">← Click card to view complete login activity history</p>
+      </div>
     </div>
   );
 }
