@@ -113,6 +113,7 @@ function SupervisorDashboard() {
   const [criteriaSummaries, setCriteriaSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('academic');
   const bootstrapAttemptedRef = useRef(false);
 
   useEffect(() => {
@@ -401,7 +402,6 @@ function SupervisorDashboard() {
   const [filterStart, setFilterStart] = useState('');
   const [filterEnd, setFilterEnd] = useState('');
   const [filterStudent, setFilterStudent] = useState('');
-  const [activeTab, setActiveTab] = useState('academic');
 
   function CustomChartTooltip({ active, payload, label }) {
     if (!active || !payload || payload.length === 0) return null;
