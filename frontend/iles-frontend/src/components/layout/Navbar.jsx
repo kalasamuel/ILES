@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiAward, FiBell, FiChevronDown } from 'react-icons/fi';
+import { FiBell, FiChevronDown } from 'react-icons/fi';
 import { useAuth } from '../../hooks/AuthContext';
 import { notificationsAPI } from '../../services/endpoints';
 import { ROLES } from '../../constants';
+import ilesLogo from '../../assets/iles_logo.png';
 import './Navbar.css';
 
 function Navbar({ user, onMenuClick }) {
@@ -70,11 +71,8 @@ function Navbar({ user, onMenuClick }) {
           <span />
         </button>
 
-        <div className="navbar-logo">
-          <div className="navbar-logo-icon">
-            <FiAward size={16} color="white" />
-          </div>
-          <span className="navbar-logo-text">ILES</span>
+        <div className="navbar-logo" aria-label="ILES">
+          <img src={ilesLogo} alt="ILES logo" className="navbar-brand-image" />
         </div>
       </div>
 

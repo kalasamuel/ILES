@@ -173,15 +173,12 @@
   text-decoration: none;
 }
 
-.navbar-logo-icon {
-  width: 32px;
+.navbar-brand-image {
   height: 32px;
-  background: #0f0f0f;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  transform: none;
 }
 
 .navbar-logo-text {
