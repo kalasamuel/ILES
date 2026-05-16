@@ -21,9 +21,9 @@
   --shadow-hover: 0 8px 24px rgba(249, 115, 22, 0.10);
 
   min-height: 100vh;
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 28px 32px;
+  padding: 28px 36px 36px;
   background: linear-gradient(180deg, #fffdf9 0%, var(--bg-page) 100%);
   color: var(--text-primary);
   font-family: 'DM Sans', sans-serif;
@@ -169,6 +169,33 @@
   gap: 18px;
 }
 
+.dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.dashboard-section--overview {
+  margin-top: 22px;
+}
+
+.dashboard-section--analytics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.dashboard-section--two-up,
+.dashboard-section--insight {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-section--insight {
+  margin-top: 22px;
+}
+
 .dashboard-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -184,6 +211,16 @@
 
 .dashboard-card.half-width {
   grid-column: span 2;
+}
+
+.dashboard-card--priority {
+  min-height: 100%;
+}
+
+.dashboard-card--analytics,
+.dashboard-card--insight,
+.dashboard-card--actions {
+  min-height: 100%;
 }
 
 .card-header {
@@ -223,6 +260,14 @@
 
 .chart-card .chart-container {
   padding: 14px 18px 4px;
+}
+
+.dashboard-card--insight .chart-container {
+  padding-bottom: 12px;
+}
+
+.dashboard-card--actions .card-content {
+  padding-top: 14px;
 }
 
 .score-histogram-shell {
@@ -441,6 +486,15 @@
   gap: 10px;
 }
 
+.dashboard-card--actions .quick-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.dashboard-card--actions .quick-actions .btn {
+  flex: 1 1 220px;
+}
+
 .quick-actions .btn {
   width: 100%;
 }
@@ -481,6 +535,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .dashboard-section--analytics {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-card.half-width {
     grid-column: span 1;
   }
@@ -496,7 +554,10 @@
   }
 
   .stats-grid,
-  .dashboard-grid {
+  .dashboard-grid,
+  .dashboard-section--two-up,
+  .dashboard-section--analytics,
+  .dashboard-section--insight {
     grid-template-columns: 1fr;
   }
 
@@ -518,6 +579,10 @@
     padding-right: 14px;
   }
 
+  .dashboard-section {
+    gap: 14px;
+  }
+
   .card-header--split {
     align-items: flex-start;
     flex-direction: column;
@@ -534,5 +599,9 @@
 
   .heatmap-cells {
     min-width: 720px;
+  }
+
+  .dashboard-card--actions .quick-actions {
+    flex-direction: column;
   }
 }

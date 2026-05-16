@@ -360,7 +360,7 @@ function AcademicDashboard() {
         </div>
       </div>
 
-      <div className="dashboard-grid">
+      <div className="dashboard-section dashboard-section--overview">
         <div className="dashboard-card chart-card full-width">
           <div className="card-header">
             <div className="card-icon"><FiTrendingUp aria-hidden="true" /></div>
@@ -407,8 +407,10 @@ function AcademicDashboard() {
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="dashboard-card half-width">
+      <div className="dashboard-section dashboard-section--two-up">
+        <div className="dashboard-card half-width dashboard-card--priority">
           <div className="card-header">
             <div className="card-icon"><FiFileText aria-hidden="true" /></div>
             <h3>Pending Evaluations</h3>
@@ -437,7 +439,7 @@ function AcademicDashboard() {
           </div>
         </div>
 
-        <div className="dashboard-card half-width">
+        <div className="dashboard-card half-width dashboard-card--priority">
           <div className="card-header">
             <div className="card-icon"><FiClock aria-hidden="true" /></div>
             <h3>Recent Evaluation Activity</h3>
@@ -468,8 +470,10 @@ function AcademicDashboard() {
             </Link>
           </div>
         </div>
+      </div>
 
-        <div className="dashboard-card chart-card half-width">
+      <div className="dashboard-section dashboard-section--analytics">
+        <div className="dashboard-card chart-card dashboard-card--analytics">
           <div className="card-header">
             <div className="card-icon"><FiCalendar aria-hidden="true" /></div>
             <h3>Monthly Evaluation Throughput</h3>
@@ -491,7 +495,7 @@ function AcademicDashboard() {
           </div>
         </div>
 
-        <div className="dashboard-card chart-card full-width">
+        <div className="dashboard-card chart-card dashboard-card--insight">
           <div className="card-header">
             <div className="card-icon"><FiTrendingUp aria-hidden="true" /></div>
             <h3>Activity Heatmap</h3>
@@ -500,8 +504,10 @@ function AcademicDashboard() {
             <Heatmap data={activityHeatmap} />
           </div>
         </div>
+      </div>
 
-        <div className="dashboard-card chart-card half-width">
+      <div className="dashboard-section dashboard-section--insight">
+        <div className="dashboard-card chart-card full-width dashboard-card--insight">
           <div className="card-header card-header--split">
             <div className="card-header-main">
               <div className="card-icon"><FiBarChart2 aria-hidden="true" /></div>
@@ -520,7 +526,7 @@ function AcademicDashboard() {
           </div>
         </div>
 
-        <div className="dashboard-card half-width">
+        <div className="dashboard-card dashboard-card--actions full-width">
           <div className="card-header">
             <div className="card-icon"><FiZap aria-hidden="true" /></div>
             <h3>Quick Actions</h3>
