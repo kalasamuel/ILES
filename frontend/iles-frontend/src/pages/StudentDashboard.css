@@ -474,6 +474,8 @@
     min-height: 110px;
   }
 
+}
+
 @media (max-width: 760px) {
   .student-dashboard {
     padding: 16px;
