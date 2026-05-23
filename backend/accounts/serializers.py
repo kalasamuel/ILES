@@ -54,6 +54,48 @@ class UserSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.profile_picture.url)
         return obj.profile_picture.url
 
+    def to_representation(self, instance):
+        """
+        Mask identifying fields when the target user has profile_visible=False
+        and the requesting user is neither the target user nor an admin.
+        """
+        request = self.context.get('request')
+        # Base representation
+        data = super().to_representation(instance)
+
+        try:
+            settings_obj = UserSettings.objects.filter(user=instance).first()
+        except Exception:
+            settings_obj = None
+
+        # If no request context, return as-is
+        if not request or not hasattr(request, 'user') or request.user is None:
+            return data
+
+        requester = request.user
+        is_admin = False
+        try:
+            is_admin = bool(requester.role and str(requester.role.role_name).strip().lower() == 'admin')
+        except Exception:
+            is_admin = False
+
+        is_self = getattr(requester, 'user_id', None) and getattr(instance, 'user_id', None) and str(requester.user_id) == str(instance.user_id)
+
+        if settings_obj and settings_obj.profile_visible is False and not is_admin and not is_self:
+            # Mask identifying fields
+            data['first_name'] = ''
+            data['last_name'] = ''
+            data['email'] = None
+            data['phone_number'] = None
+            data['institution_name'] = None
+            data['profile_picture_url'] = None
+
+        # Additionally respect the show_email flag even when profile_visible is True
+        if settings_obj and settings_obj.show_email is False and not is_admin and not is_self:
+            data['email'] = None
+
+        return data
+
     def _role_slug(self, obj):
         return str(getattr(obj.role, 'role_name', '')).strip().lower().replace('-', ' ').replace('_', ' ')
 
