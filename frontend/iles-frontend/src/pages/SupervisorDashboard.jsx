@@ -20,6 +20,7 @@ import {
   Legend,
 } from 'recharts';
 import { useAuth } from '../hooks/AuthContext';
+import MaskedUserName from '../components/users/MaskedUserName';
 import { dashboardsAPI, reviewsAPI, placementsAPI, logbooksAPI, evaluationsAPI } from '../services/endpoints';
 import { exportChartRefAsPNG } from '../utils/chartExport';
 import './SupervisorDashboard.css';
@@ -40,11 +41,10 @@ function formatDate(value) {
 }
 
 function getStudentLabel(placement) {
-  const first = placement?.student_details?.user_details?.first_name || '';
-  const last = placement?.student_details?.user_details?.last_name || '';
-  const fullName = `${first} ${last}`.trim();
-  if (fullName) return fullName;
-  return placement?.student_details?.registration_number || 'Unknown student';
+  const user = placement?.student_details?.user_details || null;
+  const reg = placement?.student_details?.registration_number || null;
+  if (!user) return reg || 'Unknown student';
+  return <MaskedUserName user={user} fallback={reg || 'Unknown student'} />;
 }
 
 function getPlacementIdFromLog(log) {
