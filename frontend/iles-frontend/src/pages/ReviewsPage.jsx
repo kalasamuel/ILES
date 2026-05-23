@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { FiClipboard, FiStar } from 'react-icons/fi';
 import { reviewsAPI } from '../services/endpoints';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
@@ -18,6 +19,15 @@ function Stars({ rating }) {
       ))}
     </div>
   );
+}
+
+function getReviewLogId(review) {
+  return review?.log_details?.log_id
+    || review?.log_details?.id
+    || review?.log?.log_id
+    || review?.log?.id
+    || review?.log
+    || null;
 }
 
 function ReviewsPage() {
@@ -135,10 +145,24 @@ function ReviewsPage() {
                 filtered.map((rv, idx) => {
                   const isActing = actionLoading[rv.review_id];
                   const done     = rv.status === 'approved' || rv.status === 'rejected';
+                  const logId    = getReviewLogId(rv);
                   return (
                     <tr key={rv.review_id || idx}>
                       <td>{idx + 1}</td>
-                      <td><strong>Week {rv.log_details?.week_number ?? rv.log}</strong></td>
+                      <td>
+                        {logId ? (
+                          <Link
+                            to={`/app/logs/${logId}`}
+                            className="rv-log-link"
+                            aria-label={`View details for Week ${rv.log_details?.week_number ?? rv.log}`}
+                          >
+                            <strong>Week {rv.log_details?.week_number ?? rv.log}</strong>
+                            <span>View details</span>
+                          </Link>
+                        ) : (
+                          <strong>Week {rv.log_details?.week_number ?? rv.log}</strong>
+                        )}
+                      </td>
                       <td>{rv.supervisor_details?.first_name || `Supervisor #${rv.supervisor || 'N/A'}`}</td>
                       <td>
                         <span className={`rv-status ${rv.status || 'pending'}`}>

@@ -127,6 +127,34 @@
 
 .rv-table td strong { color: #111827; font-weight: 600; }
 
+.rv-log-link {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.rv-log-link strong {
+  color: #111827;
+}
+
+.rv-log-link span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f97316;
+}
+
+.rv-log-link:hover {
+  transform: translateY(-1px);
+}
+
+.rv-log-link:hover strong,
+.rv-log-link:hover span {
+  color: #ea580c;
+}
+
 .rv-status {
   display: inline-flex;
   align-items: center;
