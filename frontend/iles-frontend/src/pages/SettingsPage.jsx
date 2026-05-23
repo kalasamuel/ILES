@@ -335,6 +335,8 @@ const SettingsPage = () => {
     setError('');
     try {
       await usersAPI.updateCurrentUserSettings(privacy);
+      // refresh auth context so other UI (navbar/profile) updates immediately
+      await refreshUser?.();
       setSuccess('Privacy settings saved!');
       clearFeedbackLater();
     } catch (error) {
