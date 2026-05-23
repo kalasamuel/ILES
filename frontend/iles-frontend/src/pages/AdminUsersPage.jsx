@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { rolesAPI, usersAPI } from '../services/endpoints';
 import { FiXCircle } from 'react-icons/fi';
+import MaskedUserName from '../components/users/MaskedUserName';
 import './AdminUsersPage.css';
 
 const ROLE_PERMISSIONS = {
