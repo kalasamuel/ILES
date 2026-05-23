@@ -15,6 +15,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useAuth } from '../../../hooks/AuthContext';
+import MaskedUserName from '../../../components/users/MaskedUserName';
 import { evaluationsAPI, placementsAPI } from '../../../services/endpoints';
 import { exportChartRefAsPNG } from '../../../utils/chartExport';
 import './AcademicDashboard.css';
@@ -40,12 +41,9 @@ function getPlacementKey(placement) {
 
 function getStudentLabel(placement) {
   const user = placement?.student_details?.user_details || placement?.student?.user_details || placement?.student?.user || null;
-  const firstName = user?.first_name || placement?.student_details?.first_name || placement?.student?.first_name || '';
-  const lastName = user?.last_name || placement?.student_details?.last_name || placement?.student?.last_name || '';
-  const fullName = `${firstName} ${lastName}`.trim();
-
-  if (fullName) return fullName;
-  return placement?.student_details?.registration_number || placement?.student?.registration_number || 'Unnamed student';
+  const reg = placement?.student_details?.registration_number || placement?.student?.registration_number || null;
+  if (!user) return reg || 'Unnamed student';
+  return <MaskedUserName user={user} fallback={reg || 'Unnamed student'} />;
 }
 
 function getPlacementLabel(placement) {
