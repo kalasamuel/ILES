@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { rolesAPI, usersAPI } from '../services/endpoints';
 import { FiXCircle } from 'react-icons/fi';
 import MaskedUserName from '../components/users/MaskedUserName';
+import MaskedContact from '../components/users/MaskedContact';
 import './AdminUsersPage.css';
 
 const ROLE_PERMISSIONS = {
@@ -169,6 +170,7 @@ function AdminUsersPage() {
                           <div>
                             <div className="user-name"><MaskedUserName user={user} fallback={`${user.email || 'User'}`} /></div>
                             <div className="user-email">{user.email}</div>
+                            <div className="user-phone"><MaskedContact user={user} fallback="" /></div>
                           </div>
                         </div>
                       </td>
