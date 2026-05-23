@@ -3,6 +3,7 @@ import { Link, Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft, FiClipboard } from 'react-icons/fi';
 import { evaluationsAPI, placementsAPI } from '../services/endpoints';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import MaskedUserName from '../components/users/MaskedUserName';
 import './EvaluationsPage.css';
 
 const FILTERS = ['All', 'Completed', 'Pending', 'In Progress'];
@@ -169,7 +170,9 @@ function EvaluationList() {
                           <strong>{getPlacementTitle(evaluation)}</strong>
                         )}
                       </td>
-                      <td>{evaluation.placement_details?.student_details?.user_details?.first_name || '—'}</td>
+                      <td>
+                        <MaskedUserName user={evaluation.placement_details?.student_details?.user_details} fallback="—" />
+                      </td>
                       <td>
                         {score !== null ? (
                           <div className="ep-score-bar-wrap">
