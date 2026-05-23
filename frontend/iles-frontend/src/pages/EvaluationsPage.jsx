@@ -50,9 +50,9 @@ function getPlacementTitle(evaluation) {
 }
 
 function getStudentName(placement) {
-  return placement?.student_details?.user_details
-    ? `${placement.student_details.user_details.first_name || ''} ${placement.student_details.user_details.last_name || ''}`.trim()
-    : '—';
+  const user = placement?.student_details?.user_details || null;
+  if (!user) return '—';
+  return <MaskedUserName user={user} fallback="—" />;
 }
 
 function EvaluationList() {
