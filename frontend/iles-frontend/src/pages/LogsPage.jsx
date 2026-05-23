@@ -235,7 +235,7 @@ function LogDetails() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                     <strong>
-                      {review.supervisor_details?.first_name || 'Supervisor'} {review.supervisor_details?.last_name || ''}
+                      <MaskedUserName user={review.supervisor_details} fallback="Supervisor" />
                     </strong>
                     <span className={`lp-status ${review.status || 'approved'}`}>
                       {String(review.status || 'feedback').replace(/_/g, ' ')}
