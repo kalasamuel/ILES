@@ -28,14 +28,22 @@ const clearSession = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser]         = useState(null);
+  const [userSettings, setUserSettings] = useState(null);
   const [isLoading, setIsLoading] = useState(
     () => !!localStorage.getItem('accessToken') && isSessionValid()
   );
 
   const refreshUser = useCallback(async () => {
     const userData = await usersAPI.getCurrentUser();
+    let settings = null;
+    try {
+      settings = await usersAPI.getCurrentUserSettings();
+    } catch (e) {
+      // ignore settings fetch errors
+    }
     setUser(userData);
-    return userData;
+    setUserSettings(settings);
+    return { user: userData, settings };
   }, []);
 
   // ── On mount: restore session if still valid ─────────────────────────────
@@ -43,8 +51,11 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('accessToken');
 
     if (token && isSessionValid()) {
-      usersAPI.getCurrentUser()
-        .then(setUser)
+      Promise.all([usersAPI.getCurrentUser(), usersAPI.getCurrentUserSettings()])
+        .then(([u, s]) => {
+          setUser(u);
+          setUserSettings(s);
+        })
         .catch(() => clearSession())
         .finally(() => setIsLoading(false));
     } else {
@@ -84,6 +95,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    userSettings,
     login,
     logout,
     refreshUser,
