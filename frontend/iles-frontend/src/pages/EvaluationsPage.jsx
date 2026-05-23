@@ -321,7 +321,13 @@ function EvaluationDetails() {
                 </div>
                 <div className="ep-detail-row">
                   <span>Evaluator</span>
-                  <strong>{evaluation?.evaluator_details ? `${evaluation.evaluator_details.first_name || ''} ${evaluation.evaluator_details.last_name || ''}`.trim() : evaluation?.evaluator || '—'}</strong>
+                  <strong>
+                    {evaluation?.evaluator_details ? (
+                      <MaskedUserName user={evaluation.evaluator_details} fallback={evaluation?.evaluator || '—'} />
+                    ) : (
+                      evaluation?.evaluator || '—'
+                    )}
+                  </strong>
                 </div>
               </div>
             </div>
