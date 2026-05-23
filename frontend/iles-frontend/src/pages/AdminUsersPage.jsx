@@ -166,7 +166,7 @@ function AdminUsersPage() {
                             {getInitials(user.first_name, user.last_name)}
                           </span>
                           <div>
-                            <div className="user-name">{user.first_name} {user.last_name}</div>
+                            <div className="user-name"><MaskedUserName user={user} fallback={`${user.email || 'User'}`} /></div>
                             <div className="user-email">{user.email}</div>
                           </div>
                         </div>
