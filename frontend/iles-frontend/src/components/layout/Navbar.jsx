@@ -8,7 +8,7 @@ import ilesLogo from '../../assets/iles_logo.png';
 import './Navbar.css';
 
 function Navbar({ user, onMenuClick }) {
-  const { logout } = useAuth();
+  const { logout, userSettings } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -115,7 +115,7 @@ function Navbar({ user, onMenuClick }) {
               <div className="profile-dropdown">
                 <div className="profile-dropdown-header">
                   <p className="profile-dropdown-name">{user?.first_name} {user?.last_name}</p>
-                  <p className="profile-dropdown-email">{user?.email}</p>
+                  <p className="profile-dropdown-email">{userSettings?.show_email === false ? '' : user?.email}</p>
                 </div>
                 <button
                   className="logout-btn"
