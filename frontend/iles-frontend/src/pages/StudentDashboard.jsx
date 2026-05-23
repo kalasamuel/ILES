@@ -76,78 +76,16 @@ const StudentDashboard = () => {
 
         // Debug: inspect raw API responses when student dashboard shows no data
         // eslint-disable-next-line no-console
-        console.debug('StudentDashboard raw responses', { placementsRes, logsRes, reviewsRes, notificationsRes });
+        // console.debug('StudentDashboard raw responses', { placementsRes, logsRes, reviewsRes, notificationsRes });
 
         let placementsData = placementsRes?.results || placementsRes || [];
         let logsData = logsRes?.results || logsRes || [];
         let reviewsData = reviewsRes?.results || reviewsRes || [];
         let notificationsData = notificationsRes?.results || notificationsRes || [];
 
-        let context = null;
-        try {
-          context = await dashboardsAPI.getMyDataContext();
-        } catch (ctxError) {
-          console.warn('Failed to load dashboard context:', ctxError);
-        }
-
-        // Debug: show dashboard context
-        // eslint-disable-next-line no-console
-        console.debug('StudentDashboard context', context);
-
-        const shouldBootstrap =
-          !bootstrapAttemptedRef.current &&
-          context &&
-          String(context.role_name || '').toLowerCase().includes('student') &&
-          context.has_student_profile &&
-          (context.student_owned?.placements || 0) === 0 &&
-          (context.student_owned?.logs || 0) === 0 &&
-          (context.student_owned?.notifications || 0) === 0;
-
-        if (shouldBootstrap) {
-          try {
-            await dashboardsAPI.bootstrapMyStudentData();
-            bootstrapAttemptedRef.current = true;
-
-            const [placementsRefetch, logsRefetch, reviewsRefetch, notificationsRefetch] = await Promise.all([
-              placementsAPI.getPlacements(),
-              logbooksAPI.getLogs(),
-              reviewsAPI.getReviews(),
-              notificationsAPI.getNotifications(),
-            ]);
-
-            placementsData = placementsRefetch?.results || placementsRefetch || [];
-            logsData = logsRefetch?.results || logsRefetch || [];
-            reviewsData = reviewsRefetch?.results || reviewsRefetch || [];
-            notificationsData = notificationsRefetch?.results || notificationsRefetch || [];
-          } catch (bootstrapError) {
-            console.warn('Student bootstrap failed:', bootstrapError);
-          }
-        }
-
-          // Fallback bootstrap if we still have no key data
-          const noKeyData = (placementsData?.length || 0) + (logsData?.length || 0) + (reviewsData?.length || 0) === 0;
-          if (!bootstrapAttemptedRef.current && context && String(context.role_name || '').toLowerCase().includes('student') && noKeyData) {
-            try {
-              // eslint-disable-next-line no-console
-              console.info('StudentDashboard: attempting fallback bootstrap due to empty data');
-              await dashboardsAPI.bootstrapMyStudentData();
-              bootstrapAttemptedRef.current = true;
-
-              const [p2, l2, r2, n2] = await Promise.all([
-                placementsAPI.getPlacements(),
-                logbooksAPI.getLogs(),
-                reviewsAPI.getReviews(),
-                notificationsAPI.getNotifications(),
-              ]);
-
-              placementsData = p2?.results || p2 || [];
-              logsData = l2?.results || l2 || [];
-              reviewsData = r2?.results || r2 || [];
-              notificationsData = n2?.results || n2 || [];
-            } catch (fallbackError) {
-              console.warn('Student fallback bootstrap failed:', fallbackError);
-            }
-          }
+        // Removed automatic bootstrapping of sample/student data to avoid unexpected
+        // auto-generated content. Dashboard will only display what exists for the
+        // current user via the standard API calls above.
 
         setPlacements(placementsData);
         setLogs(logsData);
@@ -331,12 +269,12 @@ const StudentDashboard = () => {
     <div className="student-dashboard">
       <section className="studio-hero">
         <div className="hero-copy">
-          <p className="hero-kicker">Student Workbench</p>
+          <p className="hero-kicker">Student Dashboard</p>
           <h1>
-            {user?.first_name || 'Student'}, keep your internship story moving.
+            Welcome{user?.first_name ? `, ${user.first_name}` : ''}.
           </h1>
           <p>
-            One place for your weekly logs, supervisor feedback, and progress trail.
+            Your weekly logs, supervisor feedback, and progress in one place.
           </p>
         </div>
         <div className="hero-date-chip">
@@ -380,7 +318,7 @@ const StudentDashboard = () => {
       <section className="studio-grid">
         <article className="panel panel-primary">
           <header className="panel-header">
-            <h2>Logbook Command Center</h2>
+            <h2>Logbook</h2>
             {selectedPlacement ? <span className="pill">Week {nextWeekNumber} next</span> : <span className="pill">No active placement</span>}
           </header>
           <div className="panel-body">
