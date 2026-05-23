@@ -196,14 +196,15 @@
 }
 
 .wl-card-header::after {
+  /* horizontal accent line removed to avoid orange fading lines */
   content: '';
   position: absolute;
   bottom: 0;
   left: 28px;
   right: 28px;
-  height: 1px;
-  background: linear-gradient(90deg, var(--amber) 0%, transparent 60%);
-  opacity: .5;
+  height: 0;
+  background: none;
+  opacity: 0;
 }
 
 .wl-card-header h2 {
@@ -577,14 +578,15 @@
 }
 
 .wl-side-header::after {
+  /* horizontal accent line removed to avoid orange fading lines */
   content: '';
   position: absolute;
   bottom: 0;
   left: 22px;
   right: 22px;
-  height: 1px;
-  background: linear-gradient(90deg, var(--amber), transparent);
-  opacity: .4;
+  height: 0;
+  background: none;
+  opacity: 0;
 }
 
 .wl-side-header h3 {
