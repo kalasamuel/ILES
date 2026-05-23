@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { evaluationsAPI, logbooksAPI, placementsAPI, reviewsAPI } from '../services/endpoints';
 import { FiClock, FiFileText, FiCheck } from 'react-icons/fi';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import MaskedUserName from '../components/users/MaskedUserName';
 import './ActivitiesPage.css';
 
 function ActivitiesPage() {
@@ -44,13 +45,11 @@ function ActivitiesPage() {
   }, [placements]);
 
   const getStudentLabel = (placement) => {
-    const first = placement?.student_details?.user_details?.first_name || '';
-    const last = placement?.student_details?.user_details?.last_name || '';
-    const fullName = `${first} ${last}`.trim();
-    if (fullName) {
-      return fullName;
-    }
-    return placement?.student_details?.registration_number || 'Unknown student';
+    const user = placement?.student_details?.user_details || null;
+    const reg = placement?.student_details?.registration_number || null;
+    if (!user && reg) return reg;
+    if (!user && !reg) return 'Unknown student';
+    return <MaskedUserName user={user} fallback={reg || 'Unknown student'} />;
   };
 
   const parseDate = (value) => {
