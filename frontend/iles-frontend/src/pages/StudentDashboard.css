@@ -168,8 +168,9 @@
 
 .studio-grid {
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
-  gap: 14px;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+  align-items: start;
 }
 
 .panel {
@@ -453,15 +454,25 @@
   }
 
   .studio-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
-  .panel-wide,
+  .panel-wide {
+    grid-column: 1 / span 2;
+  }
+
+  .panel-primary {
+    grid-column: 1 / span 2;
+  }
+
   .panel-tall {
-    grid-column: span 1;
     grid-row: span 1;
   }
-}
+
+  /* Ensure panels have a consistent minimum height for visual rhythm */
+  .panel {
+    min-height: 110px;
+  }
 
 @media (max-width: 760px) {
   .student-dashboard {
