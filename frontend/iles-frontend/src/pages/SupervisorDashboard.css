@@ -299,6 +299,13 @@ ul {
   border-color: #d1d5db;
 }
 
+/* Prevent recent activity from stretching its card; allow scrolling */
+.dashboard-card > .activity-list {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
 .activity-icon {
   font-size: 18px;
   line-height: 1;
@@ -311,6 +318,14 @@ ul {
   flex-direction: column;
   gap: 2px;
   flex: 1;
+}
+
+/* ensure long text in activity details truncates instead of overflowing */
+.activity-details strong,
+.activity-details span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .activity-details strong {
@@ -497,6 +512,9 @@ ul {
   flex-direction: column;
   gap: 10px;
   margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .completed-evaluation-row {
@@ -510,6 +528,12 @@ ul {
   border-radius: var(--border-radius-sm);
 }
 
+/* allow content to truncate instead of growing the row */
+.completed-evaluation-row > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .completed-evaluation-row strong {
   display: block;
   font-size: 13px;
@@ -521,6 +545,13 @@ ul {
   margin-top: 2px;
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.completed-evaluation-row strong,
+.completed-evaluation-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .completed-evaluation-score {

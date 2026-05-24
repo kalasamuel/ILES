@@ -611,22 +611,7 @@ const SettingsPage = () => {
               <button onClick={handleNotificationUpdate} className="btn-save" disabled={savingAction === 'notifications'}>
                 {savingAction === 'notifications' ? 'Saving…' : 'Save Preferences'}
               </button>
-              <button
-                type="button"
-                className="btn-save btn-test"
-                onClick={async () => {
-                  try {
-                    await notificationsAPI.sendTestNotification({ title: 'ILES Test', body: 'This is a test notification from Settings' });
-                    setSuccess('Test notification triggered');
-                    clearFeedbackLater();
-                  } catch (e) {
-                    console.error('Failed to send test notification', e);
-                    setError('Failed to trigger test notification');
-                  }
-                }}
-              >
-                Send test notification
-              </button>
+              {/* Test notification button removed */}
             </div>
           )}
 
