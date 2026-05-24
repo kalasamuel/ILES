@@ -570,7 +570,7 @@ ul {
 
 .workplace-mode .completed-evaluations-card .advanced-charts-grid {
   grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
-  max-height: 560px;
+  max-height: clamp(680px, 78vh, 900px);
   overflow: auto;
   padding-right: 6px;
 }
@@ -745,8 +745,13 @@ ul {
     grid-column: span 2;
   }
 
+  .workplace-mode .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .workplace-mode .completed-evaluations-card .advanced-charts-grid {
     grid-template-columns: 1fr;
+    max-height: clamp(620px, 76vh, 820px);
   }
 
   .workplace-mode .dashboard-card.stat-card {
@@ -754,12 +759,12 @@ ul {
   }
 
   .workplace-mode .dashboard-card.completed-evaluations-card,
-  .workplace-mode .dashboard-card.recent-activity-card {
+  .workplace-mode .dashboard-card.quick-actions-card {
     grid-column: 1 / -1;
   }
 
-  .workplace-mode .dashboard-card.score-distribution-card,
-  .workplace-mode .dashboard-card.quick-actions-card {
+  .workplace-mode .dashboard-card.recent-activity-card,
+  .workplace-mode .dashboard-card.score-distribution-card {
     grid-column: span 1;
   }
 }
@@ -803,5 +808,23 @@ ul {
 
   .completed-evaluation-score {
     align-items: flex-start;
+  }
+
+  .workplace-mode .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workplace-mode .completed-evaluations-card .advanced-charts-grid {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .workplace-mode .dashboard-card.stat-card,
+  .workplace-mode .dashboard-card.completed-evaluations-card,
+  .workplace-mode .dashboard-card.recent-activity-card,
+  .workplace-mode .dashboard-card.score-distribution-card,
+  .workplace-mode .dashboard-card.quick-actions-card {
+    grid-column: 1 / -1;
   }
 }
