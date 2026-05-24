@@ -1034,7 +1034,7 @@ function SupervisorDashboard() {
           </Link>
         </div>
         {/* Score Distribution as its own card so it can sit beside Quick Actions */}
-        <div className="dashboard-card">
+        <div className="dashboard-card score-distribution-card">
           <h3>Score Distribution</h3>
           <div style={{marginTop:8}}>
             <ScoreHistogram data={scoreHistogram} />
@@ -1045,7 +1045,7 @@ function SupervisorDashboard() {
           </div>
         </div>
 
-        <div className="dashboard-card">
+        <div className="dashboard-card quick-actions-card">
           <h3>Quick Actions</h3>
           <div className="quick-actions">
             <Link to="/app/placements" className="btn btn-secondary">

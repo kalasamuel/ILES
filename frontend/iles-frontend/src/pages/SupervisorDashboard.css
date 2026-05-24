@@ -129,8 +129,8 @@ ul {
 /* ── Dashboard Grid ────────────────────────────────────────── */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 20px);
 }
 
 /* Default card span */
@@ -144,6 +144,7 @@ ul {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .dashboard-card:hover {
@@ -584,6 +585,28 @@ ul {
   min-width: 0;
 }
 
+/* Workplace dashboard grid composition */
+.workplace-mode .dashboard-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+}
+
+.workplace-mode .dashboard-card.stat-card {
+  grid-column: span 2;
+}
+
+/* Completed Evaluations occupies a full row in workplace mode */
+.workplace-mode .dashboard-card.completed-evaluations-card {
+  grid-column: 1 / -1;
+  min-height: 0;
+}
+
+.workplace-mode .dashboard-card.recent-activity-card,
+.workplace-mode .dashboard-card.score-distribution-card,
+.workplace-mode .dashboard-card.quick-actions-card {
+  grid-column: span 2;
+}
+
 .workplace-mode .recent-activity-card .activity-list,
 .workplace-mode .recent-activity-card .activity-list li,
 .workplace-mode .recent-activity-card .activity-details {
@@ -724,6 +747,20 @@ ul {
 
   .workplace-mode .completed-evaluations-card .advanced-charts-grid {
     grid-template-columns: 1fr;
+  }
+
+  .workplace-mode .dashboard-card.stat-card {
+    grid-column: span 1;
+  }
+
+  .workplace-mode .dashboard-card.completed-evaluations-card,
+  .workplace-mode .dashboard-card.recent-activity-card {
+    grid-column: 1 / -1;
+  }
+
+  .workplace-mode .dashboard-card.score-distribution-card,
+  .workplace-mode .dashboard-card.quick-actions-card {
+    grid-column: span 1;
   }
 }
 
