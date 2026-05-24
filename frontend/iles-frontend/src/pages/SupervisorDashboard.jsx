@@ -103,6 +103,19 @@ function getPlacementId(value) {
   return value;
 }
 
+function normalizeRoleName(rawRole) {
+  return String(rawRole || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+}
+
+function isWorkplaceSupervisorRole(user) {
+  const rawRole = user?.role?.role_name || user?.role_name || user?.role;
+  const roleName = normalizeRoleName(rawRole);
+  return roleName === 'workplace_supervisor' || roleName === 'workplace' || roleName === 'supervisor';
+}
+
 function SupervisorDashboard() {
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
@@ -114,6 +127,7 @@ function SupervisorDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('academic');
+  const roleTabInitializedRef = useRef(false);
   const bootstrapAttemptedRef = useRef(false);
 
   useEffect(() => {
@@ -166,6 +180,14 @@ function SupervisorDashboard() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (roleTabInitializedRef.current) return;
+    if (isWorkplaceSupervisorRole(user)) {
+      setActiveTab('workplace');
+    }
+    roleTabInitializedRef.current = true;
+  }, [user]);
 
   const placementsById = useMemo(
     () => new Map(placements.map((placement) => [placement?.placement_id, placement])),
@@ -781,7 +803,7 @@ function SupervisorDashboard() {
   }
 
   return (
-    <div className="supervisor-dashboard">
+    <div className={`supervisor-dashboard ${activeTab === 'workplace' ? 'workplace-mode' : ''}`}>
       <header className="dashboard-header">
         <h1>Supervisor Dashboard</h1>
         <p>Welcome back, {user?.first_name} {user?.last_name}</p>
@@ -849,7 +871,7 @@ function SupervisorDashboard() {
           </Link>
         </div>
 
-        <div className="dashboard-card chart-card">
+        <div className="dashboard-card chart-card completed-evaluations-card">
           <h3>Completed Evaluations</h3>
           <Link to="/app/reports" className="stat-link" aria-label="Open evaluation summaries">
             <div className="stat-number">{completedEvaluationCount}</div>
@@ -987,7 +1009,7 @@ function SupervisorDashboard() {
           </div>
         </div>
 
-        <div className="dashboard-card">
+        <div className="dashboard-card recent-activity-card">
           <h3>Recent Activity</h3>
           {recentActivity.length > 0 ? (
             <ul className="activity-list">

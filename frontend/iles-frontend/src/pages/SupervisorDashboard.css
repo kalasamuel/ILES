@@ -306,6 +306,29 @@ ul {
   padding-right: 6px;
 }
 
+/* Workplace-only defensive rules to prevent Recent Activity from stretching cards */
+.workplace-mode .dashboard-card > .activity-list {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
+  min-width: 0;
+}
+
+.workplace-mode .dashboard-card .activity-list {
+  min-width: 0;
+}
+
+.workplace-mode .activity-list li,
+.workplace-mode .activity-details {
+  min-width: 0;
+}
+
+.workplace-mode .activity-details strong,
+.workplace-mode .activity-details span {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .activity-icon {
   font-size: 18px;
   line-height: 1;
@@ -517,6 +540,65 @@ ul {
   padding-right: 6px;
 }
 
+/* Workplace-only defensive rules for Completed Evaluations */
+.workplace-mode .completed-evaluations-list {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
+  min-width: 0;
+}
+
+.workplace-mode .completed-evaluation-row {
+  min-width: 0;
+}
+
+.workplace-mode .completed-evaluation-row strong,
+.workplace-mode .completed-evaluation-row span {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Workplace-only card layout tuning for the two problematic containers */
+.workplace-mode .dashboard-card.completed-evaluations-card {
+  min-width: 0;
+}
+
+.workplace-mode .completed-evaluations-card .filter-row {
+  flex-wrap: wrap;
+}
+
+.workplace-mode .completed-evaluations-card .advanced-charts-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  max-height: 560px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.workplace-mode .completed-evaluations-card .chart-panel,
+.workplace-mode .completed-evaluations-card .overview-pill {
+  min-width: 0;
+}
+
+.workplace-mode .dashboard-card.recent-activity-card {
+  grid-column: span 2;
+  min-width: 0;
+}
+
+.workplace-mode .recent-activity-card .activity-list,
+.workplace-mode .recent-activity-card .activity-list li,
+.workplace-mode .recent-activity-card .activity-details {
+  min-width: 0;
+}
+
+.workplace-mode .recent-activity-card .activity-details strong,
+.workplace-mode .recent-activity-card .activity-details span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .completed-evaluation-row {
   display: flex;
   align-items: center;
@@ -638,6 +720,10 @@ ul {
 
   .dashboard-card.chart-card {
     grid-column: span 2;
+  }
+
+  .workplace-mode .completed-evaluations-card .advanced-charts-grid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -401,6 +401,51 @@
   gap: 8px;
 }
 
+/* Defensive layout rules for student dashboard lists to prevent
+   activity/feedback panels from stretching when content is long
+   or contains unbreakable tokens. Keeps panels scrollable and stable. */
+.panel {
+  min-width: 0;
+}
+
+/* Activity feed: confine height and enable scrolling */
+.panel .timeline-list {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
+  min-width: 0;
+}
+
+/* Recent submissions (compact) and other entry lists */
+.panel .entry-list.compact {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 6px;
+  min-width: 0;
+}
+
+.panel .entry-list,
+.panel .timeline-list {
+  min-width: 0;
+}
+
+/* Ensure list items don't force growth and long text wraps safely */
+.timeline-list li,
+.entry-list li,
+.feedback-head,
+.alert-line {
+  min-width: 0;
+}
+
+.timeline-copy strong,
+.timeline-copy p,
+.entry-list p,
+.feedback-head strong,
+.feedback-head p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .panel-chart {
   min-height: 320px;
 }
