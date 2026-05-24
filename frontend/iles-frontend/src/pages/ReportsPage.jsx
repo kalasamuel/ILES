@@ -1,18 +1,32 @@
-import React, { useState } from 'react';
-import { useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { dashboardsAPI, evaluationsAPI, placementsAPI } from '../services/endpoints';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './ReportsPage.css';
 
 function ReportsPage() {
-  const [activeTab, setActiveTab] = useState('internship');
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = ['internship', 'analytics', 'evaluations'].includes(searchParams.get('tab'))
+    ? searchParams.get('tab')
+    : 'internship';
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [placementStatusFilter, setPlacementStatusFilter] = useState('all');
+  const [evaluationGradeFilter, setEvaluationGradeFilter] = useState('all');
   const [placements, setPlacements] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [metrics, setMetrics] = useState([]);
   const [criteriaData, setCriteriaData] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (['internship', 'analytics', 'evaluations'].includes(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams, activeTab]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,6 +64,30 @@ function ReportsPage() {
 
   const averageScore = Number(getMetricValue('average_score') || 0).toFixed(2);
   const aGrades = evaluations.filter((item) => String(item.grade || '').toUpperCase() === 'A').length;
+
+  const filteredPlacements = useMemo(() => {
+    if (placementStatusFilter === 'all') return placements;
+    return placements.filter((item) => String(item.status || '').toLowerCase() === placementStatusFilter);
+  }, [placements, placementStatusFilter]);
+
+  const filteredEvaluations = useMemo(() => {
+    if (evaluationGradeFilter === 'all') return evaluations;
+    return evaluations.filter((item) => String(item.grade || '').toUpperCase() === evaluationGradeFilter);
+  }, [evaluations, evaluationGradeFilter]);
+
+  const navigateToTab = (tab, options = {}) => {
+    const nextTab = ['internship', 'analytics', 'evaluations'].includes(tab) ? tab : 'internship';
+    setActiveTab(nextTab);
+    if (options.placementStatus !== undefined) {
+      setPlacementStatusFilter(options.placementStatus);
+    }
+    if (options.evaluationGrade !== undefined) {
+      setEvaluationGradeFilter(options.evaluationGrade);
+    }
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', nextTab);
+    setSearchParams(params, { replace: true });
+  };
 
   const serializeCsv = (rows) => {
     if (!rows.length) {
@@ -123,6 +161,23 @@ function ReportsPage() {
     return date.toLocaleDateString();
   };
 
+  const openPlacement = (placementId) => {
+    if (!placementId) return;
+    navigate(`/app/placements/${placementId}`);
+  };
+
+  const openEvaluation = (evaluationId) => {
+    if (!evaluationId) return;
+    navigate(`/app/evaluations/${evaluationId}`);
+  };
+
+  const handleRowKeyDown = (event, onActivate) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onActivate();
+    }
+  };
+
   const tabs = [
     { id: 'internship', label: 'Internship Reports' },
     { id: 'analytics', label: 'Analytics' },
@@ -148,22 +203,22 @@ function ReportsPage() {
       </div>
 
       <div className="rp-stats">
-        <div className="rp-stat-card">
+        <button type="button" className="rp-stat-card rp-stat-card-clickable" onClick={() => navigateToTab('internship')}>
           <span className="rp-stat-label">Placements</span>
           <strong className="rp-stat-value">{placements.length}</strong>
-        </div>
-        <div className="rp-stat-card">
+        </button>
+        <button type="button" className="rp-stat-card rp-stat-card-clickable" onClick={() => navigateToTab('internship', { placementStatus: 'completed' })}>
           <span className="rp-stat-label">Completed</span>
           <strong className="rp-stat-value">{internshipCompleted}</strong>
-        </div>
-        <div className="rp-stat-card">
+        </button>
+        <button type="button" className="rp-stat-card rp-stat-card-clickable" onClick={() => navigateToTab('evaluations')}>
           <span className="rp-stat-label">Evaluations</span>
           <strong className="rp-stat-value">{evaluations.length}</strong>
-        </div>
-        <div className="rp-stat-card">
+        </button>
+        <button type="button" className="rp-stat-card rp-stat-card-clickable" onClick={() => navigateToTab('analytics')}>
           <span className="rp-stat-label">Average Score</span>
           <strong className="rp-stat-value">{averageScore}</strong>
-        </div>
+        </button>
       </div>
 
       <div className="rp-tabs" role="tablist" aria-label="Report categories">
@@ -194,21 +249,29 @@ function ReportsPage() {
           !loading && !error && (
             <div className="rp-section">
               <div className="rp-kpis">
-                <div className="rp-kpi-box">
+                <button type="button" className="rp-kpi-box rp-kpi-box-clickable" onClick={() => navigateToTab('internship', { placementStatus: 'approved' })}>
                   <span>Approved placements</span>
                   <strong>{internshipApproved}</strong>
-                </div>
-                <div className="rp-kpi-box">
+                </button>
+                <button type="button" className="rp-kpi-box rp-kpi-box-clickable" onClick={() => navigateToTab('internship', { placementStatus: 'pending' })}>
                   <span>Pending placements</span>
                   <strong>{internshipPending}</strong>
-                </div>
-                <div className="rp-kpi-box">
+                </button>
+                <button type="button" className="rp-kpi-box rp-kpi-box-clickable" onClick={() => navigateToTab('internship', { placementStatus: 'completed' })}>
                   <span>Completion ratio</span>
                   <strong>{placements.length ? `${Math.round((internshipCompleted / placements.length) * 100)}%` : '0%'}</strong>
-                </div>
+                </button>
               </div>
 
-              {placements.length === 0 ? (
+              <div className="rp-filter-summary">
+                {placementStatusFilter !== 'all' ? (
+                  <button type="button" className="rp-clear-filter" onClick={() => navigateToTab('internship', { placementStatus: 'all' })}>
+                    Showing {placementStatusFilter} placements · Clear filter
+                  </button>
+                ) : null}
+              </div>
+
+              {filteredPlacements.length === 0 ? (
                 <div className="rp-message">No placement records found.</div>
               ) : (
                 <div className="rp-table-wrap">
@@ -223,8 +286,16 @@ function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {placements.slice(0, 10).map((item) => (
-                        <tr key={item.placement_id}>
+                      {filteredPlacements.slice(0, 10).map((item) => (
+                        <tr
+                          key={item.placement_id}
+                          className="rp-clickable-row"
+                          tabIndex={0}
+                          role="link"
+                          aria-label={`Open placement details for ${item.position_title || 'placement'}`}
+                          onClick={() => openPlacement(item.placement_id)}
+                          onKeyDown={(event) => handleRowKeyDown(event, () => openPlacement(item.placement_id))}
+                        >
                           <td>{item.position_title || 'N/A'}</td>
                           <td>{item?.organization_details?.name || 'N/A'}</td>
                           <td>
@@ -273,18 +344,26 @@ function ReportsPage() {
           !loading && !error && (
             <div className="rp-section">
               <div className="rp-kpis">
-                <div className="rp-kpi-box">
+                <button type="button" className="rp-kpi-box rp-kpi-box-clickable" onClick={() => navigateToTab('evaluations')}>
                   <span>Submitted</span>
                   <strong>{evaluations.length}</strong>
-                </div>
-                <div className="rp-kpi-box">
+                </button>
+                <button type="button" className="rp-kpi-box rp-kpi-box-clickable" onClick={() => navigateToTab('analytics')}>
                   <span>Average score</span>
                   <strong>{averageScore}</strong>
-                </div>
-                <div className="rp-kpi-box">
+                </button>
+                <button type="button" className="rp-kpi-box rp-kpi-box-clickable" onClick={() => navigateToTab('evaluations', { evaluationGrade: 'A' })}>
                   <span>A grades</span>
                   <strong>{aGrades}</strong>
-                </div>
+                </button>
+              </div>
+
+              <div className="rp-filter-summary">
+                {evaluationGradeFilter !== 'all' ? (
+                  <button type="button" className="rp-clear-filter" onClick={() => navigateToTab('evaluations', { evaluationGrade: 'all' })}>
+                    Showing grade {evaluationGradeFilter} evaluations · Clear filter
+                  </button>
+                ) : null}
               </div>
 
               {/* Average Scores by Criteria Chart */}
@@ -303,7 +382,7 @@ function ReportsPage() {
                 </div>
               )}
 
-              {evaluations.length === 0 ? (
+              {filteredEvaluations.length === 0 ? (
                 <div className="rp-message">No evaluations submitted yet.</div>
               ) : (
                 <div className="rp-table-wrap">
@@ -317,8 +396,16 @@ function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {evaluations.slice(0, 12).map((item) => (
-                        <tr key={item.evaluation_id}>
+                      {filteredEvaluations.slice(0, 12).map((item) => (
+                        <tr
+                          key={item.evaluation_id}
+                          className="rp-clickable-row"
+                          tabIndex={0}
+                          role="link"
+                          aria-label={`Open evaluation details for ${item.evaluation_id || 'evaluation'}`}
+                          onClick={() => openEvaluation(item.evaluation_id)}
+                          onKeyDown={(event) => handleRowKeyDown(event, () => openEvaluation(item.evaluation_id))}
+                        >
                           <td>{item.evaluation_id || 'N/A'}</td>
                           <td>{item.grade || 'N/A'}</td>
                           <td>{item.status || 'N/A'}</td>

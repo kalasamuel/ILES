@@ -92,8 +92,8 @@ ul {
 /* ── Dashboard Layout ──────────────────────────────────────── */
 .supervisor-dashboard {
   min-height: 100vh;
-  padding: 28px 32px;
-  max-width: 1200px;
+  padding: clamp(20px, 2.2vw, 30px) clamp(18px, 2.5vw, 32px);
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -131,25 +131,26 @@ ul {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(14px, 2vw, 20px);
+  align-items: start;
 }
 
 /* Default card span */
 .dashboard-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  padding: 20px 22px;
-  box-shadow: var(--shadow-card);
+  border-radius: var(--border-radius-lg);
+  padding: 22px 24px;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.05);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
   min-width: 0;
 }
 
 .dashboard-card:hover {
-  box-shadow: var(--shadow-card-hover);
-  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.08);
+  transform: translateY(-2px);
 }
 
 /* Assigned Students + Pending Reviews */
@@ -170,12 +171,12 @@ ul {
 
 /* ── Card Headings ─────────────────────────────────────────── */
 .dashboard-card h3 {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
+  letter-spacing: 0.08em;
+  margin-bottom: 0;
 }
 
 /* ── Stat Numbers ──────────────────────────────────────────── */
@@ -189,9 +190,10 @@ ul {
 }
 
 .dashboard-card > p {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 0;
+  line-height: 1.55;
 }
 
 .stat-link {
@@ -209,16 +211,16 @@ ul {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 0.4rem 0.9rem;
-  border-radius: 20px;
-  font-size: 0.82rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  font-size: 0.84rem;
   font-weight: 600;
   font-family: var(--font-main);
   cursor: pointer;
   transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s, background 0.15s, color 0.15s, border-color 0.15s;
   border: none;
   white-space: nowrap;
-  margin-top: 6px;
+  margin-top: 0;
   width: fit-content;
   letter-spacing: 0.01em;
   text-decoration: none;
@@ -257,10 +259,10 @@ ul {
   gap: 6px;
   color: #ff7a00;
   text-decoration: none;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 600;
-  padding: 0.4rem 0.85rem;
-  border-radius: 20px;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
   border: 1.5px solid rgba(234, 88, 12, 0.3);
   background: #fff7ed;
   transition: all 0.2s;
@@ -289,9 +291,9 @@ ul {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 12px 14px;
-  background: var(--bg-page);
-  border-radius: var(--border-radius-sm);
+  padding: 13px 14px;
+  background: linear-gradient(180deg, #fffdf9, #fffaf5);
+  border-radius: 12px;
   border: 1px solid var(--border-color);
   transition: border-color 0.15s;
 }
@@ -534,8 +536,8 @@ ul {
 .completed-evaluations-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 12px;
   max-height: 260px;
   overflow-y: auto;
   padding-right: 6px;
@@ -627,10 +629,10 @@ ul {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
-  background: var(--bg-page);
+  padding: 14px 16px;
+  background: linear-gradient(180deg, #fffdf9, #fffaf5);
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
+  border-radius: 12px;
 }
 
 /* allow content to truncate instead of growing the row */
@@ -669,7 +671,7 @@ ul {
 
 .completed-evaluation-score span {
   margin-top: 0;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-primary);
   font-weight: 700;
 }
@@ -683,8 +685,8 @@ ul {
 .card-actions-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 /* Recharts overrides */
@@ -711,8 +713,8 @@ ul {
 .quick-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 4px;
+  gap: 12px;
+  margin-top: 8px;
 }
 
 .quick-actions .btn {

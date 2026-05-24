@@ -155,6 +155,14 @@ function NotificationsPage() {
       {/* Header Section */}
       <div className="notifications-header">
         <div className="notifications-title-block">
+          <button
+            type="button"
+            className="btn-back-dashboard"
+            onClick={() => navigate('/app/dashboard')}
+            title="Back to dashboard"
+          >
+            <FiArrowLeft aria-hidden="true" /> Back to dashboard
+          </button>
           <h1 className="notifications-title">Notifications</h1>
           {unreadCount > 0 && (
             <p className="notifications-subtitle">
