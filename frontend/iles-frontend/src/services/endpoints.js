@@ -207,6 +207,12 @@ export const logbooksAPI = {
     const response = await api.post(`/logbooks/logs/${id}/submit/`);
     return response.data;
   },
+  scheduleLog: async (id, scheduledSubmissionAt) => {
+    const response = await api.post(`/logbooks/logs/${id}/schedule/`, {
+      scheduled_submission_at: scheduledSubmissionAt,
+    });
+    return response.data;
+  },
   approveLog: async (id, data = {}) => {
     const response = await api.post(`/logbooks/logs/${id}/approve/`, data);
     return response.data;

@@ -6,9 +6,10 @@ import WeeklyLogForm from './WeeklyLogForm';
 import { useAuth } from '../context/AuthContext';
 import ReviewCreateForm from '../components/reviews/ReviewCreateForm';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import MaskedUserName from '../components/users/MaskedUserName';
 import './LogsPage.css';
 
-const STATUS_FILTERS = ['All', 'Draft', 'Submitted', 'Reviewed', 'Approved', 'Rejected'];
+const STATUS_FILTERS = ['All', 'Draft', 'Scheduled', 'Submitted', 'Reviewed', 'Approved', 'Rejected'];
 
 // ── Log List ──────────────────────────────────────────────────────────────
 function LogList() {
@@ -36,6 +37,7 @@ function LogList() {
   });
 
   const total     = logs.length;
+  const scheduled = logs.filter((l) => l.status === 'scheduled').length;
   const submitted = logs.filter((l) => l.status === 'submitted').length;
   const approved  = logs.filter((l) => l.status === 'approved').length;
   const totalHrs  = logs.reduce((s, l) => s + (Number(l.hours_worked) || 0), 0);
@@ -56,6 +58,7 @@ function LogList() {
       <div className="lp-stats">
         {[
           { label: 'Total Logs',  value: total },
+          { label: 'Scheduled',   value: scheduled },
           { label: 'Submitted',   value: submitted },
           { label: 'Approved',    value: approved },
           { label: 'Total Hours', value: totalHrs },
@@ -89,7 +92,7 @@ function LogList() {
             <thead>
               <tr>
                 <th>Week</th>
-                <th>Date Submitted</th>
+                <th>Sent / Scheduled</th>
                 <th>Status</th>
                 <th>Hours</th>
                 <th>Activities Summary</th>
@@ -110,7 +113,13 @@ function LogList() {
                 filtered.map((log) => (
                   <tr key={log.log_id}>
                     <td><strong>Week {log.week_number}</strong></td>
-                    <td>{log.submitted_at ? new Date(log.submitted_at).toLocaleDateString() : '—'}</td>
+                    <td>
+                      {log.submitted_at
+                        ? new Date(log.submitted_at).toLocaleString()
+                        : log.scheduled_submission_at
+                          ? new Date(log.scheduled_submission_at).toLocaleString()
+                          : '—'}
+                    </td>
                     <td>
                       <span className={`lp-status ${log.status || 'draft'}`}>
                         {log.status || 'Draft'}

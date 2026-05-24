@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from datetime import datetime
 from django.utils import timezone
 from .models import WeeklyLog, LogAttachment
 from .serializers import WeeklyLogSerializer, LogAttachmentSerializer
@@ -101,6 +102,22 @@ class WeeklyLogViewSet(viewsets.ModelViewSet):
                 changed_by=user
             )
 
+    def _schedule_log(self, log, scheduled_submission_at, user):
+        old_status = log.status
+        log.status = 'scheduled'
+        log.scheduled_submission_at = scheduled_submission_at
+        log.submitted_at = None
+        log.save(update_fields=['status', 'scheduled_submission_at', 'submitted_at'])
+
+        if old_status != 'scheduled':
+            WorkflowHistory.objects.create(
+                entity_type='log',
+                entity_id=log.log_id,
+                previous_status=old_status,
+                new_status='scheduled',
+                changed_by=user,
+            )
+
     def get_queryset(self):
         user = self.request.user
         if not user.is_authenticated:
@@ -181,6 +198,44 @@ class WeeklyLogViewSet(viewsets.ModelViewSet):
             )
             return Response({'message': 'Log submitted'})
         return Response({'error': 'Cannot submit this log'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def schedule(self, request, pk=None):
+        log = self.get_object()
+        self._assert_log_owner_for_student(request.user, log)
+
+        scheduled_submission_at = request.data.get('scheduled_submission_at')
+        if not scheduled_submission_at:
+            return Response(
+                {'error': 'Please provide a scheduled_submission_at value.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            scheduled_submission_at = datetime.fromisoformat(scheduled_submission_at)
+        except ValueError:
+            return Response(
+                {'error': 'scheduled_submission_at must be a valid ISO datetime.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if timezone.is_naive(scheduled_submission_at):
+            scheduled_submission_at = timezone.make_aware(scheduled_submission_at, timezone.get_current_timezone())
+
+        if scheduled_submission_at <= timezone.now():
+            return Response(
+                {'error': 'scheduled_submission_at must be in the future.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        self._schedule_log(log, scheduled_submission_at, request.user)
+        return Response(
+            {
+                'message': 'Log scheduled for submission.',
+                'scheduled_submission_at': scheduled_submission_at,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):

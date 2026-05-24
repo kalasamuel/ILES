@@ -1,9 +1,12 @@
 from django.core import mail
+from django.core.management import call_command
 from django.test import override_settings
 from datetime import date
 from decimal import Decimal
 from rest_framework import status
 from rest_framework.test import APITestCase
+from django.utils import timezone
+from datetime import timedelta
 
 from accounts.models import Department, Role, Student, Supervisor, User
 from notifications.models import Notification
@@ -125,3 +128,28 @@ class WeeklyLogSubmissionNotificationTests(APITestCase):
 		)
 		self.assertTrue(any('Your log for Week 1 was successfully submitted' in email.body for email in mail.outbox))
 		self.assertTrue(any('New log submission from Student One - Week 1' in email.body for email in mail.outbox))
+
+	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+	def test_schedule_defers_submission_until_management_command_runs(self):
+		future_time = timezone.now() + timedelta(hours=2)
+		response = self.client.post(
+			f'/api/logbooks/logs/{self.log.log_id}/schedule/',
+			{'scheduled_submission_at': future_time.isoformat()},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.log.refresh_from_db()
+		self.assertEqual(self.log.status, 'scheduled')
+		self.assertIsNotNone(self.log.scheduled_submission_at)
+		self.assertIsNone(self.log.submitted_at)
+		self.assertEqual(mail.outbox, [])
+
+		self.log.scheduled_submission_at = timezone.now() - timedelta(minutes=1)
+		self.log.save(update_fields=['scheduled_submission_at'])
+		call_command('process_scheduled_logs')
+
+		self.log.refresh_from_db()
+		self.assertEqual(self.log.status, 'submitted')
+		self.assertIsNotNone(self.log.submitted_at)
+		self.assertGreaterEqual(len(mail.outbox), 3)

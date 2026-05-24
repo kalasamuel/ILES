@@ -7,6 +7,7 @@ from placements.models import InternshipPlacement
 class WeeklyLog(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Draft'),
+        ('scheduled', 'Scheduled'),
         ('submitted', 'Submitted'),
         ('reviewed', 'Reviewed'),
         ('approved', 'Approved'),
@@ -24,6 +25,7 @@ class WeeklyLog(models.Model):
     solutions = models.TextField()
     hours_worked = models.DecimalField(max_digits=5, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    scheduled_submission_at = models.DateTimeField(null=True, blank=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

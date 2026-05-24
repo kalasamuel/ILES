@@ -27,6 +27,8 @@ const WeeklyLogForm = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageDescription, setImageDescription] = useState('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [scheduledSubmissionAt, setScheduledSubmissionAt] = useState('');
+  const [actionMode, setActionMode] = useState('draft');
 
   const selectedPlacement = placements.find(
     (item) => String(item.placement_id) === String(selectedPlacementId)
@@ -81,6 +83,11 @@ const WeeklyLogForm = () => {
               solutions: existing.solutions,
               hours_worked: existing.hours_worked,
             });
+            setScheduledSubmissionAt(
+              existing.scheduled_submission_at
+                ? new Date(existing.scheduled_submission_at).toISOString().slice(0, 16)
+                : ''
+            );
           }
         }
       } catch {
@@ -159,6 +166,90 @@ const WeeklyLogForm = () => {
       navigate('/app/dashboard');
     } catch {
       setError('Failed to save log. Please check your entries and try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveLogRecord = async () => {
+    const logData = {
+      placement: activePlacement.placement_id,
+      week_number: weekNumber ? parseInt(weekNumber) : 1,
+      start_date: activePlacement?.start_date || new Date().toISOString().split('T')[0],
+      end_date: activePlacement?.end_date || new Date().toISOString().split('T')[0],
+      ...formData,
+    };
+
+    if (existingLog) {
+      return (await logbooksAPI.updateLog(existingLog.log_id, logData)) || existingLog;
+    }
+
+    const savedLog = await logbooksAPI.createLog(logData);
+    setExistingLog(savedLog);
+    return savedLog;
+  };
+
+  const persistAttachment = async (savedLog) => {
+    if (!selectedImage || !savedLog?.log_id) return;
+
+    const fd = new FormData();
+    fd.append('log', savedLog.log_id);
+    fd.append('file', selectedImage);
+    if (imageDescription.trim()) fd.append('description', imageDescription.trim());
+    await logbooksAPI.createAttachment(fd);
+  };
+
+  const handleSaveDraft = async (e) => {
+    e.preventDefault();
+    if (!activePlacement) return;
+    setSaving(true);
+    setError('');
+
+    try {
+      const savedLog = await saveLogRecord();
+      await persistAttachment(savedLog);
+      navigate('/app/dashboard');
+    } catch {
+      setError('Failed to save log. Please check your entries and try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSendNow = async () => {
+    if (!activePlacement) return;
+    setSaving(true);
+    setError('');
+
+    try {
+      const savedLog = await saveLogRecord();
+      await persistAttachment(savedLog);
+      await logbooksAPI.submitLog(savedLog.log_id);
+      navigate('/app/dashboard');
+    } catch {
+      setError('Failed to submit log for review.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleScheduleSend = async () => {
+    if (!activePlacement) return;
+    if (!scheduledSubmissionAt) {
+      setError('Choose a date and time to schedule the log.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+
+    try {
+      const savedLog = await saveLogRecord();
+      await persistAttachment(savedLog);
+      await logbooksAPI.scheduleLog(savedLog.log_id, new Date(scheduledSubmissionAt).toISOString());
+      navigate('/app/dashboard');
+    } catch {
+      setError('Failed to schedule log submission.');
     } finally {
       setSaving(false);
     }
@@ -298,7 +389,7 @@ const WeeklyLogForm = () => {
       <div className="wl-shell">
 
         {/* ── Main form ── */}
-        <form className="wl-card wl-form-card" onSubmit={handleSubmit}>
+        <form className="wl-card wl-form-card" onSubmit={handleSaveDraft}>
           <div className="wl-card-header">
             <h2>Log details</h2>
             <p>Document what you did and learned this week.</p>
@@ -444,17 +535,51 @@ const WeeklyLogForm = () => {
               )}
             </div>
 
+            <div className="wl-section">
+              <div className="wl-section-tag"><span>Send</span></div>
+              <div className="wl-grid">
+                <div className="wl-field">
+                  <div className="wl-field-label">
+                    <span>Delivery mode</span>
+                  </div>
+                  <div className="wl-input-wrap">
+                    <select value={actionMode} onChange={(e) => setActionMode(e.target.value)}>
+                      <option value="draft">Save as draft</option>
+                      <option value="send">Send immediately</option>
+                      <option value="schedule">Schedule send</option>
+                    </select>
+                  </div>
+                </div>
+
+                {actionMode === 'schedule' && (
+                  <div className="wl-field">
+                    <div className="wl-field-label">
+                      <span>Send at</span>
+                    </div>
+                    <div className="wl-input-wrap">
+                      <input
+                        type="datetime-local"
+                        value={scheduledSubmissionAt}
+                        onChange={(e) => setScheduledSubmissionAt(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {error && <div className="wl-message error">{error}</div>}
 
             <div className="wl-actions">
-              <button type="submit" className="wl-btn-primary" disabled={saving}>
+              <button type="submit" className="wl-btn-primary" disabled={saving || actionMode !== 'draft'}>
                 {saving ? 'Saving…' : <><FiSave aria-hidden="true" /> Save Draft</>}
               </button>
-              {existingLog?.status === 'draft' && (
-                <button type="button" onClick={handleSubmitForReview} className="wl-btn-secondary">
-                  Submit for Review →
-                </button>
-              )}
+              <button type="button" onClick={handleSendNow} className="wl-btn-secondary" disabled={saving || actionMode === 'draft'}>
+                Send Now →
+              </button>
+              <button type="button" onClick={handleScheduleSend} className="wl-btn-secondary" disabled={saving || actionMode !== 'schedule'}>
+                Schedule Send →
+              </button>
               <div className="wl-actions-spacer" />
               <button type="button" className="wl-btn-ghost" onClick={() => navigate(-1)}>
                 Cancel
@@ -496,8 +621,8 @@ const WeeklyLogForm = () => {
             <div className="wl-side-note">
               <span className="wl-side-note-icon"><FiInfo aria-hidden="true" /></span>
               <span>
-                Save as a draft first. Once the week is complete, submit for
-                supervisor review.
+                Save as a draft first, then either send immediately or schedule
+                the log to submit automatically later.
               </span>
             </div>
           </div>
