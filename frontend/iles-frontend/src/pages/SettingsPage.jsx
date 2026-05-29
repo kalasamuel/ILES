@@ -19,9 +19,11 @@ const SettingsPage = () => {
     last_name: '',
     email: '',
     phone_number: '',
+    role_name: '',
     institution_name: '',
     affiliation_type: '',
     affiliation_name: '',
+    student_course: '',
     department_id: '',
     profile_picture_url: '',
   });
@@ -70,9 +72,11 @@ const SettingsPage = () => {
           last_name: currentUser?.last_name || '',
           email: currentUser?.email || '',
           phone_number: currentUser?.phone_number || '',
+          role_name: currentUser?.role?.role_name || '',
           institution_name: currentUser?.institution_name || '',
           affiliation_type: currentUser?.affiliation_type || '',
           affiliation_name: currentUser?.affiliation_name || '',
+          student_course: currentUser?.student_course || '',
           department_id: currentUser?.department?.department_id || '',
           profile_picture_url: currentUser?.profile_picture_url || '',
         });
@@ -178,7 +182,10 @@ const SettingsPage = () => {
       payload.append('email', profile.email);
       payload.append('phone_number', profile.phone_number);
       payload.append('institution_name', profile.institution_name || '');
-      payload.append('department_id', profile.department_id || '');
+
+      if (profile.role_name.toLowerCase().includes('academic') && profile.department_id) {
+        payload.append('department_id', profile.department_id);
+      }
 
       if (profilePictureFile) {
         payload.append('profile_picture', profilePictureFile);
@@ -367,7 +374,13 @@ const SettingsPage = () => {
 
   const profilePictureSrc = profilePicturePreview || profile.profile_picture_url;
   const isWorkplaceSupervisor = profile.affiliation_type === 'organization';
+  const isStudent = profile.role_name.toLowerCase().includes('student');
+  const isAcademicSupervisor = profile.role_name.toLowerCase().includes('academic');
   const institutionOrOrganizationLabel = profile.affiliation_type === 'organization' ? 'Organization' : 'Institution';
+  const courseOrDepartmentLabel = isStudent ? 'Course' : 'Department';
+  const courseOrDepartmentValue = isStudent
+    ? (profile.student_course || 'Not set')
+    : (getDepartmentLabel(profile.department_id) || 'Not set');
 
   return (
     <div className="settings-page">
@@ -451,6 +464,7 @@ const SettingsPage = () => {
                     type="text"
                     value={profile.first_name}
                     onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                    readOnly
                     placeholder="First name"
                   />
                 </div>
@@ -460,6 +474,7 @@ const SettingsPage = () => {
                     type="text"
                     value={profile.last_name}
                     onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                    readOnly
                     placeholder="Last name"
                   />
                 </div>
@@ -471,6 +486,7 @@ const SettingsPage = () => {
                   type="email"
                   value={profile.email}
                   onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                  readOnly
                   placeholder="you@example.com"
                 />
               </div>
@@ -498,9 +514,9 @@ const SettingsPage = () => {
                 ) : (
                   <input
                     type="text"
-                    value={profile.institution_name}
-                    onChange={(e) => setProfile({ ...profile, institution_name: e.target.value })}
-                    placeholder="Enter your institution"
+                    value={profile.institution_name || profile.affiliation_name || 'Not set'}
+                    readOnly
+                    placeholder="Institution is set during registration"
                   />
                 )}
                 <small className="field-hint">
@@ -510,21 +526,22 @@ const SettingsPage = () => {
                 </small>
               </div>
 
-              <div className="form-group">
-                <label>Department</label>
-                <select
-                  value={profile.department_id}
-                  onChange={(e) => setProfile({ ...profile, department_id: e.target.value })}
-                >
-                  <option value="">Select department</option>
-                  {departments.map((department) => (
-                    <option key={department.department_id} value={department.department_id}>
-                      {department.department_name} • {department.faculty}
-                    </option>
-                  ))}
-                </select>
-                <small className="field-hint">{getDepartmentLabel(profile.department_id)}</small>
-              </div>
+              {(isStudent || isAcademicSupervisor) && (
+                <div className="form-group">
+                  <label>{courseOrDepartmentLabel}</label>
+                  <input
+                    type="text"
+                    value={courseOrDepartmentValue}
+                    readOnly
+                    placeholder={isStudent ? 'Course is set during registration' : 'Department is set during registration'}
+                  />
+                  <small className="field-hint">
+                    {isStudent
+                      ? 'Course is captured from student registration.'
+                      : 'Department is captured from academic supervisor registration.'}
+                  </small>
+                </div>
+              )}
 
               <button type="submit" className="btn-save" disabled={savingAction === 'profile'}>
                 {savingAction === 'profile' ? 'Saving…' : 'Save Changes'}

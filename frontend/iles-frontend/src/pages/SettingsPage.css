@@ -376,6 +376,12 @@
   box-shadow: 0 0 0 4px var(--accent-glow);
 }
 
+.form-group input[readonly] {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
 .form-group select {
   width: 100%;
   padding: 0.6875rem 0.9375rem;
@@ -394,6 +400,12 @@
   border-color: var(--accent);
   background: var(--surface);
   box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.form-group select:disabled {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  cursor: not-allowed;
 }
 
 .field-hint {
