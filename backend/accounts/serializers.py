@@ -36,12 +36,13 @@ class UserSerializer(serializers.ModelSerializer):
     profile_picture_url = serializers.SerializerMethodField()
     affiliation_type = serializers.SerializerMethodField()
     affiliation_name = serializers.SerializerMethodField()
+    student_course = serializers.SerializerMethodField()
     role_id = serializers.PrimaryKeyRelatedField(source='role', queryset=Role.objects.all(), write_only=True, required=False)
     department_id = serializers.PrimaryKeyRelatedField(source='department', queryset=Department.objects.all(), write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'institution_name', 'institution_email', 'profile_picture', 'profile_picture_url', 'affiliation_type', 'affiliation_name', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
+        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'institution_name', 'institution_email', 'profile_picture', 'profile_picture_url', 'affiliation_type', 'affiliation_name', 'student_course', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -121,6 +122,12 @@ class UserSerializer(serializers.ModelSerializer):
 
         return None
 
+    def get_student_course(self, obj):
+        student = getattr(obj, 'student', None)
+        if student and getattr(student, 'program', None):
+            return student.program
+        return None
+
     def validate_profile_picture(self, file_obj):
         if not file_obj:
             return file_obj
@@ -179,6 +186,13 @@ class UserSerializer(serializers.ModelSerializer):
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     role = serializers.CharField(write_only=True, required=True)  # Accept role name as string
+    course = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    department_id = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        queryset=Department.objects.all(),
+        required=False,
+        allow_null=True,
+    )
     organization_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     organization_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
     institution_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
@@ -187,7 +201,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'password', 'role', 'organization_id', 'organization_name', 'institution_name', 'institution_email', 'institution_verification_code']
+        fields = ['first_name', 'last_name', 'email', 'password', 'role', 'course', 'department_id', 'organization_id', 'organization_name', 'institution_name', 'institution_email', 'institution_verification_code']
 
     def validate(self, attrs):
         role_name = str(attrs.get('role', '')).strip().lower().replace('-', ' ').replace('_', ' ')
@@ -196,12 +210,20 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         institution_verification_code = (attrs.get('institution_verification_code') or '').strip()
         organization_name = (attrs.get('organization_name') or '').strip()
         organization_id = attrs.get('organization_id')
+        course = (attrs.get('course') or '').strip()
+        department = attrs.get('department_id')
 
         if 'workplace' in role_name and not (organization_id or organization_name):
             raise serializers.ValidationError({'organization_name': 'Organization name is required for workplace supervisors.'})
 
         if ('student' in role_name or 'academic' in role_name) and not institution_name:
             raise serializers.ValidationError({'institution_name': 'Institution is required for students and academic supervisors.'})
+
+        if 'student' in role_name and not course:
+            raise serializers.ValidationError({'course': 'Course is required for students.'})
+
+        if 'academic' in role_name and not department:
+            raise serializers.ValidationError({'department_id': 'Department is required for academic supervisors.'})
 
         if 'student' in role_name or 'academic' in role_name:
             if not institution_email:
@@ -223,19 +245,22 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             if not Student.objects.filter(registration_number=value).exists():
                 return value
 
-    def _ensure_role_profile(self, user, role_name, organization=None):
+    def _ensure_role_profile(self, user, role_name, organization=None, department=None, course=None):
         normalized = role_name.strip().lower().replace('-', ' ').replace('_', ' ')
 
         if 'student' in normalized:
-            Student.objects.get_or_create(
+            student, _ = Student.objects.get_or_create(
                 user=user,
                 defaults={
                     'registration_number': self._generate_registration_number(),
-                    'program': 'Not Set',
+                    'program': course or 'Not Set',
                     'year_of_study': 1,
                     'expected_graduation': timezone.now().date() + timedelta(days=365 * 4),
                 }
             )
+            if course and student.program != course:
+                student.program = course
+                student.save(update_fields=['program'])
             return
 
         if 'supervisor' in normalized or 'academic' in normalized or 'workplace' in normalized:
@@ -245,11 +270,15 @@ class UserRegisterSerializer(serializers.ModelSerializer):
                 defaults={
                     'supervisor_type': supervisor_type,
                     'organization': organization if supervisor_type == 'workplace' else None,
+                    'department': department if supervisor_type == 'academic' else None,
                 }
             )
             if supervisor_type == 'workplace' and organization and supervisor.organization_id != organization.organization_id:
                 supervisor.organization = organization
                 supervisor.save(update_fields=['organization'])
+            if supervisor_type == 'academic' and department and supervisor.department_id != department.department_id:
+                supervisor.department = department
+                supervisor.save(update_fields=['department'])
 
     def _resolve_workplace_organization(self, organization_id, organization_name):
         if organization_id:
@@ -280,6 +309,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         role_name = validated_data.pop('role')
         password = validated_data.pop('password')
+        course = (validated_data.pop('course', '') or '').strip()
+        department = validated_data.pop('department_id', None)
         organization_id = validated_data.pop('organization_id', None)
         organization_name = validated_data.pop('organization_name', '')
         institution_name = (validated_data.pop('institution_name', '') or '').strip()
@@ -295,6 +326,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             role=role,
             institution_name=institution_name,
             institution_email=institution_email,
+            department=department,
             **{k: v for k, v in validated_data.items() if k != 'email'}
         )
 
@@ -306,7 +338,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         if ('student' in normalized or 'academic' in normalized) and institution_email and institution_verification_code:
             cache.delete(_institution_verification_cache_key(institution_email))
 
-        self._ensure_role_profile(user, role_name, organization=workplace_org)
+        self._ensure_role_profile(user, role_name, organization=workplace_org, department=department, course=course)
         return user
 
 
