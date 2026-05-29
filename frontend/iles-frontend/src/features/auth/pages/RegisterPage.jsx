@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authAPI } from '../../../services/endpoints';
+import { authAPI, departmentsAPI } from '../../../services/endpoints';
 import { useAuth } from '../../../hooks/AuthContext';
 import './RegisterPage.css';
 
@@ -19,9 +19,17 @@ function RegisterPage() {
     institutionVerificationCode: '',
     organizationName: '',
     organizationId: '',
+    courseName: '',
+    departmentName: '',
+    departmentId: '',
   });
   const [organizationResults, setOrganizationResults] = useState([]);
+  const [courseResults, setCourseResults] = useState([]);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
+  const [departmentResults, setDepartmentResults] = useState([]);
   const [showOrgDropdown, setShowOrgDropdown] = useState(false);
+  const [showCourseDropdown, setShowCourseDropdown] = useState(false);
+  const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,9 +55,29 @@ function RegisterPage() {
           next.institutionName = '';
           next.institutionEmail = '';
           next.institutionVerificationCode = '';
+          next.courseName = '';
+          next.departmentName = '';
+          next.departmentId = '';
           setCodeSent(false);
           setCodeExpiresAt(null);
           setIsInstitutionVerified(false);
+          setCourseResults([]);
+          setDepartmentResults([]);
+          setShowCourseDropdown(false);
+          setShowDepartmentDropdown(false);
+        } else if (event.target.value === 'student') {
+          next.organizationName = '';
+          next.organizationId = '';
+          next.departmentName = '';
+          next.departmentId = '';
+          setDepartmentResults([]);
+          setShowDepartmentDropdown(false);
+        } else if (event.target.value === 'academic_supervisor') {
+          next.organizationName = '';
+          next.organizationId = '';
+          next.courseName = '';
+          setCourseResults([]);
+          setShowCourseDropdown(false);
         } else {
           next.organizationName = '';
           next.organizationId = '';
@@ -60,6 +88,15 @@ function RegisterPage() {
         setIsInstitutionVerified(false);
       }
 
+      if (event.target.name === 'courseName') {
+        setShowCourseDropdown(true);
+      }
+
+      if (event.target.name === 'departmentName') {
+        next.departmentId = '';
+        setShowDepartmentDropdown(true);
+      }
+
       return next;
     });
 
@@ -68,6 +105,19 @@ function RegisterPage() {
       setShowOrgDropdown(true);
     }
   };
+
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const res = await departmentsAPI.getDepartments();
+        setDepartmentOptions(res?.results || res || []);
+      } catch {
+        setDepartmentOptions([]);
+      }
+    };
+
+    loadDepartments();
+  }, []);
 
   useEffect(() => {
     const isWorkplace = formData.role === 'workplace_supervisor';
@@ -88,6 +138,45 @@ function RegisterPage() {
 
     return () => window.clearTimeout(timer);
   }, [formData.role, formData.organizationName]);
+
+  useEffect(() => {
+    const isStudent = formData.role === 'student';
+    const query = (formData.courseName || '').trim();
+    if (!isStudent || query.length < 2) {
+      setCourseResults([]);
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await authAPI.getCourseSuggestions(query);
+        setCourseResults(res?.results || []);
+      } catch {
+        setCourseResults([]);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [formData.role, formData.courseName]);
+
+  useEffect(() => {
+    const isAcademicSupervisor = formData.role === 'academic_supervisor';
+    const query = (formData.departmentName || '').trim().toLowerCase();
+    if (!isAcademicSupervisor || query.length < 2) {
+      setDepartmentResults([]);
+      return;
+    }
+
+    const filtered = departmentOptions.filter((department) => {
+      const haystack = [department.department_name, department.faculty, department.university]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    }).slice(0, 10);
+
+    setDepartmentResults(filtered);
+  }, [formData.role, formData.departmentName, departmentOptions]);
 
   useEffect(() => {
     if (!codeExpiresAt) {
@@ -121,6 +210,23 @@ function RegisterPage() {
       organizationId: org.organization_id,
     }));
     setShowOrgDropdown(false);
+  };
+
+  const handleCourseSelect = (course) => {
+    setFormData((current) => ({
+      ...current,
+      courseName: course.name,
+    }));
+    setShowCourseDropdown(false);
+  };
+
+  const handleDepartmentSelect = (department) => {
+    setFormData((current) => ({
+      ...current,
+      departmentName: department.department_name,
+      departmentId: department.department_id,
+    }));
+    setShowDepartmentDropdown(false);
   };
 
   const handleSendInstitutionCode = async () => {
@@ -229,6 +335,29 @@ function RegisterPage() {
       return;
     }
 
+    if (formData.role === 'student' && !(formData.courseName || '').trim()) {
+      setError('Course is required for students.');
+      return;
+    }
+
+    if (formData.role === 'academic_supervisor' && !(formData.departmentId || '').trim()) {
+      const selectedDepartment = departmentOptions.find((department) => {
+        const value = (formData.departmentName || '').trim().toLowerCase();
+        return value && department.department_name?.trim().toLowerCase() === value;
+      });
+
+      if (!selectedDepartment) {
+        setError('Please choose a department from the suggestions.');
+        return;
+      }
+
+      setFormData((current) => ({
+        ...current,
+        departmentId: selectedDepartment.department_id,
+        departmentName: selectedDepartment.department_name,
+      }));
+    }
+
     if ((formData.role === 'student' || formData.role === 'academic_supervisor') && !(formData.institutionEmail || '').trim()) {
       setError('Institution email is required for students and academic supervisors.');
       return;
@@ -264,6 +393,8 @@ function RegisterPage() {
         email: formData.email,
         password: formData.password,
         role: roleMap[formData.role] || 'Student',
+        course: formData.courseName || undefined,
+        department_id: formData.departmentId || undefined,
         institution_name: formData.institutionName || undefined,
         institution_email: formData.institutionEmail || undefined,
         institution_verification_code: formData.institutionVerificationCode || undefined,
@@ -412,7 +543,7 @@ function RegisterPage() {
                 </div>
               )}
 
-              {(formData.role === 'student' || formData.role === 'academic_supervisor') && (
+              {formData.role === 'student' && (
                 <>
                   <div className="form-group">
                     <label htmlFor="institutionName">Institution</label>
@@ -426,6 +557,36 @@ function RegisterPage() {
                       className="no-icon"
                       placeholder="e.g. Makerere University"
                     />
+                  </div>
+
+                  <div className="form-group course-search-group">
+                    <label htmlFor="courseName">Course</label>
+                    <input
+                      type="text"
+                      id="courseName"
+                      name="courseName"
+                      value={formData.courseName}
+                      onChange={handleChange}
+                      onFocus={() => setShowCourseDropdown(true)}
+                      onBlur={() => window.setTimeout(() => setShowCourseDropdown(false), 120)}
+                      required
+                      className="no-icon"
+                      placeholder="Type to search existing courses"
+                    />
+                    {showCourseDropdown && courseResults.length > 0 && (
+                      <div className="autocomplete-dropdown">
+                        {courseResults.map((course) => (
+                          <button
+                            key={course.name}
+                            type="button"
+                            className="autocomplete-option"
+                            onMouseDown={() => handleCourseSelect(course)}
+                          >
+                            {course.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -507,6 +668,41 @@ function RegisterPage() {
                     </div>
                   )}
                 </>
+              )}
+
+              {formData.role === 'academic_supervisor' && (
+                <div className="form-group department-search-group">
+                  <label htmlFor="departmentName">Department</label>
+                  <input
+                    type="text"
+                    id="departmentName"
+                    name="departmentName"
+                    value={formData.departmentName}
+                    onChange={handleChange}
+                    onFocus={() => setShowDepartmentDropdown(true)}
+                    onBlur={() => window.setTimeout(() => setShowDepartmentDropdown(false), 120)}
+                    required
+                    className="no-icon"
+                    placeholder="Type to search existing departments"
+                  />
+                  {showDepartmentDropdown && departmentResults.length > 0 && (
+                    <div className="autocomplete-dropdown">
+                      {departmentResults.map((department) => (
+                        <button
+                          key={department.department_id}
+                          type="button"
+                          className="autocomplete-option"
+                          onMouseDown={() => handleDepartmentSelect(department)}
+                        >
+                          {department.department_name} • {department.faculty}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <small className="org-help-text">
+                    Choose a department from the list so the profile can be linked to the saved database record.
+                  </small>
+                </div>
               )}
 
               <div className="form-group">

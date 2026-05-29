@@ -470,6 +470,11 @@ body {
   position: relative;
 }
 
+.course-search-group,
+.department-search-group {
+  position: relative;
+}
+
 .org-dropdown {
   position: absolute;
   top: calc(100% + 6px);
@@ -496,6 +501,35 @@ body {
 }
 
 .org-option:hover {
+  background: var(--orange-faint);
+}
+
+.autocomplete-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.autocomplete-option {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--gray-900);
+}
+
+.autocomplete-option:hover {
   background: var(--orange-faint);
 }
 
@@ -563,6 +597,12 @@ body {
 .form-group select:focus {
   border-color: var(--orange);
   box-shadow: 0 0 0 3px rgba(244, 123, 32, 0.12);
+}
+
+.form-group input[readonly],
+.form-group select[readonly] {
+  background: var(--gray-50);
+  color: var(--gray-700);
 }
 
 /* Select arrow */
