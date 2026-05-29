@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import InternshipPlacement, PlacementDocument
 from .serializers import InternshipPlacementSerializer, PlacementDocumentSerializer
+from .utils import finalize_placement_submission, unlock_placement_submission
 from reviews.models import WorkflowHistory
 from accounts.models import Supervisor
 
@@ -55,6 +56,8 @@ class InternshipPlacementViewSet(viewsets.ModelViewSet):
             new_status=placement.status,
             changed_by=self.request.user
         )
+        if placement.is_submitted and not placement.placementdocument_set.filter(document_type='acceptance_letter').exists():
+            finalize_placement_submission(placement)
 
     def perform_update(self, serializer):
         old_status = self.get_object().status
@@ -137,3 +140,15 @@ class PlacementDocumentViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(placement__academic_supervisor=supervisor)
 
         return PlacementDocument.objects.none()
+
+    def perform_create(self, serializer):
+        document = serializer.save()
+        if document.document_type == 'acceptance_letter' and not document.placement.is_submitted:
+            finalize_placement_submission(document.placement, document_name=document.file_url.name)
+
+    def perform_destroy(self, instance):
+        placement = instance.placement
+        super().perform_destroy(instance)
+        has_acceptance_letter = placement.placementdocument_set.filter(document_type='acceptance_letter').exists()
+        if not has_acceptance_letter and placement.is_submitted:
+            unlock_placement_submission(placement)
