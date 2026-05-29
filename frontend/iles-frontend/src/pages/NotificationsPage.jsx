@@ -69,6 +69,8 @@ function NotificationsPage() {
       case 'submission_deadline': return <FiCalendar aria-hidden="true" />;
       case 'log_review_pending': return <FiEye aria-hidden="true" />;
       case 'placement_rejected': return <FiXCircle aria-hidden="true" />;
+      case 'placement_submitted': return <FiBriefcase aria-hidden="true" />;
+      case 'placement_letter_deleted': return <FiTrash2 aria-hidden="true" />;
       case 'evaluation_completed': return <FiCheck aria-hidden="true" />;
       case 'feedback_added': return <FiMessageCircle aria-hidden="true" />;
       case 'log_submitted': return <FiFileText aria-hidden="true" />;
@@ -134,6 +136,8 @@ function NotificationsPage() {
       navigate(`/app/logs/${notification.log_review_details.log_id}`);
     } else if (notification.notification_type === 'log_submitted' && notification.log_details?.log_id) {
       navigate(`/app/logs/${notification.log_details.log_id}`);
+    } else if ((notification.notification_type === 'placement_submitted' || notification.notification_type === 'placement_letter_deleted') && notification.placement_details?.placement_id) {
+      navigate(`/app/placements/${notification.placement_details.placement_id}`);
     }
   };
 
@@ -338,6 +342,11 @@ function NotificationCard({
       onNavigate(`/app/logs/${notification.log_details.log_id}`);
     } else if (notification.notification_type === 'login_alert') {
       onNavigate(`/app/activity`);
+    } else if (
+      (notification.notification_type === 'placement_submitted' || notification.notification_type === 'placement_letter_deleted') &&
+      notification.placement_details?.placement_id
+    ) {
+      onNavigate(`/app/placements/${notification.placement_details.placement_id}`);
     }
   };
 
@@ -345,6 +354,8 @@ function NotificationCard({
     notification.notification_type === 'feedback_added' ||
     notification.notification_type === 'log_submitted' ||
     notification.notification_type === 'login_alert' ||
+    notification.notification_type === 'placement_submitted' ||
+    notification.notification_type === 'placement_letter_deleted' ||
     (isAdmin && isAdminSystemType(notification.notification_type));
 
   return (
@@ -398,6 +409,13 @@ function NotificationCard({
           {notification.log_details && (
             <LogSubmissionDetailsBox
               details={notification.log_details}
+              typeColor={getTypeColor(notification.notification_type)}
+            />
+          )}
+
+          {notification.placement_details && (
+            <PlacementDetailsBox
+              details={notification.placement_details}
               typeColor={getTypeColor(notification.notification_type)}
             />
           )}
@@ -661,6 +679,32 @@ function LoginAlertDetailsBox({ details, typeColor }) {
           </div>
         )}
         <p className="detail-hint">← Click card to view complete login activity history</p>
+      </div>
+    </div>
+  );
+}
+
+function PlacementDetailsBox({ details, typeColor }) {
+  const rows = [
+    ['Placement', details.position_title],
+    ['Organisation', details.organization_name],
+    ['Supervisor Email', details.workplace_supervisor_email],
+    ['Status', details.status],
+    ['Submitted', details.submitted_at ? new Date(details.submitted_at).toLocaleString() : 'Unknown'],
+  ];
+
+  return (
+    <div className="notification-detail-box" style={{ '--type-color': typeColor }}>
+      <div className="detail-box-header">
+        <span className="detail-box-title"><FiBriefcase aria-hidden="true" /> Placement Details</span>
+      </div>
+      <div className="detail-box-content">
+        {rows.map(([label, value]) => (
+          <div key={label} className="detail-row-inline">
+            <span className="detail-label">{label}:</span>
+            <span className="detail-value">{String(value || '—')}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
