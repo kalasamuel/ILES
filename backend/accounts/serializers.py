@@ -39,12 +39,13 @@ class UserSerializer(serializers.ModelSerializer):
     student_course = serializers.SerializerMethodField()
     profile_visible = serializers.SerializerMethodField()
     show_email = serializers.SerializerMethodField()
+    show_phone = serializers.SerializerMethodField()
     role_id = serializers.PrimaryKeyRelatedField(source='role', queryset=Role.objects.all(), write_only=True, required=False)
     department_id = serializers.PrimaryKeyRelatedField(source='department', queryset=Department.objects.all(), write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'institution_name', 'institution_email', 'profile_picture', 'profile_picture_url', 'affiliation_type', 'affiliation_name', 'student_course', 'profile_visible', 'show_email', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
+        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'institution_name', 'institution_email', 'profile_picture', 'profile_picture_url', 'affiliation_type', 'affiliation_name', 'student_course', 'profile_visible', 'show_email', 'show_phone', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -96,6 +97,9 @@ class UserSerializer(serializers.ModelSerializer):
         # Additionally respect the show_email flag even when profile_visible is True
         if settings_obj and settings_obj.show_email is False and not is_admin and not is_self:
             data['email'] = None
+        # Respect the show_phone flag even when profile_visible is True
+        if settings_obj and settings_obj.show_phone is False and not is_admin and not is_self:
+            data['phone_number'] = None
 
         return data
 
@@ -114,6 +118,15 @@ class UserSerializer(serializers.ModelSerializer):
             if settings_obj is None:
                 return True
             return bool(settings_obj.show_email)
+        except Exception:
+            return True
+
+    def get_show_phone(self, obj):
+        try:
+            settings_obj = UserSettings.objects.filter(user=obj).first()
+            if settings_obj is None:
+                return True
+            return bool(settings_obj.show_phone)
         except Exception:
             return True
 
