@@ -394,6 +394,34 @@ class UserViewSet(viewsets.ModelViewSet):
         results = queryset.order_by('name').values('organization_id', 'name')[:10]
         return Response({'results': list(results)})
 
+    @action(detail=False, methods=['get'], permission_classes=[], url_path='course-suggestions')
+    def course_suggestions(self, request):
+        """Public search endpoint used by registration typeahead for student courses."""
+        query = (request.query_params.get('q') or '').strip()
+
+        if len(query) < 2:
+            return Response({'results': []})
+
+        ip = get_client_ip(request)
+        lookup_key = f"rate_limit:course_lookup:{ip}"
+        if _is_rate_limited(lookup_key, limit=60, ttl_seconds=60):
+            return Response(
+                {'error': 'Too many course lookups. Please wait and try again.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        results = (
+            Student.objects
+            .exclude(program__isnull=True)
+            .exclude(program__exact='')
+            .filter(program__icontains=query)
+            .order_by('program')
+            .values_list('program', flat=True)
+            .distinct()[:10]
+        )
+
+        return Response({'results': [{'name': program} for program in results]})
+
     
     @action(detail=False, methods=['post'], permission_classes=[], url_path='forgot-password')
     def forgot_password(self, request):
