@@ -340,7 +340,9 @@ function RegisterPage() {
       return;
     }
 
-    if (formData.role === 'academic_supervisor' && !(formData.departmentId || '').trim()) {
+    let selectedDepartmentId = formData.departmentId;
+
+    if (formData.role === 'academic_supervisor' && !selectedDepartmentId) {
       const selectedDepartment = departmentOptions.find((department) => {
         const value = (formData.departmentName || '').trim().toLowerCase();
         return value && department.department_name?.trim().toLowerCase() === value;
@@ -351,6 +353,7 @@ function RegisterPage() {
         return;
       }
 
+      selectedDepartmentId = selectedDepartment.department_id;
       setFormData((current) => ({
         ...current,
         departmentId: selectedDepartment.department_id,
@@ -394,7 +397,7 @@ function RegisterPage() {
         password: formData.password,
         role: roleMap[formData.role] || 'Student',
         course: formData.courseName || undefined,
-        department_id: formData.departmentId || undefined,
+        department_id: selectedDepartmentId || undefined,
         institution_name: formData.institutionName || undefined,
         institution_email: formData.institutionEmail || undefined,
         institution_verification_code: formData.institutionVerificationCode || undefined,
