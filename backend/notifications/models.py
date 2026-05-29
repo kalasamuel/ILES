@@ -11,6 +11,8 @@ class Notification(models.Model):
         ('evaluation_completed', 'Evaluation Completed'),
         ('placement_approved', 'Placement Approved'),
         ('placement_rejected', 'Placement Rejected'),
+        ('placement_submitted', 'Placement Submitted'),
+        ('placement_letter_deleted', 'Placement Letter Deleted'),
         ('feedback_added', 'Feedback Added'),
         ('log_submitted', 'Log Submitted'),
         ('system_health_update', 'System Health Update'),
