@@ -37,12 +37,14 @@ class UserSerializer(serializers.ModelSerializer):
     affiliation_type = serializers.SerializerMethodField()
     affiliation_name = serializers.SerializerMethodField()
     student_course = serializers.SerializerMethodField()
+    profile_visible = serializers.SerializerMethodField()
+    show_email = serializers.SerializerMethodField()
     role_id = serializers.PrimaryKeyRelatedField(source='role', queryset=Role.objects.all(), write_only=True, required=False)
     department_id = serializers.PrimaryKeyRelatedField(source='department', queryset=Department.objects.all(), write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'institution_name', 'institution_email', 'profile_picture', 'profile_picture_url', 'affiliation_type', 'affiliation_name', 'student_course', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
+        fields = ['user_id', 'first_name', 'last_name', 'email', 'phone_number', 'institution_name', 'institution_email', 'profile_picture', 'profile_picture_url', 'affiliation_type', 'affiliation_name', 'student_course', 'profile_visible', 'show_email', 'role', 'department', 'role_id', 'department_id', 'is_active', 'date_joined', 'last_login']
         extra_kwargs = {
             'password': {'write_only': True}
         }
@@ -96,6 +98,24 @@ class UserSerializer(serializers.ModelSerializer):
             data['email'] = None
 
         return data
+
+    def get_profile_visible(self, obj):
+        try:
+            settings_obj = UserSettings.objects.filter(user=obj).first()
+            if settings_obj is None:
+                return True
+            return bool(settings_obj.profile_visible)
+        except Exception:
+            return True
+
+    def get_show_email(self, obj):
+        try:
+            settings_obj = UserSettings.objects.filter(user=obj).first()
+            if settings_obj is None:
+                return True
+            return bool(settings_obj.show_email)
+        except Exception:
+            return True
 
     def _role_slug(self, obj):
         return str(getattr(obj.role, 'role_name', '')).strip().lower().replace('-', ' ').replace('_', ' ')
