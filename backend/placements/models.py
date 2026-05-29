@@ -18,10 +18,13 @@ class InternshipPlacement(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     workplace_supervisor = models.ForeignKey(Supervisor, on_delete=models.CASCADE, related_name='workplace_placements')
     academic_supervisor = models.ForeignKey(Supervisor, on_delete=models.CASCADE, related_name='academic_placements')
+    workplace_supervisor_email = models.EmailField(blank=True)
     start_date = models.DateField()
     end_date = models.DateField()
     position_title = models.CharField(max_length=100)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    is_submitted = models.BooleanField(default=False)
+    submitted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
@@ -38,7 +41,7 @@ class PlacementDocument(models.Model):
     document_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE)
     document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPES)
-    file_url = models.URLField()
+    file_url = models.FileField(upload_to='placement_documents/')
     uploaded_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
