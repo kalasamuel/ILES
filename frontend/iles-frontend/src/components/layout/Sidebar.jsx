@@ -4,6 +4,7 @@ import {
   FiAward,
   FiBarChart2,
   FiBriefcase,
+  FiBell,
   FiCheckSquare,
   FiFileText,
   FiGrid,
@@ -36,6 +37,7 @@ function getSidebarItems(role) {
       { path: '/app/dashboard', label: 'Dashboard',   Icon: FiGrid },
       { path: '/app/placements', label: 'Placements',  Icon: FiBriefcase },
       { path: '/app/logs',       label: 'My Logs',     Icon: FiFileText },
+      { path: '/app/notifications', label: 'Notifications', Icon: FiBell },
       { path: '/app/results',    label: 'My Results',  Icon: FiCheckSquare },
       { path: '/app/settings',   label: 'Settings',    Icon: FiSettings },
     ],
@@ -43,6 +45,7 @@ function getSidebarItems(role) {
       { path: '/app/dashboard',  label: 'Dashboard',        Icon: FiGrid },
       { path: '/app/placements', label: 'Assigned Interns', Icon: FiUsers },
       { path: '/app/reviews',    label: 'Review Logs',      Icon: FiCheckSquare },
+      { path: '/app/notifications', label: 'Notifications', Icon: FiBell },
       { path: '/app/settings',   label: 'Settings',         Icon: FiSettings },
     ],
     [ROLES.ACADEMIC_SUPERVISOR]: [
@@ -50,6 +53,7 @@ function getSidebarItems(role) {
       { path: '/app/placements',  label: 'Student Overview',   Icon: FiSearch },
       { path: '/app/reviews',     label: 'Supervisor Reviews', Icon: FiCheckSquare },
       { path: '/app/evaluations', label: 'Final Evaluations',  Icon: FiAward },
+      { path: '/app/notifications', label: 'Notifications', Icon: FiBell },
       { path: '/app/settings',    label: 'Settings',           Icon: FiSettings },
     ],
     [ROLES.ADMIN]: [
@@ -60,6 +64,7 @@ function getSidebarItems(role) {
       { path: '/app/system-status', label: 'System Status',   Icon: FiSettings },
       { path: '/app/deadlines',     label: 'Deadlines',       Icon: FiFileText },
       { path: '/app/reports',       label: 'System Reports',  Icon: FiBarChart2 },
+      { path: '/app/notifications', label: 'Notifications', Icon: FiBell },
       { path: '/app/settings',      label: 'System Settings', Icon: FiSettings },
     ],
   };
