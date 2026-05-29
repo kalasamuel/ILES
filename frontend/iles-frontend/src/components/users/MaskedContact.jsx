@@ -12,11 +12,18 @@ export default function MaskedContact({ user, fallback = '' }) {
   const isAdmin = String(currentUser?.role?.role_name || '').toLowerCase().includes('admin');
 
   const visible = user.profile_visible;
+  const showPhone = typeof user.show_phone !== 'undefined' ? user.show_phone : undefined;
   const phone = user.phone_number || (user.user && user.user.phone_number) || null;
 
-  if (isSelf || isAdmin || visible === undefined || visible === true) {
+  if (isSelf || isAdmin) {
     return <>{phone || fallback}</>;
   }
 
-  return <>{fallback}</>;
+  // If profile is explicitly hidden, do not show contact
+  if (visible === false) return <>{fallback}</>;
+
+  // If show_phone exists and is false, hide phone for non-admin/non-self
+  if (showPhone === false) return <>{fallback}</>;
+
+  return <>{phone || fallback}</>;
 }
