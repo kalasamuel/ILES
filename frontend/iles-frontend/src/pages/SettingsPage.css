@@ -317,6 +317,34 @@
 
 .btn-upload {
   margin-top: 0;
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.btn-save.btn-upload {
+  width: auto;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  margin-top: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  box-shadow: none;
+  align-items: flex-start;
+}
+
+.btn-upload:hover {
+  text-decoration: underline;
+  background: transparent;
 }
 
 .btn-remove-picture {
