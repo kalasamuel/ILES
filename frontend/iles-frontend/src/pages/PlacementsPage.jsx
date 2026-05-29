@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Routes, Route, useParams, useNavigate, Link } from 'react-router-dom';
-import { FiArrowLeft, FiBriefcase, FiCalendar, FiCheckSquare, FiClock, FiHash, FiMessageCircle, FiXCircle, FiCheck } from 'react-icons/fi';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Routes, Route, useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { FiArrowLeft, FiBriefcase, FiCalendar, FiCheckSquare, FiClock, FiHash, FiMessageCircle, FiXCircle, FiCheck, FiTrash2, FiFileText } from 'react-icons/fi';
+import { useAuth } from '../hooks/AuthContext';
 import { placementsAPI, organizationsAPI } from '../services/endpoints';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './PlacementsPage.css';
@@ -173,10 +174,21 @@ function PlacementList() {
 
 // ── Create Placement ──────────────────────────────────────────────────────
 function PlacementCreate() {
+  const location = useLocation();
   const navigate = useNavigate();
+  const editPlacement = location.state?.placement || null;
+  const isEditMode = Boolean(editPlacement);
+  const hasExistingLetter = Boolean(editPlacement?.documents?.some((document) => document.document_type === 'acceptance_letter'));
   const [orgs, setOrgs]       = useState([]);
   const [organizationMode, setOrganizationMode] = useState('existing');
-  const [form, setForm]       = useState({ position_title: '', organization: '', start_date: '', end_date: '', description: '' });
+  const [form, setForm]       = useState({
+    position_title: editPlacement?.position_title || '',
+    organization: editPlacement?.organization || '',
+    start_date: editPlacement?.start_date || '',
+    end_date: editPlacement?.end_date || '',
+    workplace_supervisor_email: editPlacement?.workplace_supervisor_email || '',
+  });
+  const [acceptanceLetter, setAcceptanceLetter] = useState(null);
   const [newOrganization, setNewOrganization] = useState({
     name: '',
     industry: '',
@@ -190,12 +202,31 @@ function PlacementCreate() {
   const [error, setError]     = useState('');
 
   useEffect(() => {
-    organizationsAPI.getOrganizations().then((d) => setOrgs(d.results || d || [])).catch(() => {});
-  }, []);
+    if (!isEditMode) {
+      organizationsAPI.getOrganizations().then((d) => setOrgs(d.results || d || [])).catch(() => {});
+    }
+  }, [isEditMode]);
+
+  useEffect(() => {
+    if (editPlacement) {
+      setForm({
+        position_title: editPlacement.position_title || '',
+        organization: editPlacement.organization || '',
+        start_date: editPlacement.start_date || '',
+        end_date: editPlacement.end_date || '',
+        workplace_supervisor_email: editPlacement.workplace_supervisor_email || '',
+      });
+      setOrganizationMode('existing');
+    }
+  }, [editPlacement]);
 
   const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   const handleNewOrganizationChange = (e) => {
     setNewOrganization((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleLetterChange = (e) => {
+    setAcceptanceLetter(e.target.files?.[0] || null);
   };
 
   const handleSubmit = async (e) => {
@@ -204,25 +235,36 @@ function PlacementCreate() {
     setError('');
     try {
       let organizationId = form.organization;
-      if (organizationMode === 'new') {
+      if (!isEditMode && organizationMode === 'new') {
         const createdOrganization = await organizationsAPI.createOrganization(newOrganization);
         organizationId = createdOrganization.organization_id;
       }
 
-      const payload = {
-        position_title: form.position_title,
-        organization: organizationId,
-        start_date: form.start_date,
-        end_date: form.end_date,
-      };
-      await placementsAPI.createPlacement(payload);
-      navigate('/app/placements');
+      const payload = new FormData();
+      payload.append('position_title', form.position_title);
+      payload.append('start_date', form.start_date);
+      payload.append('end_date', form.end_date);
+      payload.append('workplace_supervisor_email', form.workplace_supervisor_email.trim());
+      if (organizationId) {
+        payload.append('organization', organizationId);
+      }
+      if (acceptanceLetter) {
+        payload.append('acceptance_letter', acceptanceLetter);
+      } else if (!isEditMode || !hasExistingLetter) {
+        throw new Error('Please upload your acceptance letter before submitting.');
+      }
+
+      const savedPlacement = isEditMode
+        ? await placementsAPI.updatePlacement(editPlacement.placement_id, payload)
+        : await placementsAPI.createPlacement(payload);
+
+      navigate(`/app/placements/${savedPlacement.placement_id}`);
     } catch (err) {
       const apiError = err?.response?.data;
       const firstFieldError = apiError && typeof apiError === 'object'
         ? Object.values(apiError).find((val) => Array.isArray(val) && val.length > 0)?.[0]
         : '';
-      setError(firstFieldError || apiError?.detail || 'Failed to create placement. Please try again.');
+      setError(firstFieldError || apiError?.detail || err.message || 'Failed to save placement. Please try again.');
     } finally {
       setSub(false);
     }
@@ -232,74 +274,91 @@ function PlacementCreate() {
     <div className="pl-create-page">
       <button className="pl-back-btn" onClick={() => navigate(-1)}>← Back</button>
       <div className="pl-create-card">
-        <h2>New Placement</h2>
+        <h2>{isEditMode ? 'Update Placement' : 'New Placement'}</h2>
         <form className="pl-form" onSubmit={handleSubmit}>
           <div className="pl-field">
             <label htmlFor="position_title">Position Title *</label>
             <input id="position_title" name="position_title" value={form.position_title} onChange={handleChange} placeholder="e.g. Software Engineering Intern" required />
           </div>
 
-          <div className="pl-org-mode-switch" role="group" aria-label="Organization input mode">
-            <button
-              type="button"
-              className={`pl-org-mode-btn${organizationMode === 'existing' ? ' active' : ''}`}
-              onClick={() => setOrganizationMode('existing')}
-            >
-              Select Existing
-            </button>
-            <button
-              type="button"
-              className={`pl-org-mode-btn${organizationMode === 'new' ? ' active' : ''}`}
-              onClick={() => setOrganizationMode('new')}
-            >
-              Add New Organization
-            </button>
-          </div>
-
-          {organizationMode === 'existing' ? (
-          <div className="pl-field">
-            <label htmlFor="organization">Organization *</label>
-            <select id="organization" name="organization" value={form.organization} onChange={handleChange} required>
-              <option value="">Select organisation…</option>
-              {orgs.map((o) => <option key={o.organization_id} value={o.organization_id}>{o.name}</option>)}
-            </select>
-          </div>
+          {isEditMode ? (
+            <div className="pl-field">
+              <label>Organization</label>
+              <div className="pl-readonly-value">
+                {editPlacement.organization_details?.name || `Organization #${editPlacement.organization}`}
+              </div>
+            </div>
           ) : (
             <>
-              <div className="pl-field">
-                <label htmlFor="name">Organization Name *</label>
-                <input id="name" name="name" value={newOrganization.name} onChange={handleNewOrganizationChange} placeholder="e.g. Acme Technologies" required />
+              <div className="pl-org-mode-switch" role="group" aria-label="Organization input mode">
+                <button
+                  type="button"
+                  className={`pl-org-mode-btn${organizationMode === 'existing' ? ' active' : ''}`}
+                  onClick={() => setOrganizationMode('existing')}
+                >
+                  Select Existing
+                </button>
+                <button
+                  type="button"
+                  className={`pl-org-mode-btn${organizationMode === 'new' ? ' active' : ''}`}
+                  onClick={() => setOrganizationMode('new')}
+                >
+                  Add New Organization
+                </button>
               </div>
-              <div className="pl-form-row">
+
+              {organizationMode === 'existing' ? (
                 <div className="pl-field">
-                  <label htmlFor="industry">Industry *</label>
-                  <input id="industry" name="industry" value={newOrganization.industry} onChange={handleNewOrganizationChange} placeholder="e.g. Information Technology" required />
+                  <label htmlFor="organization">Organization *</label>
+                  <select id="organization" name="organization" value={form.organization} onChange={handleChange} required>
+                    <option value="">Select organisation…</option>
+                    {orgs.map((o) => <option key={o.organization_id} value={o.organization_id}>{o.name}</option>)}
+                  </select>
                 </div>
-                <div className="pl-field">
-                  <label htmlFor="contact_phone">Contact Phone *</label>
-                  <input id="contact_phone" name="contact_phone" value={newOrganization.contact_phone} onChange={handleNewOrganizationChange} placeholder="e.g. +255700000000" required />
-                </div>
-              </div>
-              <div className="pl-field">
-                <label htmlFor="address">Address *</label>
-                <textarea id="address" name="address" value={newOrganization.address} onChange={handleNewOrganizationChange} placeholder="Office address" rows={3} required />
-              </div>
-              <div className="pl-form-row">
-                <div className="pl-field">
-                  <label htmlFor="city">City *</label>
-                  <input id="city" name="city" value={newOrganization.city} onChange={handleNewOrganizationChange} placeholder="e.g. Dar es Salaam" required />
-                </div>
-                <div className="pl-field">
-                  <label htmlFor="country">Country *</label>
-                  <input id="country" name="country" value={newOrganization.country} onChange={handleNewOrganizationChange} placeholder="e.g. Tanzania" required />
-                </div>
-              </div>
-              <div className="pl-field">
-                <label htmlFor="contact_email">Contact Email *</label>
-                <input id="contact_email" name="contact_email" type="email" value={newOrganization.contact_email} onChange={handleNewOrganizationChange} placeholder="e.g. hr@acme.com" required />
-              </div>
+              ) : (
+                <>
+                  <div className="pl-field">
+                    <label htmlFor="name">Organization Name *</label>
+                    <input id="name" name="name" value={newOrganization.name} onChange={handleNewOrganizationChange} placeholder="e.g. Acme Technologies" required />
+                  </div>
+                  <div className="pl-form-row">
+                    <div className="pl-field">
+                      <label htmlFor="industry">Industry *</label>
+                      <input id="industry" name="industry" value={newOrganization.industry} onChange={handleNewOrganizationChange} placeholder="e.g. Information Technology" required />
+                    </div>
+                    <div className="pl-field">
+                      <label htmlFor="contact_phone">Contact Phone *</label>
+                      <input id="contact_phone" name="contact_phone" value={newOrganization.contact_phone} onChange={handleNewOrganizationChange} placeholder="e.g. +255700000000" required />
+                    </div>
+                  </div>
+                  <div className="pl-field">
+                    <label htmlFor="address">Address *</label>
+                    <textarea id="address" name="address" value={newOrganization.address} onChange={handleNewOrganizationChange} placeholder="Office address" rows={3} required />
+                  </div>
+                  <div className="pl-form-row">
+                    <div className="pl-field">
+                      <label htmlFor="city">City *</label>
+                      <input id="city" name="city" value={newOrganization.city} onChange={handleNewOrganizationChange} placeholder="e.g. Dar es Salaam" required />
+                    </div>
+                    <div className="pl-field">
+                      <label htmlFor="country">Country *</label>
+                      <input id="country" name="country" value={newOrganization.country} onChange={handleNewOrganizationChange} placeholder="e.g. Tanzania" required />
+                    </div>
+                  </div>
+                  <div className="pl-field">
+                    <label htmlFor="contact_email">Contact Email *</label>
+                    <input id="contact_email" name="contact_email" type="email" value={newOrganization.contact_email} onChange={handleNewOrganizationChange} placeholder="e.g. hr@acme.com" required />
+                  </div>
+                </>
+              )}
             </>
           )}
+
+          <div className="pl-field">
+            <label htmlFor="workplace_supervisor_email">Workplace Supervisor Email *</label>
+            <input id="workplace_supervisor_email" name="workplace_supervisor_email" type="email" value={form.workplace_supervisor_email} onChange={handleChange} placeholder="e.g. supervisor@company.com" required />
+          </div>
+
           <div className="pl-form-row">
             <div className="pl-field">
               <label htmlFor="start_date">Start Date *</label>
@@ -311,12 +370,13 @@ function PlacementCreate() {
             </div>
           </div>
           <div className="pl-field">
-            <label htmlFor="description">Description</label>
-            <textarea id="description" name="description" value={form.description} onChange={handleChange} placeholder="Brief description of the role…" rows={4} />
+            <label htmlFor="acceptance_letter">Placement Letter {isEditMode ? '' : '*'}</label>
+            <input id="acceptance_letter" name="acceptance_letter" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={handleLetterChange} required={!isEditMode || !hasExistingLetter} />
+            <p className="pl-help-text">Upload the letter from the company or workplace that confirms your placement.</p>
           </div>
           {error && <p className="pl-error-message">{error}</p>}
           <button type="submit" className="pl-submit-btn" disabled={submitting}>
-            {submitting ? 'Creating…' : 'Create Placement'}
+            {submitting ? 'Saving…' : isEditMode ? 'Update Placement' : 'Submit Placement'}
           </button>
         </form>
       </div>
@@ -328,25 +388,67 @@ function PlacementCreate() {
 function PlacementDetails() {
   const { id }   = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [pl, setPl]           = useState(null);
+  const [loading, setLoading]  = useState(true);
   const [revealed, setReveal] = useState(false);
+  const [error, setError]      = useState('');
+  const [deletingDocId, setDeletingDocId] = useState(null);
 
-  useEffect(() => {
-    if (id) {
-      placementsAPI.getPlacement(id)
-        .then((data) => {
-          setPl(data);
-          setTimeout(() => setReveal(true), 50);
-        })
-        .catch(console.error);
+  const loadPlacement = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    setError('');
+    try {
+      const data = await placementsAPI.getPlacement(id);
+      setPl(data);
+      setTimeout(() => setReveal(true), 50);
+    } catch (fetchError) {
+      console.error(fetchError);
+      setError('Failed to load placement details.');
+    } finally {
+      setLoading(false);
     }
   }, [id]);
 
-  if (!pl) return <LoadingSpinner text="Loading placement…" fullscreen />;
+  useEffect(() => {
+    loadPlacement();
+  }, [loadPlacement]);
+
+  if (loading) return <LoadingSpinner text="Loading placement…" fullscreen />;
+  if (error || !pl) {
+    return (
+      <div className="pl-empty">
+        <FiBriefcase size={48} />
+        <p>{error || 'Placement not found.'}</p>
+        <button className="lp-btn-primary" onClick={() => navigate('/app/placements')}>Back to placements</button>
+      </div>
+    );
+  }
 
   const sm   = STATUS_META[pl.status?.toLowerCase()] || STATUS_META.pending;
   const days = daysCount(pl.start_date, pl.end_date);
   const org  = pl.organization_details?.name || `Organisation #${pl.organization}`;
+  const isOwner = String(pl.student_details?.user_details?.user_id || '') === String(user?.user_id || '');
+  const isEditable = Boolean(pl.is_editable);
+  const acceptanceLetter = (pl.documents || []).find((document) => document.document_type === 'acceptance_letter');
+
+  const handleEditPlacement = () => {
+    navigate('/app/placements/create', { state: { placement: pl } });
+  };
+
+  const handleDeleteLetter = async () => {
+    if (!acceptanceLetter) return;
+    setDeletingDocId(acceptanceLetter.document_id);
+    try {
+      await placementsAPI.deletePlacementDocument(acceptanceLetter.document_id);
+      await loadPlacement();
+    } catch (deleteError) {
+      console.error('Failed to delete placement letter', deleteError);
+    } finally {
+      setDeletingDocId(null);
+    }
+  };
 
   return (
     <div className={`pd-shell${revealed ? ' pd-shell--in' : ''}`}>
@@ -388,6 +490,16 @@ function PlacementDetails() {
               <p className="pd-desc-text">{pl.description}</p>
             </div>
           )}
+
+          {isOwner && isEditable && (
+            <div className="pd-desc-block">
+              <div className="pd-block-heading">Edit Submission</div>
+              <p className="pd-desc-text">You can update this placement while the acceptance letter is not attached.</p>
+              <button className="pd-action-btn pd-action-btn--back" onClick={handleEditPlacement}>
+                <FiCheckSquare aria-hidden="true" /> Edit placement
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Right column ── */}
@@ -414,6 +526,16 @@ function PlacementDetails() {
                 },
                 {
                   icon: <FiClock size={18} />,
+                  label: 'Submission',
+                  value: pl.is_submitted ? 'Submitted' : 'Draft',
+                },
+                {
+                  icon: <FiMessageCircle size={18} />,
+                  label: 'Supervisor Email',
+                  value: pl.workplace_supervisor_email || '—',
+                },
+                {
+                  icon: <FiClock size={18} />,
                   label: 'Status',
                   value: <span style={{ color: sm.color, fontWeight: 700 }}>{sm.label}</span>,
                 },
@@ -432,6 +554,36 @@ function PlacementDetails() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="pd-info-card">
+            <div className="pd-block-heading">Placement Letter</div>
+            {acceptanceLetter ? (
+              <div className="pd-info-rows">
+                <div className="pd-info-row">
+                  <div className="pd-info-icon"><FiFileText size={18} /></div>
+                  <div className="pd-info-content">
+                    <div className="pd-info-label">Uploaded letter</div>
+                    <div className="pd-info-value">
+                      <a href={acceptanceLetter.file_url} target="_blank" rel="noreferrer">Open uploaded letter</a>
+                    </div>
+                  </div>
+                </div>
+                {isOwner && (
+                  <div className="pd-actions">
+                    <button
+                      className="pd-action-btn pd-action-btn--back"
+                      onClick={handleDeleteLetter}
+                      disabled={deletingDocId === acceptanceLetter.document_id}
+                    >
+                      {deletingDocId === acceptanceLetter.document_id ? 'Deleting…' : <><FiTrash2 aria-hidden="true" /> Delete letter</>}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="pd-desc-text">No acceptance letter is attached yet.</p>
+            )}
           </div>
 
           <div className="pd-actions">
