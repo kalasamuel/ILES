@@ -177,15 +177,7 @@ const SettingsPage = () => {
     setProfilePictureError('');
     try {
       const payload = new FormData();
-      payload.append('first_name', profile.first_name);
-      payload.append('last_name', profile.last_name);
-      payload.append('email', profile.email);
       payload.append('phone_number', profile.phone_number);
-      payload.append('institution_name', profile.institution_name || '');
-
-      if (profile.role_name.toLowerCase().includes('academic') && profile.department_id) {
-        payload.append('department_id', profile.department_id);
-      }
 
       if (profilePictureFile) {
         payload.append('profile_picture', profilePictureFile);
@@ -460,35 +452,17 @@ const SettingsPage = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label>First Name</label>
-                  <input
-                    type="text"
-                    value={profile.first_name}
-                    onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
-                    readOnly
-                    placeholder="First name"
-                  />
+                  <div className="readonly-field">{profile.first_name || 'Not set'}</div>
                 </div>
                 <div className="form-group">
                   <label>Last Name</label>
-                  <input
-                    type="text"
-                    value={profile.last_name}
-                    onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
-                    readOnly
-                    placeholder="Last name"
-                  />
+                  <div className="readonly-field">{profile.last_name || 'Not set'}</div>
                 </div>
               </div>
 
               <div className="form-group">
                 <label>Email Address</label>
-                <input
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                  readOnly
-                  placeholder="you@example.com"
-                />
+                <div className="readonly-field">{profile.email || 'Not set'}</div>
               </div>
 
               <div className="form-group">
@@ -504,20 +478,9 @@ const SettingsPage = () => {
               <div className="form-group">
                 <label>{institutionOrOrganizationLabel}</label>
                 {isWorkplaceSupervisor ? (
-                  <input
-                    type="text"
-                    value={profile.affiliation_name || 'Not set'}
-                    readOnly
-                    disabled
-                    placeholder="Organization is set during registration"
-                  />
+                  <div className="readonly-field">{profile.affiliation_name || 'Not set'}</div>
                 ) : (
-                  <input
-                    type="text"
-                    value={profile.institution_name || profile.affiliation_name || 'Not set'}
-                    readOnly
-                    placeholder="Institution is set during registration"
-                  />
+                  <div className="readonly-field">{profile.institution_name || profile.affiliation_name || 'Not set'}</div>
                 )}
                 <small className="field-hint">
                   {isWorkplaceSupervisor
@@ -529,12 +492,7 @@ const SettingsPage = () => {
               {(isStudent || isAcademicSupervisor) && (
                 <div className="form-group">
                   <label>{courseOrDepartmentLabel}</label>
-                  <input
-                    type="text"
-                    value={courseOrDepartmentValue}
-                    readOnly
-                    placeholder={isStudent ? 'Course is set during registration' : 'Department is set during registration'}
-                  />
+                  <div className="readonly-field">{courseOrDepartmentValue}</div>
                   <small className="field-hint">
                     {isStudent
                       ? 'Course is captured from student registration.'
