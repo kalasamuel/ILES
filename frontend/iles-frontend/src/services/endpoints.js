@@ -168,11 +168,23 @@ export const placementsAPI = {
     return response.data;
   },
   createPlacement: async (data) => {
-    const response = await api.post('/placements/placements/', data);
+    const response = await api.post('/placements/placements/', data, data instanceof FormData ? {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    } : undefined);
     return response.data;
   },
   updatePlacement: async (id, data) => {
-    const response = await api.put(`/placements/placements/${id}/`, data);
+    const response = await api.patch(`/placements/placements/${id}/`, data, data instanceof FormData ? {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    } : undefined);
+    return response.data;
+  },
+  deletePlacementDocument: async (id) => {
+    const response = await api.delete(`/placements/documents/${id}/`);
     return response.data;
   },
   approvePlacement: async (id) => {
