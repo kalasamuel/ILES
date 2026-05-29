@@ -16,6 +16,12 @@ export const authAPI = {
     });
     return response.data;
   },
+  getCourseSuggestions: async (query) => {
+    const response = await api.get('/accounts/users/course-suggestions/', {
+      params: { q: query || '' },
+    });
+    return response.data;
+  },
   sendInstitutionVerificationCode: async (institutionEmail) => {
     const response = await api.post('/accounts/users/send-institution-verification-code/', {
       institution_email: institutionEmail,
