@@ -29,10 +29,13 @@ function daysCount(start, end) {
 
 // ── Placement List ────────────────────────────────────────────────────────
 function PlacementList() {
+  const { user } = useAuth();
   const [placements, setPlacements]   = useState([]);
   const [loading, setLoading]         = useState(true);
   const [activeFilter, setFilter]     = useState('All');
   const [actionLoading, setActing]    = useState({});
+  const roleName = String(user?.role?.role_name || user?.role_name || '').trim().toLowerCase();
+  const isStudent = roleName.includes('student');
 
   useEffect(() => {
     const fetch = async () => {
@@ -82,7 +85,7 @@ function PlacementList() {
         </div>
         <div className="pl-header-actions">
           <Link to="create" className="lp-btn-primary">
-            + New Placement
+            {isStudent ? 'Submit Placement' : '+ New Placement'}
           </Link>
           <Link to="/app/dashboard" className="lp-btn-back">
             ← Back to Dashboard
@@ -148,20 +151,24 @@ function PlacementList() {
 
                 <div className="pl-card-footer">
                   <Link to={String(pl.placement_id)} className="pl-action-btn secondary">View Details</Link>
-                  <button
-                    className="pl-action-btn approve"
-                    disabled={!!isAct || done}
-                    onClick={() => handleAction(pl.placement_id, 'approve')}
-                  >
-                    {isAct === 'approve' ? '…' : <><FiCheck aria-hidden="true" /> Approve</>}
-                  </button>
-                  <button
-                    className="pl-action-btn reject"
-                    disabled={!!isAct || done}
-                    onClick={() => handleAction(pl.placement_id, 'reject')}
-                  >
-                    {isAct === 'reject' ? '…' : <><FiXCircle aria-hidden="true" /> Reject</>}
-                  </button>
+                  {!isStudent && (
+                    <>
+                      <button
+                        className="pl-action-btn approve"
+                        disabled={!!isAct || done}
+                        onClick={() => handleAction(pl.placement_id, 'approve')}
+                      >
+                        {isAct === 'approve' ? '…' : <><FiCheck aria-hidden="true" /> Approve</>}
+                      </button>
+                      <button
+                        className="pl-action-btn reject"
+                        disabled={!!isAct || done}
+                        onClick={() => handleAction(pl.placement_id, 'reject')}
+                      >
+                        {isAct === 'reject' ? '…' : <><FiXCircle aria-hidden="true" /> Reject</>}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
