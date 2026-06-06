@@ -375,14 +375,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-class StudentSerializer(serializers.ModelSerializer):
-    user_details = UserSerializer(source='user', read_only=True)
-
-    class Meta:
-        model = Student
-        fields = '__all__'
-
-
 class SupervisorSerializer(serializers.ModelSerializer):
     user_details = UserSerializer(source='user', read_only=True)
     organization_name = serializers.CharField(source='organization.name', read_only=True)
@@ -390,6 +382,15 @@ class SupervisorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Supervisor
+        fields = '__all__'
+
+
+class StudentSerializer(serializers.ModelSerializer):
+    user_details = UserSerializer(source='user', read_only=True)
+    academic_supervisor_details = SupervisorSerializer(source='academic_supervisor', read_only=True)
+
+    class Meta:
+        model = Student
         fields = '__all__'
 
 
