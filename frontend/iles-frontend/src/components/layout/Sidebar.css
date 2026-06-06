@@ -15,7 +15,7 @@
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Slides in when open */
+/* Slides in when open - smooth sidebar animation */
 .sidebar--open {
   transform: translateX(0);
   box-shadow: 4px 0 24px rgba(124, 45, 18, 0.18);
