@@ -1,4 +1,5 @@
 // User Roles
+// Defines all possible user roles in the ILES system
 export const ROLES = {
   STUDENT: 'student',
   WORKPLACE_SUPERVISOR: 'workplace_supervisor',
