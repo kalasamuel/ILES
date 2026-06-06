@@ -343,6 +343,26 @@ const StudentDashboard = () => {
 
         <article className="panel">
           <header className="panel-header">
+            <h2>Placement Submission</h2>
+            <span className="pill">Student access</span>
+          </header>
+          <div className="panel-body">
+            <p className="panel-copy">
+              Upload your placement letter and enter the company details required for your internship record.
+            </p>
+            <div className="cta-row">
+              <Link to="/app/placements/create" className="button button-strong">
+                Open Placement Form
+              </Link>
+              <Link to="/app/placements" className="button button-muted">
+                View My Placements
+              </Link>
+            </div>
+          </div>
+        </article>
+
+        <article className="panel">
+          <header className="panel-header">
             <h2>Recent Submissions</h2>
             <Link to="/app/logs" className="panel-link">See all</Link>
           </header>
