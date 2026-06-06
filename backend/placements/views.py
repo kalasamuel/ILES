@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q
 from .models import InternshipPlacement, PlacementDocument
 from .serializers import InternshipPlacementSerializer, PlacementDocumentSerializer
 from .utils import finalize_placement_submission, unlock_placement_submission
@@ -37,7 +38,9 @@ class InternshipPlacementViewSet(viewsets.ModelViewSet):
 
         if supervisor.supervisor_type == 'workplace':
             if supervisor.organization_id:
-                return self.queryset.filter(organization=supervisor.organization)
+                return self.queryset.filter(
+                    Q(workplace_supervisor=supervisor) | Q(organization=supervisor.organization)
+                ).distinct()
             return self.queryset.filter(workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
@@ -131,7 +134,9 @@ class PlacementDocumentViewSet(viewsets.ModelViewSet):
 
         if supervisor.supervisor_type == 'workplace':
             if supervisor.organization_id:
-                return self.queryset.filter(placement__organization=supervisor.organization)
+                return self.queryset.filter(
+                    Q(placement__workplace_supervisor=supervisor) | Q(placement__organization=supervisor.organization)
+                ).distinct()
             return self.queryset.filter(placement__workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
