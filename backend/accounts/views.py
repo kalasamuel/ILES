@@ -537,6 +537,44 @@ class StudentViewSet(viewsets.ModelViewSet):
 
         return Student.objects.none()
 
+    @action(detail=False, methods=['post'], url_path='bulk-assign-supervisor')
+    def bulk_assign_supervisor(self, request):
+        """
+        Bulk assign an academic supervisor to a list of students.
+        Requires 'Admin' role.
+        """
+        user = request.user
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+
+        if role_name != 'admin':
+            return Response({'error': 'Only administrators can perform bulk assignments.'}, status=status.HTTP_403_FORBIDDEN)
+
+        student_ids = request.data.get('student_ids', [])
+        supervisor_id = request.data.get('supervisor_id')
+
+        if not student_ids or not supervisor_id:
+            return Response({'error': 'Both student_ids and supervisor_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            supervisor = Supervisor.objects.get(supervisor_id=supervisor_id, supervisor_type='academic')
+        except Supervisor.DoesNotExist:
+            return Response({'error': 'Academic supervisor not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        students = Student.objects.filter(student_id__in=student_ids)
+        updated_count = students.update(academic_supervisor=supervisor)
+
+        # Update active placements for these students
+        from placements.models import InternshipPlacement
+        InternshipPlacement.objects.filter(
+            student__in=students,
+            status__in=['pending', 'approved']
+        ).update(academic_supervisor=supervisor)
+
+        return Response({
+            'message': f'Successfully assigned supervisor to {updated_count} students.',
+            'updated_count': updated_count
+        }, status=status.HTTP_200_OK)
+
 
 class SupervisorViewSet(viewsets.ModelViewSet):
     queryset = Supervisor.objects.all()
