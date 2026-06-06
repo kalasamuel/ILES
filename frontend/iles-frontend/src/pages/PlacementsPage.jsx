@@ -436,6 +436,7 @@ function PlacementDetails() {
   const sm   = STATUS_META[pl.status?.toLowerCase()] || STATUS_META.pending;
   const days = daysCount(pl.start_date, pl.end_date);
   const org  = pl.organization_details?.name || `Organisation #${pl.organization}`;
+  const orgDetails = pl.organization_details || null;
   const isOwner = String(pl.student_details?.user_details?.user_id || '') === String(user?.user_id || '');
   const isEditable = Boolean(pl.is_editable);
   const acceptanceLetter = (pl.documents || []).find((document) => document.document_type === 'acceptance_letter');
@@ -562,6 +563,49 @@ function PlacementDetails() {
               ))}
             </div>
           </div>
+
+          {orgDetails && (
+            <div className="pd-info-card">
+              <div className="pd-block-heading">Organization Details</div>
+              <div className="pd-info-rows">
+                {[
+                  {
+                    icon: <FiBriefcase size={18} />,
+                    label: 'Organization Name',
+                    value: orgDetails.name || '—',
+                  },
+                  {
+                    icon: <FiMessageCircle size={18} />,
+                    label: 'Industry',
+                    value: orgDetails.industry || '—',
+                  },
+                  {
+                    icon: <FiMessageCircle size={18} />,
+                    label: 'Address',
+                    value: [orgDetails.address, orgDetails.city, orgDetails.country].filter(Boolean).join(', ') || '—',
+                  },
+                  {
+                    icon: <FiMessageCircle size={18} />,
+                    label: 'Contact Email',
+                    value: orgDetails.contact_email || '—',
+                  },
+                  {
+                    icon: <FiMessageCircle size={18} />,
+                    label: 'Contact Phone',
+                    value: orgDetails.contact_phone || '—',
+                  },
+                ].map(({ icon, label, value }, i) => (
+                  <div className="pd-info-row" key={label} style={{ '--delay': `${i * 60}ms` }}>
+                    <div className="pd-info-icon">{icon}</div>
+                    <div className="pd-info-content">
+                      <div className="pd-info-label">{label}</div>
+                      <div className="pd-info-value">{value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="pd-info-card">
             <div className="pd-block-heading">Placement Letter</div>
