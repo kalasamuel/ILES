@@ -95,6 +95,13 @@ export const studentsAPI = {
     const response = await api.get(`/accounts/students/${id}/`);
     return response.data;
   },
+  bulkAssignSupervisor: async (studentIds, supervisorId) => {
+    const response = await api.post('/accounts/students/bulk-assign-supervisor/', {
+      student_ids: studentIds,
+      supervisor_id: supervisorId,
+    });
+    return response.data;
+  },
 };
 
 // Supervisors
