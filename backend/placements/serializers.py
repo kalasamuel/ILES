@@ -91,12 +91,18 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
 
             academic_supervisor = attrs.get('academic_supervisor')
             if academic_supervisor is None and student is not None:
-                department = student.user.department
-                academic_qs = Supervisor.objects.filter(supervisor_type='academic')
-                if department is not None:
-                    academic_qs = academic_qs.filter(department=department)
+                # First check if the student has a pre-assigned supervisor from an admin
+                academic_supervisor = student.academic_supervisor
+                
+                # If not, fallback to the department-based default logic
+                if academic_supervisor is None:
+                    department = student.user.department
+                    academic_qs = Supervisor.objects.filter(supervisor_type='academic')
+                    if department is not None:
+                        academic_qs = academic_qs.filter(department=department)
 
-                academic_supervisor = academic_qs.order_by('user__first_name', 'user__last_name').first()
+                    academic_supervisor = academic_qs.order_by('user__first_name', 'user__last_name').first()
+                
                 if academic_supervisor is None:
                     raise serializers.ValidationError({
                         'academic_supervisor': 'No academic supervisor is available for this student.'
