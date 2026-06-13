@@ -25,7 +25,11 @@ import { dashboardsAPI, reviewsAPI, placementsAPI, logbooksAPI, evaluationsAPI }
 import { exportChartRefAsPNG } from '../utils/chartExport';
 import './SupervisorDashboard.css';
 
-
+function toDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
 function sortByDateDesc(leftValue, rightValue) {
   return (toDate(rightValue)?.getTime() || 0) - (toDate(leftValue)?.getTime() || 0);
