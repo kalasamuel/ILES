@@ -393,7 +393,14 @@ function PlacementCreate() {
 
 // ── Placement Details ─────────────────────────────────────────────────────
 function PlacementDetails() {
-  
+  const { id }   = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [pl, setPl]           = useState(null);
+  const [loading, setLoading]  = useState(true);
+  const [revealed, setReveal] = useState(false);
+  const [error, setError]      = useState('');
+  const [deletingDocId, setDeletingDocId] = useState(null);
 
   const loadPlacement = useCallback(async () => {
     if (!id) return;
