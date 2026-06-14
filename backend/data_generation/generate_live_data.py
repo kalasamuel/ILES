@@ -15,21 +15,33 @@ django.setup()
 
 from data_generation.data_factory import generate_all_data
 from django.conf import settings
+from accounts.models import User
 
 def main():
+    is_auto = "--auto" in sys.argv
+    
     print("--- ⚠️ ILES LIVE DATA GENERATOR ⚠️ ---")
-    print("This script will populate the LIVE database (on Render) with 75 realistic samples per entity.")
-    print(f"Current DB Host: {settings.DATABASES['default'].get('HOST')}")
     
-    if 'onrender.com' not in settings.DATABASES['default'].get('HOST', ''):
-        print("WARNING: This script doesn't seem to be pointing to the LIVE Render database.")
-        print("Please ensure your local environment has the production DATABASE_URL set.")
-    
-    confirm = input("\nARE YOU ABSOLUTELY SURE? This will add hundreds of records to production. (type 'YES' to proceed): ")
-    
-    if confirm != 'YES':
-        print("Aborted.")
-        return
+    # Safety Gate for automation
+    if is_auto:
+        user_count = User.objects.count()
+        if user_count > 5:
+            print(f"✅ Database already has {user_count} users. Skipping automatic seeding to prevent duplicates.")
+            return
+        print("🤖 Automation Mode: No existing data found. Proceeding with initial seeding...")
+    else:
+        print("This script will populate the LIVE database (on Render) with 75 realistic samples per entity.")
+        print(f"Current DB Host: {settings.DATABASES['default'].get('HOST')}")
+        
+        if 'onrender.com' not in settings.DATABASES['default'].get('HOST', ''):
+            print("WARNING: This script doesn't seem to be pointing to the LIVE Render database.")
+            print("Please ensure your local environment has the production DATABASE_URL set.")
+        
+        confirm = input("\nARE YOU ABSOLUTELY SURE? This will add hundreds of records to production. (type 'YES' to proceed): ")
+        
+        if confirm != 'YES':
+            print("Aborted.")
+            return
 
     try:
         generate_all_data(count=80) 
