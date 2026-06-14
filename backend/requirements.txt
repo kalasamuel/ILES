@@ -19,3 +19,7 @@ Pillow==11.1.0
 
 # HTTP requests (used in notifications/utils.py)
 requests==2.32.3
+
+# Data generation (for scripts)
+Faker==33.3.1
+tqdm==4.67.1

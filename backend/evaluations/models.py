@@ -53,8 +53,3 @@ class ScoreBreakdown(models.Model):
 
     def __str__(self):
         return f"Score breakdown for {self.placement}"
-    final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    grade = models.CharField(max_length=10, null=True, blank=True)
-
-    def __str__(self):
-        return f"Score breakdown for {self.placement}"
