@@ -8,6 +8,11 @@ from faker import Faker
 from tqdm import tqdm
 from decimal import Decimal
 
+from django.conf import settings
+
+# Force dummy email backend to prevent SMTP limits during generation
+settings.EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+
 # Import models
 from accounts.models import Role, Department, User, Student, Supervisor
 from organizations.models import Organization
