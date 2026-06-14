@@ -25,10 +25,7 @@ services:
     staticPublishPath: frontend/iles-frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: iles-backend
-          property: host
+        value: "https://iles-backend-oo3t.onrender.com/api"
     routes:
       - type: rewrite
         source: /*
