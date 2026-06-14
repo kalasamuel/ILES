@@ -338,20 +338,27 @@ class UserViewSet(viewsets.ModelViewSet):
         cache_key = _institution_verification_cache_key(institution_email)
         cache.set(cache_key, verification_code, timeout=600)
 
-        send_mail(
-            subject='Your ILES Institution Verification Code',
-            message=(
-                'Hello,\n\n'
-                'A registration on ILES requires verification of this institution email address.\n\n'
-                f'Your verification code is: {verification_code}\n\n'
-                'This code expires in 10 minutes.\n\n'
-                'If you did not request this code, you can ignore this message.\n\n'
-                '— ILES Support Team'
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[institution_email],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                subject='Your ILES Institution Verification Code',
+                message=(
+                    'Hello,\n\n'
+                    'A registration on ILES requires verification of this institution email address.\n\n'
+                    f'Your verification code is: {verification_code}\n\n'
+                    'This code expires in 10 minutes.\n\n'
+                    'If you did not request this code, you can ignore this message.\n\n'
+                    '— ILES Support Team'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[institution_email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            logger.exception('SMTP Error for %s', institution_email)
+            return Response(
+                {'error': f'Failed to send email. SMTP Error: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         return Response({'message': 'Verification code sent to institution email.'}, status=status.HTTP_200_OK)
 
