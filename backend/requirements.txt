@@ -23,7 +23,6 @@ bella==2.1.6
 bleach==6.2.0
 blinker==1.9.0
 Boruta==0.4.3
--e git+https://github.com/kalasamuel/ILES.git
 CacheControl==0.14.3
 cachetools==5.5.2
 camelot-py==1.0.9
