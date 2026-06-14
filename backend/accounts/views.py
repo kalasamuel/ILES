@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -128,7 +128,10 @@ class RoleViewSet(viewsets.ModelViewSet):
 class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.action == 'list':
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
 
 class UserViewSet(viewsets.ModelViewSet):
