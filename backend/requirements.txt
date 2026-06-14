@@ -13,3 +13,9 @@ dj-database-url==3.1.2
 # Production server & static files
 gunicorn==26.0.0
 whitenoise==6.12.0
+
+# Image processing (used in accounts/serializers.py)
+Pillow==11.1.0
+
+# HTTP requests (used in notifications/utils.py)
+requests==2.32.3
