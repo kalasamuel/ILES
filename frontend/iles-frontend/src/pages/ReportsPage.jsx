@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { dashboardsAPI, evaluationsAPI, placementsAPI } from '../services/endpoints';
+import { dashboardsAPI, evaluationsAPI, placementsAPI, logbooksAPI, finalReportsAPI } from '../services/endpoints';
+import { useAuth } from '../hooks/AuthContext';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import './ReportsPage.css';
 
@@ -11,13 +12,22 @@ function ReportsPage() {
   const initialTab = ['internship', 'analytics', 'evaluations'].includes(searchParams.get('tab'))
     ? searchParams.get('tab')
     : 'internship';
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const { user } = useAuth();
+  const rawRole = user?.role?.role_name || user?.role_name || 'student';
+  const role = String(rawRole).trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const isStudent = role === 'student';
+
+  const [activeTab, setActiveTab] = useState(isStudent ? 'student-summary' : initialTab);
   const [placementStatusFilter, setPlacementStatusFilter] = useState('all');
   const [evaluationGradeFilter, setEvaluationGradeFilter] = useState('all');
   const [placements, setPlacements] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [metrics, setMetrics] = useState([]);
   const [criteriaData, setCriteriaData] = useState([]);
+  const [weeklyLogs, setWeeklyLogs] = useState([]);
+  const [finalReports, setFinalReports] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -31,17 +41,30 @@ function ReportsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [placementsRes, evaluationsRes, metricsRes, criteriaSummariesRes] = await Promise.all([
-          placementsAPI.getPlacements(),
-          evaluationsAPI.getEvaluations(),
-          dashboardsAPI.getMetrics(),
-          dashboardsAPI.getEvaluationCriteriaSummaries(),
-        ]);
+        if (isStudent) {
+          const [logsRes, reportsRes, placementsRes] = await Promise.all([
+            logbooksAPI.getLogs(),
+            finalReportsAPI.getReports(),
+            placementsAPI.getPlacements(),
+          ]);
+          setWeeklyLogs(logsRes.results || logsRes || []);
+          setFinalReports(reportsRes.results || reportsRes || []);
+          setPlacements(placementsRes.results || placementsRes || []);
+        } else {
+          const [placementsRes, evaluationsRes, metricsRes, criteriaSummariesRes, allReportsRes] = await Promise.all([
+            placementsAPI.getPlacements(),
+            evaluationsAPI.getEvaluations(),
+            dashboardsAPI.getMetrics(),
+            dashboardsAPI.getEvaluationCriteriaSummaries(),
+            finalReportsAPI.getReports(),
+          ]);
 
-        setPlacements(placementsRes.results || placementsRes || []);
-        setEvaluations(evaluationsRes.results || evaluationsRes || []);
-        setMetrics(metricsRes.results || metricsRes || []);
-        setCriteriaData(criteriaSummariesRes?.criteria_summaries || []);
+          setPlacements(placementsRes.results || placementsRes || []);
+          setEvaluations(evaluationsRes.results || evaluationsRes || []);
+          setMetrics(metricsRes.results || metricsRes || []);
+          setCriteriaData(criteriaSummariesRes?.criteria_summaries || []);
+          setFinalReports(allReportsRes.results || allReportsRes || []);
+        }
       } catch (error) {
         console.error('Failed to fetch reports data', error);
         setError('Failed to load reports data. Please refresh and try again.');
@@ -51,7 +74,7 @@ function ReportsPage() {
     };
 
     fetchData();
-  }, []);
+  }, [isStudent, role]);
 
   const getMetricValue = (type) => {
     const metric = metrics.find((item) => item.metric_type === type);
@@ -178,11 +201,56 @@ function ReportsPage() {
     }
   };
 
-  const tabs = [
-    { id: 'internship', label: 'Internship Reports' },
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'evaluations', label: 'Evaluations' },
-  ];
+  const tabs = isStudent 
+    ? [
+        { id: 'student-summary', label: 'My Report Tools' },
+        { id: 'weekly-logs', label: 'Weekly Log Review' },
+      ]
+    : [
+        { id: 'internship', label: 'Internship Reports' },
+        { id: 'analytics', label: 'Analytics' },
+        { id: 'evaluations', label: 'Evaluations' },
+        { id: 'final-reports', label: 'Final Reports' },
+      ];
+
+  const handleFileUpload = async (e) => {
+    e.preventDefault();
+    if (!selectedFile) return;
+
+    // Get the student's current placement
+    const activePlacement = placements.find(p => p.status === 'approved' || p.status === 'pending');
+    if (!activePlacement) {
+      setError('You need an active placement to upload a final report.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('placement', activePlacement.placement_id);
+
+    try {
+      setUploading(true);
+      setError('');
+      
+      const existingReport = finalReports.find(r => r.placement === activePlacement.placement_id);
+      if (existingReport) {
+        await finalReportsAPI.updateReport(existingReport.report_id, formData);
+      } else {
+        await finalReportsAPI.uploadReport(formData);
+      }
+      
+      // Refresh reports
+      const reportsRes = await finalReportsAPI.getReports();
+      setFinalReports(reportsRes.results || reportsRes || []);
+      setSelectedFile(null);
+      alert('Final report uploaded successfully!');
+    } catch (err) {
+      console.error('Upload failed', err);
+      setError('Failed to upload report. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="reports-page">
@@ -418,6 +486,134 @@ function ReportsPage() {
               )}
             </div>
           )
+        )}
+
+        {/* Student-specific tabs */}
+        {activeTab === 'student-summary' && isStudent && (
+          <div className="rp-section">
+            <div className="rp-card">
+              <h3>Final Report Management</h3>
+              <p>Upload your final internship report here. This report should summarize your entire experience.</p>
+              
+              <div className="report-upload-box">
+                {finalReports.length > 0 ? (
+                  <div className="existing-report">
+                    <div className="report-info">
+                      <FiFileText size={24} />
+                      <div>
+                        <strong>Current Final Report</strong>
+                        <p>Uploaded on {toDisplayDate(finalReports[0].uploaded_at)}</p>
+                        <span className={`rp-status ${finalReports[0].status}`}>{finalReports[0].status}</span>
+                      </div>
+                    </div>
+                    <div className="report-actions">
+                      <a href={finalReports[0].file} target="_blank" rel="noopener noreferrer" className="rp-btn-secondary">
+                        View/Download
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="no-report">
+                    <p>No final report uploaded yet.</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleFileUpload} className="upload-form">
+                  <div className="file-input-group">
+                    <label htmlFor="final-report-file">
+                      {finalReports.length > 0 ? 'Update Final Report (PDF)' : 'Upload Final Report (PDF)'}
+                    </label>
+                    <input 
+                      type="file" 
+                      id="final-report-file" 
+                      accept=".pdf" 
+                      onChange={(e) => setSelectedFile(e.target.files[0])}
+                    />
+                  </div>
+                  <button type="submit" className="rp-btn-primary" disabled={uploading || !selectedFile}>
+                    {uploading ? 'Uploading...' : (finalReports.length > 0 ? 'Update Report' : 'Upload Report')}
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <div className="rp-card" style={{ marginTop: '24px' }}>
+              <h3>Quick Recall</h3>
+              <p>Review your activities and learnings from previous weeks to help you write your final report.</p>
+              <button className="rp-btn-secondary" onClick={() => setActiveTab('weekly-logs')}>
+                Browse Weekly Logs
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'weekly-logs' && isStudent && (
+          <div className="rp-section">
+            <h3>Weekly Logs History</h3>
+            {weeklyLogs.length === 0 ? (
+              <div className="rp-message">No weekly logs found.</div>
+            ) : (
+              <div className="logs-grid">
+                {weeklyLogs.map((log) => (
+                  <div key={log.log_id} className="log-summary-card">
+                    <div className="log-card-header">
+                      <strong>Week {log.week_number}</strong>
+                      <span>{toDisplayDate(log.start_date)} - {toDisplayDate(log.end_date)}</span>
+                    </div>
+                    <div className="log-card-body">
+                      <h4>Activities:</h4>
+                      <p>{log.activities_performed?.substring(0, 150)}{log.activities_performed?.length > 150 ? '...' : ''}</p>
+                      <h4>Learnings:</h4>
+                      <p>{log.skills_learned?.substring(0, 150)}{log.skills_learned?.length > 150 ? '...' : ''}</p>
+                    </div>
+                    <button className="rp-link" onClick={() => navigate(`/app/logs/${log.log_id}`)}>
+                      View Full Log
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'final-reports' && !isStudent && (
+          <div className="rp-section">
+            <h3>Student Final Reports</h3>
+            {finalReports.length === 0 ? (
+              <div className="rp-message">No final reports submitted yet.</div>
+            ) : (
+              <div className="rp-table-wrap">
+                <table className="rp-table">
+                  <thead>
+                    <tr>
+                      <th>Placement ID</th>
+                      <th>Uploaded At</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {finalReports.map((report) => (
+                      <tr key={report.report_id}>
+                        <td>{report.placement}</td>
+                        <td>{toDisplayDate(report.uploaded_at)}</td>
+                        <td>
+                          <span className={`rp-status ${report.status}`}>
+                            {report.status}
+                          </span>
+                        </td>
+                        <td>
+                          <a href={report.file} target="_blank" rel="noopener noreferrer" className="rp-link">
+                            Download PDF
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
       </section>
     </div>

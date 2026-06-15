@@ -546,7 +546,7 @@ function RegisterPage() {
                 </div>
               )}
 
-              {formData.role === 'student' && (
+              {(formData.role === 'student' || formData.role === 'academic_supervisor') && (
                 <>
                   <div className="form-group">
                     <label htmlFor="institutionName">Institution</label>
@@ -562,7 +562,8 @@ function RegisterPage() {
                     />
                   </div>
 
-                  <div className="form-group course-search-group">
+                  {formData.role === 'student' && (
+                    <div className="form-group course-search-group">
                     <label htmlFor="courseName">Course</label>
                     <input
                       type="text"
@@ -591,6 +592,7 @@ function RegisterPage() {
                       </div>
                     )}
                   </div>
+                  )}
 
                   <div className="form-group">
                     <label htmlFor="institutionEmail">

@@ -6,8 +6,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from datetime import datetime
 from django.utils import timezone
-from .models import WeeklyLog, LogAttachment
-from .serializers import WeeklyLogSerializer, LogAttachmentSerializer
+from .models import WeeklyLog, LogAttachment, FinalReport
+from .serializers import WeeklyLogSerializer, LogAttachmentSerializer, FinalReportSerializer
 from reviews.models import WorkflowHistory, LogReview
 from accounts.models import Student, Supervisor
 
@@ -309,3 +309,64 @@ class LogAttachmentViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(log__placement__academic_supervisor=supervisor)
 
         return LogAttachment.objects.none()
+
+
+class FinalReportViewSet(viewsets.ModelViewSet):
+    queryset = FinalReport.objects.all()
+    serializer_class = FinalReportSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def _role_name(self, user):
+        return (user.role.role_name if user.role else '').strip().lower()
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return FinalReport.objects.none()
+
+        role_name = self._role_name(user)
+
+        if role_name == 'admin':
+            return self.queryset
+
+        if 'student' in role_name:
+            return self.queryset.filter(placement__student__user=user)
+
+        try:
+            supervisor = Supervisor.objects.get(user=user)
+        except Supervisor.DoesNotExist:
+            if 'supervisor' in role_name:
+                return self.queryset
+            return FinalReport.objects.none()
+
+        if supervisor.supervisor_type == 'workplace':
+            return self.queryset.filter(placement__workplace_supervisor=supervisor)
+
+        if supervisor.supervisor_type == 'academic':
+            return self.queryset.filter(placement__academic_supervisor=supervisor)
+
+        return FinalReport.objects.none()
+
+    def perform_create(self, serializer):
+        # Allow student to upload their own final report
+        user = self.request.user
+        role_name = self._role_name(user)
+
+        if 'student' not in role_name and role_name != 'admin':
+            raise PermissionDenied('Only students can upload final reports.')
+
+        placement_id = self.request.data.get('placement')
+        if not placement_id:
+            raise PermissionDenied('Placement ID is required.')
+
+        # Ensure placement belongs to student if not admin
+        if role_name != 'admin':
+            from placements.models import InternshipPlacement
+            try:
+                # placement_id might be a UUID string
+                placement = InternshipPlacement.objects.get(placement_id=placement_id, student__user=user)
+            except InternshipPlacement.DoesNotExist:
+                raise PermissionDenied('You can only upload a report for your own placement.')
+
+        serializer.save()

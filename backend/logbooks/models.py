@@ -45,3 +45,21 @@ class LogAttachment(models.Model):
 
     def __str__(self):
         return f"Attachment for {self.log}"
+
+
+class FinalReport(models.Model):
+    STATUS_CHOICES = [
+        ('submitted', 'Submitted'),
+        ('reviewed', 'Reviewed'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    report_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    placement = models.OneToOneField(InternshipPlacement, on_delete=models.CASCADE, related_name='final_report')
+    file = models.FileField(upload_to='final_reports/')
+    uploaded_at = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='submitted')
+
+    def __str__(self):
+        return f"Final Report for {self.placement}"

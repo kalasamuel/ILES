@@ -38,6 +38,7 @@ function getSidebarItems(role) {
       { path: '/app/placements', label: 'Placements',  Icon: FiBriefcase },
       { path: '/app/placements/create', label: 'Submit Placement', Icon: FiFileText },
       { path: '/app/logs',       label: 'My Logs',     Icon: FiFileText },
+      { path: '/app/reports',    label: 'Reports',     Icon: FiBarChart2 },
       { path: '/app/notifications', label: 'Notifications', Icon: FiBell },
       { path: '/app/results',    label: 'My Results',  Icon: FiCheckSquare },
       { path: '/app/settings',   label: 'Settings',    Icon: FiSettings },

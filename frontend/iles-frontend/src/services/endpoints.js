@@ -264,6 +264,38 @@ export const logbooksAPI = {
   },
 };
 
+// Final Reports
+export const finalReportsAPI = {
+  getReports: async () => {
+    const response = await api.get('/logbooks/final-reports/');
+    return response.data;
+  },
+  getReport: async (id) => {
+    const response = await api.get(`/logbooks/final-reports/${id}/`);
+    return response.data;
+  },
+  uploadReport: async (data) => {
+    const response = await api.post('/logbooks/final-reports/', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+  updateReport: async (id, data) => {
+    const response = await api.patch(`/logbooks/final-reports/${id}/`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+  deleteReport: async (id) => {
+    const response = await api.delete(`/logbooks/final-reports/${id}/`);
+    return response.data;
+  },
+};
+
 // Reviews
 export const reviewsAPI = {
   getReviews: async () => {

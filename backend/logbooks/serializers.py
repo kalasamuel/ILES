@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WeeklyLog, LogAttachment
+from .models import WeeklyLog, LogAttachment, FinalReport
 
 
 class LogAttachmentSerializer(serializers.ModelSerializer):
@@ -27,4 +27,10 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WeeklyLog
+        fields = '__all__'
+
+
+class FinalReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinalReport
         fields = '__all__'

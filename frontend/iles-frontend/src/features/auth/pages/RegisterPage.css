@@ -367,7 +367,13 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--gray-500);
-  margin-bottom: 14px;
+  margin-top: 24px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.form-section-label:first-of-type {
+  margin-top: 0;
 }
 
 /* ── Role Selector ── */
@@ -458,8 +464,8 @@ body {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 0;
+  margin-bottom: 18px;
 }
 
 .form-group:last-child {
@@ -534,9 +540,11 @@ body {
 }
 
 .org-help-text {
-  margin-top: 6px;
+  display: block;
+  margin-top: 8px;
   color: var(--gray-500);
   font-size: 0.76rem;
+  line-height: 1.4;
 }
 
 /* Labels */
@@ -545,6 +553,16 @@ body {
   font-weight: 500;
   color: var(--gray-700);
   font-family: var(--font-body);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 6px;
+  color: var(--gray-500);
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
 
 /* Input wrapper with icon */
@@ -605,6 +623,13 @@ body {
   color: var(--gray-700);
 }
 
+.form-group input:disabled,
+.form-group select:disabled {
+  background: var(--gray-50);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 /* Select arrow */
 .select-wrapper {
   position: relative;
@@ -641,7 +666,8 @@ body {
   gap: 6px;
   font-size: 0.775rem;
   color: var(--gray-500);
-  margin-top: 4px;
+  margin-top: 8px;
+  line-height: 1.4;
 }
 
 .password-hint svg {
@@ -777,6 +803,7 @@ body {
   display: flex;
   gap: 10px;
   align-items: stretch;
+  margin-top: 8px;
 }
 
 .verification-row input {
@@ -796,7 +823,7 @@ body {
 }
 
 .verify-btn {
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 .form-group label .verified-badge {
@@ -819,7 +846,8 @@ body {
 }
 
 .change-email-btn {
-  margin-top: 8px;
+  display: block;
+  margin-top: 12px;
   padding: 0;
   border: none;
   background: transparent;
@@ -836,18 +864,20 @@ body {
 
 .verification-timer {
   display: block;
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 0.78rem;
   color: var(--orange-dark);
   font-weight: 600;
+  line-height: 1.4;
 }
 
 .verification-expired {
   display: block;
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 0.78rem;
   color: #b91c1c;
   font-weight: 600;
+  line-height: 1.4;
 }
 
 .verification-status-row {

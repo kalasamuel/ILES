@@ -6,4 +6,4 @@ Lib/
 Scripts/ 
 db.sqlite3 
 frontend/iles-frontend/node_modules/ 
-frontend/iles-frontend/.env 
+frontend/iles-frontend/.env
