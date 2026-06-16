@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import EvaluationCriteria, Evaluation, EvaluationScore, ScoreBreakdown
+from placements.serializers import InternshipPlacementSerializer
 
 
 class EvaluationCriteriaSerializer(serializers.ModelSerializer):
@@ -18,6 +19,7 @@ class EvaluationScoreSerializer(serializers.ModelSerializer):
 
 class EvaluationSerializer(serializers.ModelSerializer):
     scores = EvaluationScoreSerializer(source='evaluationscore_set', many=True, read_only=True)
+    placement_details = InternshipPlacementSerializer(source='placement', read_only=True)
 
     class Meta:
         model = Evaluation

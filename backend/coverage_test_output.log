@@ -1,0 +1,256 @@
+Creating test database for alias 'default' ('test_postgres')...
+
+Device Info: {'device_type': 'desktop', 'browser': 'Chrome 124', 'operating_system': 'Windows', 'device_name': 'Chrome 124 on Windows'}
+Location Info: {'location': 'Local Machine', 'country': None, 'city': None, 'latitude': None, 'longitude': None}
+Found 33 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders, messages, rest_framework, rest_framework_simplejwt, simple_history, staticfiles
+  Apply all migrations: accounts, admin, auth, contenttypes, dashboards, evaluations, logbooks, notifications, organizations, placements, reviews, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying organizations.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying accounts.0001_initial... OK
+  Applying accounts.0002_alter_user_managers_remove_user_username... OK
+  Applying accounts.0003_alter_user_role... OK
+  Applying accounts.0004_usersettings... OK
+  Applying accounts.0005_alter_user_role... OK
+  Applying accounts.0006_usersettings_login_alerts... OK
+  Applying accounts.0007_user_profile_picture... OK
+  Applying accounts.0008_user_institution_name... OK
+  Applying accounts.0009_user_institution_email... OK
+  Applying accounts.0010_student_academic_supervisor... OK
+  Applying accounts.0011_remove_student_academic_supervisor... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying dashboards.0001_initial... OK
+  Applying dashboards.0002_historicaldashboardmetric_and_more... OK
+  Applying placements.0001_initial... OK
+  Applying evaluations.0001_initial... OK
+  Applying placements.0002_internshipplacement_is_submitted_and_more... OK
+  Applying logbooks.0001_initial... OK
+  Applying logbooks.0002_logattachment_file_and_optional_url... OK
+  Applying logbooks.0003_weeklylog_scheduled_submission_at_and_status... OK
+  Applying logbooks.0004_finalreport... OK
+  Applying reviews.0001_initial... OK
+  Applying notifications.0001_initial... OK
+  Applying notifications.0002_add_logreview_reference... OK
+  Applying notifications.0003_add_log_reference... OK
+  Applying notifications.0004_admin_notification_details... OK
+  Applying notifications.0005_pushsubscription... OK
+  Applying notifications.0006_alter_notification_notification_type_loginhistory... OK
+  Applying notifications.0007_alter_loginhistory_city_alter_loginhistory_country... OK
+  Applying notifications.0008_alter_notification_notification_type... OK
+test_login_sends_email_and_creates_notification (accounts.tests.LoginNotificationWorkflowTests.test_login_sends_email_and_creates_notification) ... ok
+test_forgot_password_sends_reset_link (accounts.tests.PasswordResetWorkflowTests.test_forgot_password_sends_reset_link) ... ok
+test_reset_password_changes_password_and_invalidates_token (accounts.tests.PasswordResetWorkflowTests.test_reset_password_changes_password_and_invalidates_token) ... ok
+test_reset_password_rejects_invalid_token (accounts.tests.PasswordResetWorkflowTests.test_reset_password_rejects_invalid_token) ... ok
+test_academic_registration_requires_valid_institution_verification_code (accounts.tests.RegistrationAffiliationWorkflowTests.test_academic_registration_requires_valid_institution_verification_code) ... FAIL
+test_send_institution_verification_code_requires_email (accounts.tests.RegistrationAffiliationWorkflowTests.test_send_institution_verification_code_requires_email) ... ok
+test_student_registration_requires_institution (accounts.tests.RegistrationAffiliationWorkflowTests.test_student_registration_requires_institution) ... ok
+test_student_registration_requires_institution_email_and_code (accounts.tests.RegistrationAffiliationWorkflowTests.test_student_registration_requires_institution_email_and_code) ... FAIL
+test_verify_institution_verification_code_endpoint_confirms_valid_code (accounts.tests.RegistrationAffiliationWorkflowTests.test_verify_institution_verification_code_endpoint_confirms_valid_code) ... ok
+test_change_password_validates_and_updates_password (accounts.tests.UserSettingsWorkflowTests.test_change_password_validates_and_updates_password) ... ok
+test_me_settings_get_creates_default_settings (accounts.tests.UserSettingsWorkflowTests.test_me_settings_get_creates_default_settings) ... ok
+test_profile_picture_rejects_file_larger_than_5mb (accounts.tests.UserSettingsWorkflowTests.test_profile_picture_rejects_file_larger_than_5mb) ... ok
+test_profile_picture_rejects_too_small_dimensions (accounts.tests.UserSettingsWorkflowTests.test_profile_picture_rejects_too_small_dimensions) ... ok
+test_profile_picture_upload_and_remove (accounts.tests.UserSettingsWorkflowTests.test_profile_picture_upload_and_remove) ... ok
+test_profile_update_persists_profile_fields (accounts.tests.UserSettingsWorkflowTests.test_profile_update_persists_profile_fields) ... ok
+test_profile_update_rejects_duplicate_email (accounts.tests.UserSettingsWorkflowTests.test_profile_update_rejects_duplicate_email) ... ok
+test_settings_update_persists_notification_and_privacy_preferences (accounts.tests.UserSettingsWorkflowTests.test_settings_update_persists_notification_and_privacy_preferences) ... ok
+test_admin_bulk_assign_supervisor (accounts.tests_assignment.SupervisorAssignmentTests.test_admin_bulk_assign_supervisor) ... ERROR
+test_non_admin_cannot_bulk_assign (accounts.tests_assignment.SupervisorAssignmentTests.test_non_admin_cannot_bulk_assign) ... ok
+test_admin_can_view_all_reports (logbooks.test_final_reports.FinalReportTests.test_admin_can_view_all_reports) ... ok
+test_student_can_upload_report (logbooks.test_final_reports.FinalReportTests.test_student_can_upload_report) ... ok
+test_student_cannot_upload_for_others (logbooks.test_final_reports.FinalReportTests.test_student_cannot_upload_for_others) ... ok
+test_supervisor_can_view_assigned_report (logbooks.test_final_reports.FinalReportTests.test_supervisor_can_view_assigned_report) ... ok
+test_schedule_defers_submission_until_management_command_runs (logbooks.tests.WeeklyLogSubmissionNotificationTests.test_schedule_defers_submission_until_management_command_runs) ... ok
+test_submit_creates_student_confirmation_and_supervisor_emails (logbooks.tests.WeeklyLogSubmissionNotificationTests.test_submit_creates_student_confirmation_and_supervisor_emails) ... ok
+test_email_not_sent_when_email_notifications_disabled (notifications.tests.NotificationEmailTests.test_email_not_sent_when_email_notifications_disabled) ... ok
+test_email_not_sent_when_log_reminders_disabled_for_deadline_type (notifications.tests.NotificationEmailTests.test_email_not_sent_when_log_reminders_disabled_for_deadline_type) ... ok
+test_email_not_sent_when_notification_updated (notifications.tests.NotificationEmailTests.test_email_not_sent_when_notification_updated) ... ok
+test_email_not_sent_when_review_alerts_disabled_for_review_types (notifications.tests.NotificationEmailTests.test_email_not_sent_when_review_alerts_disabled_for_review_types) ... ok
+test_email_sent_when_notification_created (notifications.tests.NotificationEmailTests.test_email_sent_when_notification_created) ... ok
+test_login_alert_notification_does_not_send_email_from_signal (notifications.tests.NotificationEmailTests.test_login_alert_notification_does_not_send_email_from_signal) ... ok
+test_locked_placement_rejects_student_updates_until_letter_deleted (placements.tests.PlacementSubmissionWorkflowTests.test_locked_placement_rejects_student_updates_until_letter_deleted) ... ok
+test_student_can_submit_placement_with_letter_and_supervisor_email (placements.tests.PlacementSubmissionWorkflowTests.test_student_can_submit_placement_with_letter_and_supervisor_email) ... ERROR
+
+======================================================================
+ERROR: test_admin_bulk_assign_supervisor (accounts.tests_assignment.SupervisorAssignmentTests.test_admin_bulk_assign_supervisor)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\db\models\options.py", line 683, in get_field
+    return self.fields_map[field_name]
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^
+KeyError: 'academic_supervisor'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\computer_science\Year 2\Sem-2\SDP\ILES\backend\accounts\tests_assignment.py", line 71, in test_admin_bulk_assign_supervisor
+    response = self.client.post(url, data, format='json')
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 295, in post
+    response = super().post(
+        path, data=data, format=format, content_type=content_type, **extra)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 209, in post
+    return self.generic('POST', path, data, content_type, **extra)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 233, in generic
+    return super().generic(
+           ~~~~~~~~~~~~~~~^
+        method, path, data, content_type, secure, **extra)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\test\client.py", line 671, in generic
+    return self.request(**r)
+           ~~~~~~~~~~~~^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 285, in request
+    return super().request(**kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 237, in request
+    request = super().request(**kwargs)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\test\client.py", line 1087, in request
+    self.check_exception(response)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\test\client.py", line 802, in check_exception
+    raise exc_value
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ILES\backend\accounts\views.py", line 574, in bulk_assign_supervisor
+    updated_count = students.update(academic_supervisor=supervisor)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\db\models\query.py", line 1235, in update
+    query.add_update_values(kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\db\models\sql\subqueries.py", line 88, in add_update_values
+    field = self.get_meta().get_field(name)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\db\models\options.py", line 685, in get_field
+    raise FieldDoesNotExist(
+        "%s has no field named '%s'" % (self.object_name, field_name)
+    )
+django.core.exceptions.FieldDoesNotExist: Student has no field named 'academic_supervisor'
+
+======================================================================
+ERROR: test_student_can_submit_placement_with_letter_and_supervisor_email (placements.tests.PlacementSubmissionWorkflowTests.test_student_can_submit_placement_with_letter_and_supervisor_email)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\computer_science\Year 2\Sem-2\SDP\ILES\backend\placements\tests.py", line 80, in test_student_can_submit_placement_with_letter_and_supervisor_email
+    response = self.client.post(
+    	'/api/placements/placements/',
+    ...<8 lines>...
+    	format='multipart',
+    )
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 295, in post
+    response = super().post(
+        path, data=data, format=format, content_type=content_type, **extra)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 209, in post
+    return self.generic('POST', path, data, content_type, **extra)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 233, in generic
+    return super().generic(
+           ~~~~~~~~~~~~~~~^
+        method, path, data, content_type, secure, **extra)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\test\client.py", line 671, in generic
+    return self.request(**r)
+           ~~~~~~~~~~~~^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 285, in request
+    return super().request(**kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\test.py", line 237, in request
+    request = super().request(**kwargs)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\test\client.py", line 1087, in request
+    self.check_exception(response)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\test\client.py", line 802, in check_exception
+    raise exc_value
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\viewsets.py", line 124, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\views.py", line 480, in raise_uncaught_exception
+    raise exc
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\mixins.py", line 18, in create
+    serializer.is_valid(raise_exception=True)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\serializers.py", line 223, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+                           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\rest_framework\serializers.py", line 445, in run_validation
+    value = self.validate(value)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ILES\backend\placements\serializers.py", line 95, in validate
+    academic_supervisor = student.academic_supervisor
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Student' object has no attribute 'academic_supervisor'
+
+======================================================================
+FAIL: test_academic_registration_requires_valid_institution_verification_code (accounts.tests.RegistrationAffiliationWorkflowTests.test_academic_registration_requires_valid_institution_verification_code)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\computer_science\Year 2\Sem-2\SDP\ERD\ILES\venv\Lib\site-packages\django\test\utils.py", line 456, in inner
+    return func(*args, **kwargs)
+  File "D:\computer_science\Year 2\Sem-2\SDP\ILES\backend\accounts\tests.py", line 387, in test_academic_registration_requires_valid_institution_verification_code
+    self.assertIn('institution_verification_code', invalid_register.data)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'institution_verification_code' not found in {'department_id': [ErrorDetail(string='Department is required for academic supervisors.', code='invalid')]}
+
+======================================================================
+FAIL: test_student_registration_requires_institution_email_and_code (accounts.tests.RegistrationAffiliationWorkflowTests.test_student_registration_requires_institution_email_and_code)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\computer_science\Year 2\Sem-2\SDP\ILES\backend\accounts\tests.py", line 358, in test_student_registration_requires_institution_email_and_code
+    self.assertIn('institution_email', response.data)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'institution_email' not found in {'course': [ErrorDetail(string='Course is required for students.', code='invalid')]}
+
+----------------------------------------------------------------------
+Ran 33 tests in 192.297s
+
+FAILED (failures=2, errors=2)
+Destroying test database for alias 'default' ('test_postgres')...
+
+  Applying sessions.0001_initial... OK
+System check identified no issues (0 silenced).
+Processed 1 scheduled log(s).

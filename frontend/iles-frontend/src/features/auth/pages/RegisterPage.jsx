@@ -493,7 +493,7 @@ function RegisterPage() {
                     onChange={handleChange}
                     required
                     className="no-icon"
-                    placeholder="Jane"
+                    placeholder="Samuel"
                   />
                 </div>
                 <div className="form-group">
@@ -506,7 +506,7 @@ function RegisterPage() {
                     onChange={handleChange}
                     required
                     className="no-icon"
-                    placeholder="Doe"
+                    placeholder="Kala"
                   />
                 </div>
               </div>

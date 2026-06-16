@@ -1,4 +1,4 @@
-const { test, expect, request } = require('@playwright/test');
+import { test, expect, request } from '@playwright/test';
 
 test('toggle notifications and verify backend persistence', async ({ page }) => {
   // Log in via backend to get JWT and set in localStorage
