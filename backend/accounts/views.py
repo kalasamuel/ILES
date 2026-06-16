@@ -356,7 +356,7 @@ class UserViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.exception('SMTP Error for %s', institution_email)
             return Response(
-                {'error': f'Failed to send email. SMTP Error: {str(e)}'},
+                {'error': f'Failed to send email. SMTP Error: {type(e).__name__}: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
