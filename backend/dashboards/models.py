@@ -1,13 +1,10 @@
 import uuid
 from django.db import models
 from django.utils import timezone
-from simple_history.models import HistoricalRecords  # For tracking changes
+from simple_history.models import HistoricalRecords
 
 
 class DashboardMetric(models.Model):
-    """
-    Stores key dashboard metrics for the system, with historical tracking.
-    """
 
     METRIC_TYPES = [
         ('internships_completed', 'Internships Completed'),
@@ -46,16 +43,15 @@ class DashboardMetric(models.Model):
         help_text="Record last update timestamp"
     )
 
-    # Track historical changes
     history = HistoricalRecords()
 
     class Meta:
-        ordering = ['-calculated_at']  # Latest metrics first
+        ordering = ['-calculated_at']
         indexes = [
             models.Index(fields=['metric_type']),
             models.Index(fields=['calculated_at']),
         ]
-        unique_together = ('metric_type', 'calculated_at')  # One metric per type per timestamp
+        unique_together = ('metric_type', 'calculated_at')
         verbose_name = "Dashboard Metric"
         verbose_name_plural = "Dashboard Metrics"
 
@@ -63,9 +59,5 @@ class DashboardMetric(models.Model):
         return f"{self.get_metric_type_display()}: {self.value} (calculated at {self.calculated_at:%Y-%m-%d %H:%M})"
 
     def increment(self, amount=1):
-        """
-        Increment the metric's value by a given amount.
-        Ensures historical record is tracked automatically.
-        """
         self.value += amount
         self.save()
