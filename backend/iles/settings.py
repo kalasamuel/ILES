@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'notifications',
     'dashboards',
     'simple_history',
+    'data_generation',
 ]
 
 MIDDLEWARE = [

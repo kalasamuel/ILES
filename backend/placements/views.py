@@ -26,15 +26,13 @@ class InternshipPlacementViewSet(viewsets.ModelViewSet):
         queryset = self.queryset.select_related(
             'student__user__role',
             'student__user__department',
-            'student__academic_supervisor__user__role',
             'organization',
             'workplace_supervisor__user__role',
             'workplace_supervisor__organization',
             'academic_supervisor__user__role',
-            'academic_supervisor__department'
+            'academic_supervisor__user__department'
         ).prefetch_related(
             Prefetch('student__user__settings'),
-            Prefetch('student__academic_supervisor__user__settings'),
             Prefetch('workplace_supervisor__user__settings'),
             Prefetch('academic_supervisor__user__settings')
         )
