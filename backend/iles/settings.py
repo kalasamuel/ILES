@@ -185,9 +185,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
 # CORS settings
-# Only use CORS_ALLOW_ALL_ORIGINS for development
-CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
+# Allow frontend origins (both development and production)
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://iles-frontend-zb3m.onrender.com',
+])
+
+# For development: allow all origins if DEBUG is True
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = []
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
