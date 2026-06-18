@@ -2,12 +2,12 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from .models import InternshipPlacement, PlacementDocument
 from .serializers import InternshipPlacementSerializer, PlacementDocumentSerializer
 from .utils import finalize_placement_submission, unlock_placement_submission
 from reviews.models import WorkflowHistory
-from accounts.models import Supervisor
+from accounts.models import Supervisor, UserSettings
 
 
 class InternshipPlacementViewSet(viewsets.ModelViewSet):
@@ -22,31 +22,48 @@ class InternshipPlacementViewSet(viewsets.ModelViewSet):
 
         role_name = (user.role.role_name if user.role else '').strip().lower()
 
+        # Optimize queries with select_related and prefetch_related
+        queryset = self.queryset.select_related(
+            'student__user__role',
+            'student__user__department',
+            'student__academic_supervisor__user__role',
+            'organization',
+            'workplace_supervisor__user__role',
+            'workplace_supervisor__organization',
+            'academic_supervisor__user__role',
+            'academic_supervisor__department'
+        ).prefetch_related(
+            Prefetch('student__user__settings'),
+            Prefetch('student__academic_supervisor__user__settings'),
+            Prefetch('workplace_supervisor__user__settings'),
+            Prefetch('academic_supervisor__user__settings')
+        )
+
         if role_name == 'admin':
-            return self.queryset
+            return queryset
 
         if 'student' in role_name:
-            return self.queryset.filter(student__user=user)
+            return queryset.filter(student__user=user)
 
         # Check if user is a Supervisor
         try:
             supervisor = Supervisor.objects.get(user=user)
         except Supervisor.DoesNotExist:
             if 'supervisor' in role_name:
-                return self.queryset
+                return queryset
             return InternshipPlacement.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
             if supervisor.organization_id:
-                return self.queryset.filter(
+                return queryset.filter(
                     Q(workplace_supervisor=supervisor) | Q(organization=supervisor.organization)
                 ).distinct()
-            return self.queryset.filter(workplace_supervisor=supervisor)
+            return queryset.filter(workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
             if supervisor.department:
-                return self.queryset.filter(student__user__department=supervisor.department)
-            return self.queryset.filter(academic_supervisor=supervisor)
+                return queryset.filter(student__user__department=supervisor.department)
+            return queryset.filter(academic_supervisor=supervisor)
 
         return InternshipPlacement.objects.none()
 
@@ -119,30 +136,43 @@ class PlacementDocumentViewSet(viewsets.ModelViewSet):
 
         role_name = (user.role.role_name if user.role else '').strip().lower()
 
+        # Optimize queries with select_related
+        queryset = self.queryset.select_related(
+            'placement__student__user__role',
+            'placement__student__user__department',
+            'placement__organization',
+            'placement__workplace_supervisor__user__role',
+            'placement__academic_supervisor__user__role'
+        ).prefetch_related(
+            Prefetch('placement__student__user__settings'),
+            Prefetch('placement__workplace_supervisor__user__settings'),
+            Prefetch('placement__academic_supervisor__user__settings')
+        )
+
         if role_name == 'admin':
-            return self.queryset
+            return queryset
 
         if 'student' in role_name:
-            return self.queryset.filter(placement__student__user=user)
+            return queryset.filter(placement__student__user=user)
 
         try:
             supervisor = Supervisor.objects.get(user=user)
         except Supervisor.DoesNotExist:
             if 'supervisor' in role_name:
-                return self.queryset
+                return queryset
             return PlacementDocument.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
             if supervisor.organization_id:
-                return self.queryset.filter(
+                return queryset.filter(
                     Q(placement__workplace_supervisor=supervisor) | Q(placement__organization=supervisor.organization)
                 ).distinct()
-            return self.queryset.filter(placement__workplace_supervisor=supervisor)
+            return queryset.filter(placement__workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
             if supervisor.department:
-                return self.queryset.filter(placement__student__user__department=supervisor.department)
-            return self.queryset.filter(placement__academic_supervisor=supervisor)
+                return queryset.filter(placement__student__user__department=supervisor.department)
+            return queryset.filter(placement__academic_supervisor=supervisor)
 
         return PlacementDocument.objects.none()
 

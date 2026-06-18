@@ -68,7 +68,14 @@ class UserSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
 
         try:
-            settings_obj = UserSettings.objects.filter(user=instance).first()
+            # Try to use prefetched settings first (from Django's prefetch cache)
+            settings_obj = getattr(instance, '_prefetched_usersettings', None)
+            if settings_obj is None:
+                # If not prefetched, use reverse relation if it exists
+                settings_obj = getattr(instance, 'settings', None)
+                if settings_obj is None:
+                    # Only query if not prefetched
+                    settings_obj = UserSettings.objects.filter(user=instance).first()
         except Exception:
             settings_obj = None
 
@@ -105,7 +112,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_profile_visible(self, obj):
         try:
-            settings_obj = UserSettings.objects.filter(user=obj).first()
+            # Use cached relation from reverse accessor if available
+            settings_obj = getattr(obj, 'settings', None)
             if settings_obj is None:
                 return True
             return bool(settings_obj.profile_visible)
@@ -114,7 +122,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_show_email(self, obj):
         try:
-            settings_obj = UserSettings.objects.filter(user=obj).first()
+            settings_obj = getattr(obj, 'settings', None)
             if settings_obj is None:
                 return True
             return bool(settings_obj.show_email)
@@ -123,7 +131,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_show_phone(self, obj):
         try:
-            settings_obj = UserSettings.objects.filter(user=obj).first()
+            settings_obj = getattr(obj, 'settings', None)
             if settings_obj is None:
                 return True
             return bool(settings_obj.show_phone)
