@@ -104,8 +104,18 @@ WSGI_APPLICATION = 'iles.wsgi.application'
 if env('DATABASE_URL', default=''):
     import dj_database_url
     DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600)
+        'default': dj_database_url.config(
+            conn_max_age=300,  # Recycle connections every 5 minutes (Neon requirement)
+            conn_health_checks=True,  # Check connection health before using
+            connect_timeout=10,
+            options='-c statement_timeout=30000'  # 30 second statement timeout
+        )
     }
+    # Ensure OPTIONS dict exists for Neon-specific settings
+    if 'OPTIONS' not in DATABASES['default']:
+        DATABASES['default']['OPTIONS'] = {}
+    DATABASES['default']['OPTIONS']['sslmode'] = 'require'
+    DATABASES['default']['OPTIONS']['connect_timeout'] = 10
 else:
     DATABASES = {
         'default': {
@@ -115,6 +125,10 @@ else:
             'PASSWORD': env('DB_PASSWORD', default=''),
             'HOST': env('DB_HOST', default='localhost'),
             'PORT': env('DB_PORT', default='5432'),
+            'CONN_MAX_AGE': 300,
+            'OPTIONS': {
+                'connect_timeout': 10,
+            },
         }
     }
 
