@@ -107,8 +107,6 @@ if env('DATABASE_URL', default=''):
         'default': dj_database_url.config(
             conn_max_age=300,  # Recycle connections every 5 minutes (Neon requirement)
             conn_health_checks=True,  # Check connection health before using
-            connect_timeout=10,
-            options='-c statement_timeout=30000'  # 30 second statement timeout
         )
     }
     # Ensure OPTIONS dict exists for Neon-specific settings
@@ -116,6 +114,7 @@ if env('DATABASE_URL', default=''):
         DATABASES['default']['OPTIONS'] = {}
     DATABASES['default']['OPTIONS']['sslmode'] = 'require'
     DATABASES['default']['OPTIONS']['connect_timeout'] = 10
+    DATABASES['default']['OPTIONS']['options'] = '-c statement_timeout=30000'
 else:
     DATABASES = {
         'default': {
