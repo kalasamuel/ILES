@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "ILES - Weighted Score Computation API (Academic Supervisor)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "description": "Academic supervisor API endpoints for viewing weighted score computations and evaluations."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "supervisorEmail", "value": "REPLACE_WITH_ACADEMIC_SUPERVISOR_EMAIL" },
+    { "key": "supervisorPassword", "value": "REPLACE_WITH_SUPERVISOR_PASSWORD" },
+    { "key": "accessToken", "value": "REPLACE_WITH_TOKEN_FROM_LOGIN" }
+  ],
+  "item": [
+    {
+      "name": "Academic Supervisor Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{supervisorEmail}}\",\n  \"password\": \"{{supervisorPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/accounts/users/login/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "accounts", "users", "login", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Login Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"refresh\": \"<refresh_token>\",\n  \"access\": \"<access_token>\",\n  \"user\": {\n    \"user_id\": \"supervisor-uuid\",\n    \"email\": \"academic-supervisor@example.com\",\n    \"first_name\": \"Academic\",\n    \"last_name\": \"Supervisor\",\n    \"role\": \"Academic Supervisor\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Score Breakdowns (Filtered by Supervisor)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/evaluations/breakdowns/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "evaluations", "breakdowns", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Score Breakdowns List Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"score_id\": \"11111111-2222-3333-4444-555555555555\",\n    \"placement\": \"placement-uuid-1\",\n    \"supervisor_score\": \"85.50\",\n    \"academic_score\": \"82.30\",\n    \"logbook_score\": \"78.90\",\n    \"final_score\": \"82.23\",\n    \"grade\": \"A\"\n  },\n  {\n    \"score_id\": \"22222222-3333-4444-5555-666666666666\",\n    \"placement\": \"placement-uuid-2\",\n    \"supervisor_score\": \"78.20\",\n    \"academic_score\": \"81.40\",\n    \"logbook_score\": \"79.80\",\n    \"final_score\": \"79.80\",\n    \"grade\": \"B+\"\n  },\n  {\n    \"score_id\": \"33333333-4444-5555-6666-777777777777\",\n    \"placement\": \"placement-uuid-3\",\n    \"supervisor_score\": \"89.00\",\n    \"academic_score\": \"88.50\",\n    \"logbook_score\": \"87.20\",\n    \"final_score\": \"88.23\",\n    \"grade\": \"A\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Detailed Score Breakdown",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/evaluations/breakdowns/11111111-2222-3333-4444-555555555555/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "evaluations", "breakdowns", "11111111-2222-3333-4444-555555555555", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Score Breakdown Detail Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"score_id\": \"11111111-2222-3333-4444-555555555555\",\n  \"placement\": \"placement-uuid-1\",\n  \"supervisor_score\": \"85.50\",\n  \"academic_score\": \"82.30\",\n  \"logbook_score\": \"78.90\",\n  \"final_score\": \"82.23\",\n  \"grade\": \"A\",\n  \"breakdown_details\": {\n    \"weights\": {\n      \"supervisor_weight\": \"40%\",\n      \"academic_weight\": \"35%\",\n      \"logbook_weight\": \"25%\"\n    },\n    \"weighted_calculation\": {\n      \"supervisor_contribution\": \"85.50 * 0.40 = 34.20\",\n      \"academic_contribution\": \"82.30 * 0.35 = 28.81\",\n      \"logbook_contribution\": \"78.90 * 0.25 = 19.73\",\n      \"total_weighted\": \"34.20 + 28.81 + 19.73 = 82.74\",\n      \"final_score_computed\": \"82.23 (clamped to 0-100 range)\"\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Evaluations for Supervisor's Department",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/evaluations/evaluations/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "evaluations", "evaluations", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Evaluations List Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"evaluation_id\": \"eval-uuid-1\",\n    \"placement\": \"placement-uuid-1\",\n    \"evaluator\": \"supervisor-uuid\",\n    \"evaluation_date\": \"2026-06-15\",\n    \"total_score\": \"82.30\",\n    \"grade\": \"A\",\n    \"comments\": \"Student demonstrated strong communication and technical skills.\",\n    \"scores\": [\n      {\n        \"score_id\": \"score-uuid-1\",\n        \"criteria_id\": \"criteria-uuid-1\",\n        \"criteria_name\": \"Communication Skills\",\n        \"score\": \"85.00\",\n        \"max_score\": \"100.00\",\n        \"weight\": \"25.00%\",\n        \"weighted_contribution\": \"21.25\"\n      },\n      {\n        \"score_id\": \"score-uuid-2\",\n        \"criteria_id\": \"criteria-uuid-2\",\n        \"criteria_name\": \"Technical Competence\",\n        \"score\": \"88.00\",\n        \"max_score\": \"100.00\",\n        \"weight\": \"35.00%\",\n        \"weighted_contribution\": \"30.80\"\n      },\n      {\n        \"score_id\": \"score-uuid-3\",\n        \"criteria_id\": \"criteria-uuid-3\",\n        \"criteria_name\": \"Problem Solving\",\n        \"score\": \"78.00\",\n        \"max_score\": \"100.00\",\n        \"weight\": \"20.00%\",\n        \"weighted_contribution\": \"15.60\"\n      },\n      {\n        \"score_id\": \"score-uuid-4\",\n        \"criteria_id\": \"criteria-uuid-4\",\n        \"criteria_name\": \"Collaboration\",\n        \"score\": \"80.00\",\n        \"max_score\": \"100.00\",\n        \"weight\": \"20.00%\",\n        \"weighted_contribution\": \"16.00\"\n      }\n    ]\n  },\n  {\n    \"evaluation_id\": \"eval-uuid-2\",\n    \"placement\": \"placement-uuid-2\",\n    \"evaluator\": \"supervisor-uuid\",\n    \"evaluation_date\": \"2026-06-14\",\n    \"total_score\": \"79.80\",\n    \"grade\": \"B+\",\n    \"comments\": \"Good performance overall with room for improvement in technical depth.\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Evaluation Details with Weighted Scores",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/evaluations/evaluations/eval-uuid-1/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "evaluations", "evaluations", "eval-uuid-1", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Evaluation Detail with Weighted Computation",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"evaluation_id\": \"eval-uuid-1\",\n  \"placement\": {\n    \"placement_id\": \"placement-uuid-1\",\n    \"student\": \"student-name\",\n    \"organization\": \"Tech Corp\",\n    \"start_date\": \"2026-01-15\",\n    \"end_date\": \"2026-05-15\"\n  },\n  \"evaluator\": \"supervisor-uuid\",\n  \"evaluation_date\": \"2026-06-15\",\n  \"total_score\": \"82.30\",\n  \"grade\": \"A\",\n  \"comments\": \"Student demonstrated strong communication and technical skills. Maintained consistent performance throughout the internship.\",\n  \"scores\": [\n    {\n      \"score_id\": \"score-uuid-1\",\n      \"criteria\": {\n        \"criteria_id\": \"criteria-uuid-1\",\n        \"name\": \"Communication Skills\",\n        \"weight_percentage\": \"25.00\",\n        \"max_score\": \"100.00\"\n      },\n      \"score\": \"85.00\",\n      \"percentage\": \"85.00%\",\n      \"weighted_score\": \"21.25\"\n    },\n    {\n      \"score_id\": \"score-uuid-2\",\n      \"criteria\": {\n        \"criteria_id\": \"criteria-uuid-2\",\n        \"name\": \"Technical Competence\",\n        \"weight_percentage\": \"35.00\",\n        \"max_score\": \"100.00\"\n      },\n      \"score\": \"88.00\",\n      \"percentage\": \"88.00%\",\n      \"weighted_score\": \"30.80\"\n    },\n    {\n      \"score_id\": \"score-uuid-3\",\n      \"criteria\": {\n        \"criteria_id\": \"criteria-uuid-3\",\n        \"name\": \"Problem Solving\",\n        \"weight_percentage\": \"20.00\",\n        \"max_score\": \"100.00\"\n      },\n      \"score\": \"78.00\",\n      \"percentage\": \"78.00%\",\n      \"weighted_score\": \"15.60\"\n    },\n    {\n      \"score_id\": \"score-uuid-4\",\n      \"criteria\": {\n        \"criteria_id\": \"criteria-uuid-4\",\n        \"name\": \"Collaboration\",\n        \"weight_percentage\": \"20.00\",\n        \"max_score\": \"100.00\"\n      },\n      \"score\": \"80.00\",\n      \"percentage\": \"80.00%\",\n      \"weighted_score\": \"16.00\"\n    }\n  ],\n  \"weighted_calculation_summary\": {\n    \"total_weight\": \"100.00%\",\n    \"weighted_total\": \"83.65\",\n    \"final_clamped_score\": \"82.30\",\n    \"grade_assigned\": \"A (80-90 range)\"\n  }\n}"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "info": {
+    "name": "ILES - Login API Examples",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "description": "Example requests and saved responses for the Login API (success + invalid credentials)."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "email", "value": "samuelkala2003@gmail.com" },
+    { "key": "password", "value": "kalasam123" }
+  ],
+  "item": [
+    {
+      "name": "Login - Success",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/accounts/users/login/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","accounts","users","login",""]
+        }
+      },
+      "response": [
+        {
+          "name": "Success Example",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"refresh\": \"<refresh_token>\",\n  \"access\": \"<access_token>\",\n  \"user\": {\n    \"user_id\": \"11111111-2222-3333-4444-555555555555\",\n    \"email\": \"login-user@example.com\",\n    \"first_name\": \"Login\",\n    \"last_name\": \"User\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Login - Invalid Credentials",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"wrong-password\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/accounts/users/login/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","accounts","users","login",""]
+        }
+      },
+      "response": [
+        {
+          "name": "Invalid Credentials Example",
+          "originalRequest": {},
+          "status": "Unauthorized",
+          "code": 401,
+          "body": "{\n  \"error\": \"Invalid credentials\"\n}"
+        }
+      ]
+    }
+  ]
+}

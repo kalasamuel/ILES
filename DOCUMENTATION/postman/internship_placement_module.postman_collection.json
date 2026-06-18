@@ -1,0 +1,352 @@
+{
+  "info": {
+    "name": "ILES - Internship Placement Module API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "description": "API endpoints for internship placement management (create placement, upload documents, approve/reject, workflow history)."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "adminEmail", "value": "admin@gmail.com" },
+    { "key": "adminPassword", "value": "admin123" },
+    { "key": "accessToken", "value": "REPLACE_WITH_TOKEN_FROM_LOGIN" },
+    { "key": "placementId", "value": "REPLACE_WITH_PLACEMENT_UUID" },
+    { "key": "documentId", "value": "REPLACE_WITH_DOCUMENT_UUID" }
+  ],
+  "item": [
+    {
+      "name": "Admin Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/accounts/users/login/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "accounts", "users", "login", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Admin Login Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"refresh\": \"<refresh_token>\",\n  \"access\": \"<access_token>\",\n  \"user\": {\n    \"user_id\": \"admin-uuid\",\n    \"email\": \"admin@gmail.com\",\n    \"first_name\": \"Admin\",\n    \"last_name\": \"User\",\n    \"role\": \"Administrator\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "List All Placements",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/placements/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "placements", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Placements List Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"placement_id\": \"placement-uuid-1\",\n    \"student\": \"student-uuid-1\",\n    \"organization\": \"org-uuid-1\",\n    \"workplace_supervisor\": \"supervisor-uuid-1\",\n    \"academic_supervisor\": \"supervisor-uuid-2\",\n    \"workplace_supervisor_email\": \"john.supervisor@company.com\",\n    \"start_date\": \"2026-05-01\",\n    \"end_date\": \"2026-08-31\",\n    \"position_title\": \"Software Development Intern\",\n    \"status\": \"approved\",\n    \"is_submitted\": true,\n    \"submitted_at\": \"2026-04-15T10:30:00Z\",\n    \"created_at\": \"2026-04-01T09:00:00Z\"\n  },\n  {\n    \"placement_id\": \"placement-uuid-2\",\n    \"student\": \"student-uuid-2\",\n    \"organization\": \"org-uuid-2\",\n    \"workplace_supervisor\": \"supervisor-uuid-3\",\n    \"academic_supervisor\": \"supervisor-uuid-4\",\n    \"workplace_supervisor_email\": \"jane.lead@techcorp.com\",\n    \"start_date\": \"2026-06-01\",\n    \"end_date\": \"2026-09-30\",\n    \"position_title\": \"Data Science Intern\",\n    \"status\": \"pending\",\n    \"is_submitted\": false,\n    \"submitted_at\": null,\n    \"created_at\": \"2026-05-10T14:20:00Z\"\n  },\n  {\n    \"placement_id\": \"placement-uuid-3\",\n    \"student\": \"student-uuid-3\",\n    \"organization\": \"org-uuid-1\",\n    \"workplace_supervisor\": \"supervisor-uuid-1\",\n    \"academic_supervisor\": \"supervisor-uuid-5\",\n    \"workplace_supervisor_email\": \"john.supervisor@company.com\",\n    \"start_date\": \"2026-07-01\",\n    \"end_date\": \"2026-10-31\",\n    \"position_title\": \"Backend Development Intern\",\n    \"status\": \"rejected\",\n    \"is_submitted\": false,\n    \"submitted_at\": null,\n    \"created_at\": \"2026-05-20T11:45:00Z\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Create New Placement",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student\": \"student-uuid\",\n  \"organization\": \"org-uuid\",\n  \"workplace_supervisor\": \"supervisor-uuid-1\",\n  \"academic_supervisor\": \"supervisor-uuid-2\",\n  \"workplace_supervisor_email\": \"supervisor@company.com\",\n  \"start_date\": \"2026-06-01\",\n  \"end_date\": \"2026-09-30\",\n  \"position_title\": \"Full Stack Development Intern\",\n  \"status\": \"pending\",\n  \"is_submitted\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/placements/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "placements", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Create Placement Success",
+          "originalRequest": {},
+          "status": "Created",
+          "code": 201,
+          "body": "{\n  \"placement_id\": \"new-placement-uuid\",\n  \"student\": \"student-uuid\",\n  \"organization\": \"org-uuid\",\n  \"workplace_supervisor\": \"supervisor-uuid-1\",\n  \"academic_supervisor\": \"supervisor-uuid-2\",\n  \"workplace_supervisor_email\": \"supervisor@company.com\",\n  \"start_date\": \"2026-06-01\",\n  \"end_date\": \"2026-09-30\",\n  \"position_title\": \"Full Stack Development Intern\",\n  \"status\": \"pending\",\n  \"is_submitted\": false,\n  \"submitted_at\": null,\n  \"created_at\": \"2026-06-16T12:00:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Placement Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/placements/{{placementId}}/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "placements", "{{placementId}}", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Placement Detail Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"placement_id\": \"placement-uuid\",\n  \"student\": \"student-uuid-1\",\n  \"organization\": \"org-uuid-1\",\n  \"workplace_supervisor\": \"supervisor-uuid-1\",\n  \"academic_supervisor\": \"supervisor-uuid-2\",\n  \"workplace_supervisor_email\": \"john.supervisor@company.com\",\n  \"start_date\": \"2026-05-01\",\n  \"end_date\": \"2026-08-31\",\n  \"position_title\": \"Software Development Intern\",\n  \"status\": \"approved\",\n  \"is_submitted\": true,\n  \"submitted_at\": \"2026-04-15T10:30:00Z\",\n  \"created_at\": \"2026-04-01T09:00:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Placement",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"position_title\": \"Senior Software Development Intern\",\n  \"end_date\": \"2026-09-15\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/placements/{{placementId}}/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "placements", "{{placementId}}", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Update Placement Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"placement_id\": \"placement-uuid\",\n  \"student\": \"student-uuid-1\",\n  \"organization\": \"org-uuid-1\",\n  \"workplace_supervisor\": \"supervisor-uuid-1\",\n  \"academic_supervisor\": \"supervisor-uuid-2\",\n  \"workplace_supervisor_email\": \"john.supervisor@company.com\",\n  \"start_date\": \"2026-05-01\",\n  \"end_date\": \"2026-09-15\",\n  \"position_title\": \"Senior Software Development Intern\",\n  \"status\": \"approved\",\n  \"is_submitted\": true,\n  \"submitted_at\": \"2026-04-15T10:30:00Z\",\n  \"created_at\": \"2026-04-01T09:00:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Approve Placement",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/placements/{{placementId}}/approve/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "placements", "{{placementId}}", "approve", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Approve Placement Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"message\": \"Placement approved\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Reject Placement",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/placements/{{placementId}}/reject/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "placements", "{{placementId}}", "reject", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Reject Placement Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"message\": \"Placement rejected\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Placement Documents",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/documents/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "documents", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Documents List Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"document_id\": \"doc-uuid-1\",\n    \"placement\": \"placement-uuid-1\",\n    \"document_type\": \"introduction_letter\",\n    \"file_url\": \"http://localhost:8000/media/placement_documents/intro_letter_2026.pdf\",\n    \"uploaded_at\": \"2026-04-10T14:00:00Z\"\n  },\n  {\n    \"document_id\": \"doc-uuid-2\",\n    \"placement\": \"placement-uuid-1\",\n    \"document_type\": \"acceptance_letter\",\n    \"file_url\": \"http://localhost:8000/media/placement_documents/acceptance_2026.pdf\",\n    \"uploaded_at\": \"2026-04-12T10:30:00Z\"\n  },\n  {\n    \"document_id\": \"doc-uuid-3\",\n    \"placement\": \"placement-uuid-1\",\n    \"document_type\": \"contract\",\n    \"file_url\": \"http://localhost:8000/media/placement_documents/contract_2026.pdf\",\n    \"uploaded_at\": \"2026-04-13T09:15:00Z\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Upload Placement Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "placement", "value": "placement-uuid", "type": "text" },
+            { "key": "document_type", "value": "acceptance_letter", "type": "text" },
+            { "key": "file_url", "src": "<path-to-your-file>", "type": "file" }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/documents/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "documents", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Upload Document Success",
+          "originalRequest": {},
+          "status": "Created",
+          "code": 201,
+          "body": "{\n  \"document_id\": \"new-doc-uuid\",\n  \"placement\": \"placement-uuid\",\n  \"document_type\": \"acceptance_letter\",\n  \"file_url\": \"http://localhost:8000/media/placement_documents/acceptance_letter_2026.pdf\",\n  \"uploaded_at\": \"2026-06-16T15:45:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Document Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/documents/{{documentId}}/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "documents", "{{documentId}}", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Document Detail Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"document_id\": \"doc-uuid\",\n  \"placement\": \"placement-uuid-1\",\n  \"document_type\": \"acceptance_letter\",\n  \"file_url\": \"http://localhost:8000/media/placement_documents/acceptance_2026.pdf\",\n  \"uploaded_at\": \"2026-04-12T10:30:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Document",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/documents/{{documentId}}/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "documents", "{{documentId}}", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Delete Document Success",
+          "originalRequest": {},
+          "status": "No Content",
+          "code": 204,
+          "body": ""
+        }
+      ]
+    },
+    {
+      "name": "Placement Creation Error - Missing Required Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student\": \"student-uuid\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/placements/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "placements", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Validation Error - Missing Fields",
+          "originalRequest": {},
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"organization\": [\"This field is required.\"],\n  \"workplace_supervisor\": [\"This field is required.\"],\n  \"academic_supervisor\": [\"This field is required.\"],\n  \"start_date\": [\"This field is required.\"],\n  \"end_date\": [\"This field is required.\"],\n  \"position_title\": [\"This field is required.\"]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Approve Placement Error - Invalid Status",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/placements/placements/placement-uuid-already-approved/approve/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "placements", "placements", "placement-uuid-already-approved", "approve", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Approve Error - Invalid Status",
+          "originalRequest": {},
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"error\": \"Cannot approve this placement\"\n}"
+        }
+      ]
+    }
+  ]
+}

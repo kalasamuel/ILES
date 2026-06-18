@@ -1,0 +1,162 @@
+{
+  "info": {
+    "name": "ILES - Dashboards & Reporting API Examples",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "description": "Admin dashboard and reporting API endpoints with successful response examples."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "adminEmail", "value": "admin@gmail.com" },
+    { "key": "adminPassword", "value": "admin123" },
+    { "key": "accessToken", "value": "REPLACE_WITH_TOKEN_FROM_LOGIN" }
+  ],
+  "item": [
+    {
+      "name": "Admin Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/accounts/users/login/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "accounts", "users", "login", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Login Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"refresh\": \"<refresh_token>\",\n  \"access\": \"<access_token>\",\n  \"user\": {\n    \"user_id\": \"admin-uuid-here\",\n    \"email\": \"admin@gmail.com\",\n    \"first_name\": \"Admin\",\n    \"last_name\": \"User\",\n    \"role\": \"admin\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Dashboard Metrics",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/metrics/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "metrics", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Metrics List Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"metric_id\": \"11111111-2222-3333-4444-555555555555\",\n    \"metric_type\": \"internships_completed\",\n    \"value\": \"45.00\",\n    \"calculated_at\": \"2026-06-16T10:30:00Z\",\n    \"created_at\": \"2026-06-16T10:30:00Z\",\n    \"updated_at\": \"2026-06-16T10:30:00Z\"\n  },\n  {\n    \"metric_id\": \"22222222-3333-4444-5555-666666666666\",\n    \"metric_type\": \"total_students\",\n    \"value\": \"120.00\",\n    \"calculated_at\": \"2026-06-16T10:30:00Z\",\n    \"created_at\": \"2026-06-16T10:30:00Z\",\n    \"updated_at\": \"2026-06-16T10:30:00Z\"\n  },\n  {\n    \"metric_id\": \"33333333-4444-5555-6666-777777777777\",\n    \"metric_type\": \"active_placements\",\n    \"value\": \"35.00\",\n    \"calculated_at\": \"2026-06-16T10:30:00Z\",\n    \"created_at\": \"2026-06-16T10:30:00Z\",\n    \"updated_at\": \"2026-06-16T10:30:00Z\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Refresh Metrics",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/metrics/refresh-metrics/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "metrics", "refresh-metrics", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Refresh Metrics Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"metric_id\": \"11111111-2222-3333-4444-555555555555\",\n    \"metric_type\": \"internships_completed\",\n    \"value\": \"48.00\",\n    \"calculated_at\": \"2026-06-16T11:00:00Z\",\n    \"created_at\": \"2026-06-16T10:30:00Z\",\n    \"updated_at\": \"2026-06-16T11:00:00Z\"\n  },\n  {\n    \"metric_id\": \"22222222-3333-4444-5555-666666666666\",\n    \"metric_type\": \"total_students\",\n    \"value\": \"125.00\",\n    \"calculated_at\": \"2026-06-16T11:00:00Z\",\n    \"created_at\": \"2026-06-16T10:30:00Z\",\n    \"updated_at\": \"2026-06-16T11:00:00Z\"\n  },\n  {\n    \"metric_id\": \"33333333-4444-5555-6666-777777777777\",\n    \"metric_type\": \"active_placements\",\n    \"value\": \"38.00\",\n    \"calculated_at\": \"2026-06-16T11:00:00Z\",\n    \"created_at\": \"2026-06-16T10:30:00Z\",\n    \"updated_at\": \"2026-06-16T11:00:00Z\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Public Stats",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/metrics/public-stats/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "metrics", "public-stats", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Public Stats Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"students_count\": 125,\n  \"organizations_count\": 18,\n  \"departments_count\": 8\n}"
+        }
+      ]
+    },
+    {
+      "name": "Evaluation Criteria Summaries",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/metrics/evaluation-criteria-summaries/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "metrics", "evaluation-criteria-summaries", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Evaluation Criteria Summaries Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"criteria_summaries\": [\n    {\n      \"criteria\": \"Communication Skills\",\n      \"avgPercentage\": 87.5\n    },\n    {\n      \"criteria\": \"Technical Competence\",\n      \"avgPercentage\": 82.3\n    },\n    {\n      \"criteria\": \"Problem Solving\",\n      \"avgPercentage\": 79.8\n    },\n    {\n      \"criteria\": \"Collaboration\",\n      \"avgPercentage\": 85.2\n    }\n  ],\n  \"evaluation_count\": 42\n}"
+        }
+      ]
+    },
+    {
+      "name": "My Data Context",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/metrics/my-data-context/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "metrics", "my-data-context", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Data Context Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"user_id\": \"admin-uuid-here\",\n  \"email\": \"admin@gmail.com\",\n  \"role_name\": \"admin\",\n  \"has_student_profile\": false,\n  \"has_supervisor_profile\": false,\n  \"student_owned\": {\n    \"placements\": 0,\n    \"logs\": 0,\n    \"reviews\": 0,\n    \"notifications\": 5\n  },\n  \"supervisor_owned\": {\n    \"placements_workplace\": 0,\n    \"placements_academic\": 0,\n    \"reviews\": 0,\n    \"pending_logs\": 0\n  }\n}"
+        }
+      ]
+    }
+  ]
+}

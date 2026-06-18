@@ -1,0 +1,217 @@
+{
+  "info": {
+    "name": "ILES - Supervisor Review Workflow API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "description": "API endpoints for supervisor review workflow (submit review, approve, reject, request revision, view workflow history)."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "supervisorEmail", "value": "REPLACE_WITH_SUPERVISOR_EMAIL" },
+    { "key": "supervisorPassword", "value": "REPLACE_WITH_SUPERVISOR_PASSWORD" },
+    { "key": "accessToken", "value": "REPLACE_WITH_TOKEN_FROM_LOGIN" },
+    { "key": "logId", "value": "REPLACE_WITH_WEEKLY_LOG_UUID" },
+    { "key": "reviewId", "value": "REPLACE_WITH_REVIEW_UUID" }
+  ],
+  "item": [
+    {
+      "name": "Supervisor Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{supervisorEmail}}\",\n  \"password\": \"{{supervisorPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/accounts/users/login/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "accounts", "users", "login", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Login Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"refresh\": \"<refresh_token>\",\n  \"access\": \"<access_token>\",\n  \"user\": {\n    \"user_id\": \"supervisor-uuid\",\n    \"email\": \"supervisor@example.com\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Supervisor\",\n    \"role\": \"Academic Supervisor\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Pending Reviews",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reviews/reviews/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reviews", "reviews", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Reviews List Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"review_id\": \"review-uuid-1\",\n    \"log\": \"log-uuid-1\",\n    \"supervisor\": \"supervisor-uuid\",\n    \"comments\": \"Excellent work this week. Strong technical progress.\",\n    \"rating\": \"4.5\",\n    \"status\": \"approved\",\n    \"reviewed_at\": \"2026-06-15T14:30:00Z\"\n  },\n  {\n    \"review_id\": \"review-uuid-2\",\n    \"log\": \"log-uuid-2\",\n    \"supervisor\": \"supervisor-uuid\",\n    \"comments\": \"Please review the section on error handling and resubmit.\",\n    \"rating\": \"3.0\",\n    \"status\": \"needs_revision\",\n    \"reviewed_at\": \"2026-06-14T10:15:00Z\"\n  },\n  {\n    \"review_id\": \"review-uuid-3\",\n    \"log\": \"log-uuid-3\",\n    \"supervisor\": \"supervisor-uuid\",\n    \"comments\": \"Needs significant improvements. Please address the feedback.\",\n    \"rating\": \"2.0\",\n    \"status\": \"rejected\",\n    \"reviewed_at\": \"2026-06-13T09:00:00Z\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Submit a Log Review",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"log\": \"{{logId}}\",\n  \"comments\": \"Good work on the database optimization task. Implementation is clean and well-documented. Some minor suggestions for the query optimization could be explored.\",\n  \"rating\": \"4.0\",\n  \"status\": \"approved\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/reviews/reviews/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reviews", "reviews", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Submit Review Success",
+          "originalRequest": {},
+          "status": "Created",
+          "code": 201,
+          "body": "{\n  \"review_id\": \"new-review-uuid\",\n  \"log\": \"log-uuid\",\n  \"supervisor\": \"supervisor-uuid\",\n  \"comments\": \"Good work on the database optimization task. Implementation is clean and well-documented.\",\n  \"rating\": \"4.0\",\n  \"status\": \"approved\",\n  \"reviewed_at\": \"2026-06-16T11:00:00Z\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Approve a Log Review",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reviews/reviews/{{reviewId}}/approve/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reviews", "reviews", "{{reviewId}}", "approve", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Approve Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"message\": \"Log approved\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Reject a Log Review",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reviews/reviews/{{reviewId}}/reject/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reviews", "reviews", "{{reviewId}}", "reject", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Reject Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"message\": \"Log rejected\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Request Revision on Review",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reviews/reviews/{{reviewId}}/request-revision/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reviews", "reviews", "{{reviewId}}", "request-revision", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Request Revision Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"message\": \"Revision requested\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "View Workflow History",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reviews/history/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reviews", "history", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Workflow History List Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "[\n  {\n    \"history_id\": \"history-uuid-1\",\n    \"entity_type\": \"log\",\n    \"entity_id\": \"log-uuid-1\",\n    \"previous_status\": \"submitted\",\n    \"new_status\": \"reviewed\",\n    \"changed_by\": \"supervisor-uuid\",\n    \"changed_at\": \"2026-06-15T14:30:00Z\"\n  },\n  {\n    \"history_id\": \"history-uuid-2\",\n    \"entity_type\": \"log\",\n    \"entity_id\": \"log-uuid-1\",\n    \"previous_status\": \"reviewed\",\n    \"new_status\": \"approved\",\n    \"changed_by\": \"supervisor-uuid\",\n    \"changed_at\": \"2026-06-15T14:35:00Z\"\n  },\n  {\n    \"history_id\": \"history-uuid-3\",\n    \"entity_type\": \"log\",\n    \"entity_id\": \"log-uuid-2\",\n    \"previous_status\": \"submitted\",\n    \"new_status\": \"reviewed\",\n    \"changed_by\": \"supervisor-uuid\",\n    \"changed_at\": \"2026-06-14T10:15:00Z\"\n  },\n  {\n    \"history_id\": \"history-uuid-4\",\n    \"entity_type\": \"log\",\n    \"entity_id\": \"log-uuid-2\",\n    \"previous_status\": \"reviewed\",\n    \"new_status\": \"reviewed\",\n    \"changed_by\": \"supervisor-uuid\",\n    \"changed_at\": \"2026-06-14T10:20:00Z\"\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Review Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/reviews/reviews/{{reviewId}}/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "reviews", "reviews", "{{reviewId}}", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "Review Detail Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"review_id\": \"review-uuid\",\n  \"log\": \"log-uuid\",\n  \"supervisor\": \"supervisor-uuid\",\n  \"comments\": \"Excellent work on the API integration task. The code is well-structured and follows best practices. Good error handling implemented.\",\n  \"rating\": \"4.5\",\n  \"status\": \"approved\",\n  \"reviewed_at\": \"2026-06-15T14:30:00Z\"\n}"
+        }
+      ]
+    }
+  ]
+}
