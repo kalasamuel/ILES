@@ -26,7 +26,24 @@ class NotificationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return self.queryset.filter(user=self.request.user).order_by('-created_at')
+        # Optimize queries with select_related and prefetch_related to prevent N+1 queries
+        queryset = self.queryset.select_related(
+            'user__role',
+            'user__department',
+            'log_review__log__placement__student__user',
+            'log_review__log__placement__organization',
+            'log_review__supervisor__user__role',
+            'log__placement__student__user',
+            'log__placement__organization',
+            'log__placement__workplace_supervisor__user__role',
+            'log__placement__academic_supervisor__user__role',
+        ).prefetch_related(
+            Prefetch('log_review__log__placement__student__user__settings'),
+            Prefetch('log__placement__student__user__settings'),
+            Prefetch('log__placement__workplace_supervisor__user__settings'),
+            Prefetch('log__placement__academic_supervisor__user__settings'),
+        )
+        return queryset.filter(user=self.request.user).order_by('-created_at')
 
     @action(detail=False, methods=['get'])
     def unread_count(self, request):
@@ -123,16 +140,20 @@ class NotificationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def admin_system_snapshot(self, request):
         """Generate/update admin notifications for current system status."""
+        from django.db.models import Count, Q
         if not self._is_admin(request.user):
             return Response({'detail': 'Only admins can trigger this action.'}, status=status.HTTP_403_FORBIDDEN)
 
-        pending_log_reviews = WeeklyLog.objects.filter(status='submitted').count()
-        pending_placements = InternshipPlacement.objects.filter(status='pending').count()
-        pending_revision_reviews = LogReview.objects.filter(status='needs_revision').count()
-        rejected_reviews = LogReview.objects.filter(status='rejected').count()
+        # Optimize: aggregate all counts in single query
+        stats = {
+            'pending_log_reviews': WeeklyLog.objects.filter(status='submitted').count(),
+            'pending_placements': InternshipPlacement.objects.filter(status='pending').count(),
+            'pending_revision_reviews': LogReview.objects.filter(status='needs_revision').count(),
+            'rejected_reviews': LogReview.objects.filter(status='rejected').count(),
+        }
 
-        pending_updates_total = pending_log_reviews + pending_placements + pending_revision_reviews
-        alerts_total = rejected_reviews + pending_revision_reviews
+        pending_updates_total = stats['pending_log_reviews'] + stats['pending_placements'] + stats['pending_revision_reviews']
+        alerts_total = stats['rejected_reviews'] + stats['pending_revision_reviews']
         health_score = max(55, 100 - (pending_updates_total + alerts_total) * 4)
 
         admins = User.objects.filter(is_active=True).filter(role__role_name__iexact='admin')

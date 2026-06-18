@@ -142,8 +142,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        # Prefetch UserSettings to avoid N+1 queries
-        queryset = self.queryset.prefetch_related(Prefetch('settings'))
+        # Optimize queries with select_related and prefetch_related
+        queryset = self.queryset.select_related(
+            'role',
+            'department'
+        ).prefetch_related(
+            Prefetch('settings')
+        )
         if user.role and user.role.role_name.lower() == 'admin':
             return queryset
         return queryset.filter(user_id=user.user_id)

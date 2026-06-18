@@ -384,11 +384,18 @@ class DashboardMetricViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='refresh-metrics')
     def refresh_metrics(self, request):
+        from django.db.models import Count
         with transaction.atomic():
+            # Aggregate all metrics in fewer queries
+            placement_stats = InternshipPlacement.objects.aggregate(
+                internships_completed=Count('placement_id', filter=Q(status='completed')),
+                active_placements=Count('placement_id', filter=Q(status__in=['pending', 'approved']))
+            )
+            
             metrics_data = {
-                'internships_completed': InternshipPlacement.objects.filter(status='completed').count(),
+                'internships_completed': placement_stats['internships_completed'],
                 'total_students': Student.objects.count(),
-                'active_placements': InternshipPlacement.objects.filter(status__in=['pending', 'approved']).count(),
+                'active_placements': placement_stats['active_placements'],
                 'average_score': ScoreBreakdown.objects.aggregate(avg=Avg('final_score'))['avg'] or 0,
                 'pending_reviews': LogReview.objects.filter(status='needs_revision').count(),
             }
@@ -409,14 +416,18 @@ class DashboardMetricViewSet(viewsets.ModelViewSet):
         role_name = (user.role.role_name if user.role else '').strip().lower()
 
         if 'admin' in role_name:
-            evaluations = Evaluation.objects.all()
+            evaluations = Evaluation.objects.prefetch_related(
+                Prefetch('evaluationscore_set', queryset=EvaluationScore.objects.select_related('criteria'))
+            )
         elif 'supervisor' in role_name or 'academic' in role_name or 'workplace' in role_name:
             try:
                 supervisor = Supervisor.objects.get(user=user)
                 evaluations = Evaluation.objects.filter(
                     Q(placement__workplace_supervisor=supervisor) |
                     Q(placement__academic_supervisor=supervisor)
-                ).distinct()
+                ).distinct().prefetch_related(
+                    Prefetch('evaluationscore_set', queryset=EvaluationScore.objects.select_related('criteria'))
+                )
             except Supervisor.DoesNotExist:
                 evaluations = Evaluation.objects.none()
         else:
@@ -424,7 +435,7 @@ class DashboardMetricViewSet(viewsets.ModelViewSet):
 
         criteria_map = {}
         for evaluation in evaluations:
-            scores = EvaluationScore.objects.filter(evaluation=evaluation)
+            scores = evaluation.evaluationscore_set.all()
             for score_entry in scores:
                 criteria_id = str(score_entry.criteria.criteria_id)
                 criteria_name = score_entry.criteria.name

@@ -56,17 +56,33 @@ class LogReviewViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('You can only modify reviews you authored.')
 
     def get_queryset(self):
+        from django.db.models import Prefetch
         user = self.request.user
         if not user.is_authenticated:
             return LogReview.objects.none()
 
         role_name = (user.role.role_name if user.role else '').strip().lower()
 
+        # Optimize queries with select_related and prefetch_related
+        queryset = self.queryset.select_related(
+            'log__placement__student__user__role',
+            'log__placement__student__user__department',
+            'log__placement__organization',
+            'log__placement__workplace_supervisor__user__role',
+            'log__placement__academic_supervisor__user__role',
+            'supervisor__user__role',
+        ).prefetch_related(
+            Prefetch('log__placement__student__user__settings'),
+            Prefetch('log__placement__workplace_supervisor__user__settings'),
+            Prefetch('log__placement__academic_supervisor__user__settings'),
+            Prefetch('supervisor__user__settings'),
+        )
+
         if role_name == 'admin':
-            return self.queryset
+            return queryset
 
         if 'student' in role_name:
-            return self.queryset.filter(log__placement__student__user=user)
+            return queryset.filter(log__placement__student__user=user)
 
         try:
             supervisor = Supervisor.objects.get(user=user)
@@ -76,10 +92,10 @@ class LogReviewViewSet(viewsets.ModelViewSet):
             return LogReview.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
-            return self.queryset.filter(supervisor=supervisor)
+            return queryset.filter(supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
-            return self.queryset.filter(supervisor=supervisor)
+            return queryset.filter(supervisor=supervisor)
 
         return LogReview.objects.none()
 

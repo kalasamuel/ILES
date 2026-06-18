@@ -193,17 +193,33 @@ class EvaluationViewSet(viewsets.ModelViewSet):
         return supervisor
 
     def get_queryset(self):
+        from django.db.models import Prefetch
         user = self.request.user
         if not user.is_authenticated:
             return Evaluation.objects.none()
 
         role_name = (user.role.role_name if user.role else '').strip().lower()
 
+        # Optimize queries with select_related and prefetch_related
+        queryset = self.queryset.select_related(
+            'placement__student__user__role',
+            'placement__student__user__department',
+            'placement__organization',
+            'placement__workplace_supervisor__user__role',
+            'placement__academic_supervisor__user__role',
+            'evaluator__user__role',
+        ).prefetch_related(
+            Prefetch('evaluationscore_set', queryset=EvaluationScore.objects.select_related('criteria')),
+            Prefetch('placement__student__user__settings'),
+            Prefetch('placement__workplace_supervisor__user__settings'),
+            Prefetch('placement__academic_supervisor__user__settings'),
+        )
+
         if role_name == 'admin':
-            return self.queryset
+            return queryset
 
         if 'student' in role_name:
-            return self.queryset.filter(placement__student__user=user)
+            return queryset.filter(placement__student__user=user)
 
         try:
             supervisor = Supervisor.objects.get(user=user)
@@ -214,13 +230,13 @@ class EvaluationViewSet(viewsets.ModelViewSet):
 
         if supervisor.supervisor_type == 'workplace':
             if supervisor.organization_id:
-                return self.queryset.filter(placement__organization=supervisor.organization)
-            return self.queryset.filter(placement__workplace_supervisor=supervisor)
+                return queryset.filter(placement__organization=supervisor.organization)
+            return queryset.filter(placement__workplace_supervisor=supervisor)
 
         if supervisor.supervisor_type == 'academic':
             if supervisor.department:
-                return self.queryset.filter(placement__student__user__department=supervisor.department)
-            return self.queryset.filter(placement__academic_supervisor=supervisor)
+                return queryset.filter(placement__student__user__department=supervisor.department)
+            return queryset.filter(placement__academic_supervisor=supervisor)
 
         return Evaluation.objects.none()
 
