@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Prefetch
 from .models import Role, Department, User, Student, Supervisor, UserSettings
 from .serializers import RoleSerializer, DepartmentSerializer, UserSerializer, UserRegisterSerializer, StudentSerializer, SupervisorSerializer, UserSettingsSerializer
 from datetime import timedelta
@@ -141,9 +142,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        # Prefetch UserSettings to avoid N+1 queries
+        queryset = self.queryset.prefetch_related(Prefetch('settings'))
         if user.role and user.role.role_name.lower() == 'admin':
-            return self.queryset
-        return self.queryset.filter(user_id=user.user_id)
+            return queryset
+        return queryset.filter(user_id=user.user_id)
 
     @action(detail=False, methods=['get', 'patch'])
     def me(self, request):
@@ -519,12 +522,22 @@ class StudentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         role_name = (user.role.role_name if user.role else '').strip().lower()
 
+        # Optimize queries with select_related and prefetch_related
+        queryset = self.queryset.select_related(
+            'user__role',
+            'user__department',
+            'academic_supervisor__user__role'
+        ).prefetch_related(
+            Prefetch('user__settings'),
+            Prefetch('academic_supervisor__user__settings')
+        )
+
         if role_name == 'admin':
-            return self.queryset
+            return queryset
 
         try:
             student = Student.objects.get(user=user)
-            return self.queryset.filter(student_id=student.student_id)
+            return queryset.filter(student_id=student.student_id)
         except Student.DoesNotExist:
             pass
 
@@ -532,7 +545,7 @@ class StudentViewSet(viewsets.ModelViewSet):
             supervisor = Supervisor.objects.get(user=user)
         except Supervisor.DoesNotExist:
             if 'supervisor' in role_name:
-                return self.queryset
+                return queryset
             return Student.objects.none()
 
         if supervisor.supervisor_type == 'workplace':
@@ -594,11 +607,20 @@ class SupervisorViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        # Optimize queries with select_related and prefetch_related
+        queryset = self.queryset.select_related(
+            'user__role',
+            'organization',
+            'department'
+        ).prefetch_related(
+            Prefetch('user__settings')
+        )
+
         if user.role and user.role.role_name.lower() == 'admin':
-            return self.queryset
+            return queryset
 
         try:
             supervisor = Supervisor.objects.get(user=user)
-            return self.queryset.filter(supervisor_id=supervisor.supervisor_id)
+            return queryset.filter(supervisor_id=supervisor.supervisor_id)
         except Supervisor.DoesNotExist:
             return Supervisor.objects.none()
