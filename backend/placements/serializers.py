@@ -15,6 +15,21 @@ class PlacementDocumentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class SimplePlacementSerializer(serializers.ModelSerializer):
+    """Minimal serializer for list views - avoids N+1 queries and massive data bloat"""
+    student_name = serializers.SerializerMethodField(read_only=True)
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
+    
+    def get_student_name(self, obj):
+        if obj.student and obj.student.user:
+            return f"{obj.student.user.first_name} {obj.student.user.last_name}"
+        return "N/A"
+    
+    class Meta:
+        model = InternshipPlacement
+        fields = ['placement_id', 'start_date', 'end_date', 'position_title', 'status', 'student_name', 'organization_name', 'created_at']
+
+
 class InternshipPlacementSerializer(serializers.ModelSerializer):
     student_details = StudentSerializer(source='student', read_only=True)
     organization_details = OrganizationSerializer(source='organization', read_only=True)

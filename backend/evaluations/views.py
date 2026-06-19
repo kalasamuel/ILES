@@ -6,7 +6,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.db.models import Sum, Avg
 from decimal import Decimal
 from .models import EvaluationCriteria, Evaluation, EvaluationScore, ScoreBreakdown
-from .serializers import EvaluationCriteriaSerializer, EvaluationSerializer, EvaluationScoreSerializer, ScoreBreakdownSerializer
+from .serializers import EvaluationCriteriaSerializer, EvaluationSerializer, EvaluationDetailSerializer, EvaluationMinimalSerializer, EvaluationScoreSerializer, ScoreBreakdownSerializer
 from accounts.models import Student, Supervisor
 
 
@@ -175,6 +175,17 @@ class EvaluationViewSet(viewsets.ModelViewSet):
     queryset = Evaluation.objects.all()
     serializer_class = EvaluationSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        """Use minimal serializer for admin list views, detailed for retrieve"""
+        user = self.request.user
+        role_name = (user.role.role_name if user.role else '').strip().lower()
+        
+        if self.action == 'list' and 'admin' in role_name:
+            return EvaluationMinimalSerializer
+        if self.action == 'retrieve':
+            return EvaluationDetailSerializer
+        return EvaluationSerializer
 
     def _get_supervisor(self, user):
         try:

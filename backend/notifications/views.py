@@ -13,6 +13,7 @@ from reviews.models import LogReview
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
+from django.db.models import Prefetch
 import json
 try:
     from pywebpush import webpush
@@ -190,9 +191,9 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 'pending_updates',
                 f'Pending updates: {pending_updates_total}',
                 {
-                    'pending_log_reviews': pending_log_reviews,
-                    'pending_placements': pending_placements,
-                    'reviews_needing_revision': pending_revision_reviews,
+                    'pending_log_reviews': stats['pending_log_reviews'],
+                    'pending_placements': stats['pending_placements'],
+                    'reviews_needing_revision': stats['pending_revision_reviews'],
                     'total_pending_updates': pending_updates_total,
                 },
             )
@@ -208,8 +209,8 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 ),
                 {
                     'alerts_total': alerts_total,
-                    'rejected_reviews': rejected_reviews,
-                    'reviews_needing_revision': pending_revision_reviews,
+                    'rejected_reviews': stats['rejected_reviews'],
+                    'reviews_needing_revision': stats['pending_revision_reviews'],
                     'severity': 'high' if alerts_total >= 5 else 'low',
                 },
             )

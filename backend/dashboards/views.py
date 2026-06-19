@@ -384,31 +384,40 @@ class DashboardMetricViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='refresh-metrics')
     def refresh_metrics(self, request):
-        from django.db.models import Count
-        with transaction.atomic():
-            # Aggregate all metrics in fewer queries
-            placement_stats = InternshipPlacement.objects.aggregate(
-                internships_completed=Count('placement_id', filter=Q(status='completed')),
-                active_placements=Count('placement_id', filter=Q(status__in=['pending', 'approved']))
-            )
-            
-            metrics_data = {
-                'internships_completed': placement_stats['internships_completed'],
-                'total_students': Student.objects.count(),
-                'active_placements': placement_stats['active_placements'],
-                'average_score': ScoreBreakdown.objects.aggregate(avg=Avg('final_score'))['avg'] or 0,
-                'pending_reviews': LogReview.objects.filter(status='needs_revision').count(),
-            }
-
-            for metric_type, value in metrics_data.items():
-                DashboardMetric.objects.update_or_create(
-                    metric_type=metric_type,
-                    defaults={'value': value}
-                )
-
-        metrics = DashboardMetric.objects.all().order_by('metric_type')
-        serializer = self.get_serializer(metrics, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        """Return cached metrics without expensive recalculation"""
+        from django.core.cache import cache
+        
+        # Try to return cached metrics (5 minute TTL)
+        cache_key = 'admin_dashboard_metrics'
+        cached_metrics = cache.get(cache_key)
+        if cached_metrics is not None:
+            return Response(cached_metrics, status=status.HTTP_200_OK)
+        
+        # If not cached, do quick aggregation with database-level optimization
+        from django.db.models import Count, Q
+        
+        # All in one query using aggregate with filters
+        placement_stats = InternshipPlacement.objects.aggregate(
+            internships_completed=Count('placement_id', filter=Q(status='completed')),
+            active_placements=Count('placement_id', filter=Q(status__in=['pending', 'approved'])),
+            total_placements=Count('placement_id')
+        )
+        
+        student_count = Student.objects.count()
+        avg_score = ScoreBreakdown.objects.aggregate(avg=Avg('final_score'))['avg'] or 0
+        pending_reviews = LogReview.objects.filter(status='needs_revision').count()
+        
+        metrics_data = [
+            {'metric_type': 'internships_completed', 'value': placement_stats['internships_completed']},
+            {'metric_type': 'total_students', 'value': student_count},
+            {'metric_type': 'active_placements', 'value': placement_stats['active_placements']},
+            {'metric_type': 'average_score', 'value': avg_score},
+            {'metric_type': 'pending_reviews', 'value': pending_reviews},
+        ]
+        
+        # Cache the result for 5 minutes
+        cache.set(cache_key, metrics_data, 300)
+        return Response(metrics_data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'], url_path='evaluation-criteria-summaries')
     def evaluation_criteria_summaries(self, request):

@@ -15,6 +15,13 @@ class InternshipPlacementViewSet(viewsets.ModelViewSet):
     serializer_class = InternshipPlacementSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_class(self):
+        """Use simplified serializer for list/admin views, full details for retrieve/create/update"""
+        if self.action in ['list']:
+            from .serializers import SimplePlacementSerializer
+            return SimplePlacementSerializer
+        return InternshipPlacementSerializer
+
     def get_queryset(self):
         user = self.request.user
         if not user.is_authenticated:
@@ -34,7 +41,8 @@ class InternshipPlacementViewSet(viewsets.ModelViewSet):
         ).prefetch_related(
             Prefetch('student__user__settings'),
             Prefetch('workplace_supervisor__user__settings'),
-            Prefetch('academic_supervisor__user__settings')
+            Prefetch('academic_supervisor__user__settings'),
+            Prefetch('placementdocument_set')
         )
 
         if role_name == 'admin':

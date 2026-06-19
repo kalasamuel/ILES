@@ -45,7 +45,10 @@ def seed_specific_users():
     department, _ = Department.objects.get_or_create(
         department_name='School of Computing and Informatics',
         faculty='Computing',
+        university='Makerere University',
         defaults={
+            'department_name': 'School of Computing and Informatics',
+            'faculty': 'Computing',
             'university': 'Makerere University'
         }
     )
@@ -192,14 +195,14 @@ def seed_specific_users():
     
     placement, placement_created = InternshipPlacement.objects.get_or_create(
         student=student_profile,
+        academic_supervisor=academic_supervisor,
+        position_title='Software Engineering Intern',
         defaults={
             'organization': organization,
             'workplace_supervisor': workplace_supervisor,
-            'academic_supervisor': academic_supervisor,
             'workplace_supervisor_email': 'supervisor@google-africa.com',
             'start_date': start_date,
             'end_date': end_date,
-            'position_title': 'Software Engineering Intern',
             'status': 'approved',
             'is_submitted': True,
             'submitted_at': datetime.now()
